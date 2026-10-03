@@ -1,0 +1,22 @@
+{
+  "name": "@rater/evals",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "eval": "tsx run.ts",
+    "generate": "tsx generate.ts"
+  },
+  "dependencies": {
+    "@rater/contracts": "workspace:*",
+    "@rater/core": "workspace:*",
+    "@rater/law": "workspace:*",
+    "@rater/llm": "workspace:*",
+    "@rater/pdf": "workspace:*",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+# Real contracts never go in git. Keep them in a local folder and run `pnpm eval --private <dir>`.
+private/
+.data/
+evals/results/*.json
+!evals/results/.gitkeep
+.vite/

@@ -1,0 +1,5 @@
+pnpm-lock.yaml
+packages/db/migrations
+evals/results
+evals/cases/**/*.pdf
+**/dist

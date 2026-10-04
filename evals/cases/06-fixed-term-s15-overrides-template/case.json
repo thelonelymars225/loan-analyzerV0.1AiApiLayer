@@ -1,0 +1,102 @@
+{
+  "id": "06-fixed-term-s15-overrides-template",
+  "contract": {
+    "number": "10000601",
+    "type": "fixed_term",
+    "executionDate": "2025-12-21",
+    "commencementDate": "2026-01-04",
+    "termMonths": 18,
+    "autoRenew": true,
+    "renewalNoticeDays": 30,
+    "location": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Example Construction Co.",
+      "ar": "شركة المثال للمقاولات"
+    },
+    "unifiedNo": "7000000601",
+    "email": "hr@construction.example.com",
+    "signatory": {
+      "name": {
+        "en": "Majed Al-Mithali",
+        "ar": "ماجد المثالي"
+      },
+      "idNo": "1000000602"
+    }
+  },
+  "employee": {
+    "name": "عبدالله القرني",
+    "idNo": "1000000601",
+    "gender": {
+      "en": "Male",
+      "ar": "ذكر"
+    },
+    "maritalStatus": {
+      "en": "Single",
+      "ar": "أعزب"
+    },
+    "birthDate": "1997-03-08",
+    "speciality": {
+      "en": "Civil Engineering",
+      "ar": "الهندسة المدنية"
+    },
+    "email": "abdullah.q@example.com",
+    "mobile": "+966 59 000 0601"
+  },
+  "job": {
+    "occupation": {
+      "en": "Civil Engineer",
+      "ar": "مهندس مدني"
+    },
+    "jobTitle": {
+      "en": "Site Engineer",
+      "ar": "مهندس موقع"
+    },
+    "workLocation": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "probationDays": 90,
+  "hours": {
+    "workDaysPerWeek": 5,
+    "dailyHours": 8,
+    "restDaysPerWeek": 2
+  },
+  "annualLeaveDays": 21,
+  "wage": {
+    "basic": 15000,
+    "housing": 3750,
+    "transport": 1500
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "The probationary period is 270 days.",
+      "ar": "مدة فترة التجربة 270 يومًا."
+    },
+    {
+      "en": "Annual vacation shall be fifteen (15) days per year.",
+      "ar": "تكون الإجازة السنوية خمسة عشر (15) يومًا في السنة."
+    },
+    {
+      "en": "Should either party end the contract without a valid reason before it expires, it must compensate the other party with three (3) months of the full wage.",
+      "ar": "إذا أنهى أي من الطرفين العقد دون سبب مشروع قبل انتهاء مدته، وجب عليه تعويض الطرف الآخر بما يعادل الأجر الإجمالي لثلاثة أشهر."
+    },
+    {
+      "en": "The end-of-service award shall be calculated on the last actual wage in accordance with the Labor Law.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس آخر أجر فعلي وفقًا لنظام العمل."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-08-11 20:10",
+    "downloadedByName": "عبدالله القرني",
+    "downloadedById": "1000000601",
+    "createdAt": "2025-12-21 10:30",
+    "activeAt": "2025-12-22 09:15"
+  }
+}

@@ -1,0 +1,142 @@
+# Lint, typecheck, unit tests and the web build on every push and pull request. The eval set
+# also runs when the rating logic changes (rules, law corpus, prompts, analyser, pipeline).
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# One run per branch or pull request: a newer push cancels the older run (except on main,
+# where every commit keeps its result).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rater
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d rater"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      # Tests that need a database create (and drop) their own on this server.
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/rater
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # Installs the pnpm version pinned in package.json ("packageManager").
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install PDF and OCR tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            poppler-utils tesseract-ocr tesseract-ocr-ara
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The eval cases are committed PDFs, but one test renders the synthetic Qiwa template
+      # to PDF (evals/template/render.test.ts), and that needs a headless Chromium.
+      - name: Install Chromium for the template test
+        run: pnpm --filter @rater/evals exec playwright install --with-deps --only-shell chromium
+
+      - name: Migrate the database
+        run: pnpm db:migrate
+
+      - name: Load the law corpus
+        run: pnpm law:ingest
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint, typecheck and unit tests
+        run: pnpm check
+
+      - name: Build the web app
+        run: pnpm --filter @rater/web build
+
+  changes:
+    name: Detect rating changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      rating: ${{ steps.filter.outputs.rating }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            rating:
+              - 'packages/core/**'
+              - 'packages/law/**'
+              - 'packages/llm/**'
+              - 'evals/**'
+
+  evals:
+    name: Eval set
+    needs: changes
+    if: needs.changes.outputs.rating == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install PDF and OCR tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            poppler-utils tesseract-ocr tesseract-ocr-ara
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The offline analyser keeps the run free and repeatable. To evaluate Claude, run
+      # `pnpm eval --llm claude` locally with ANTHROPIC_API_KEY set.
+      - name: Run the eval set
+        run: pnpm eval --llm heuristic
+
+      - name: Keep the eval results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: eval-results
+          path: evals/results/*.json
+          if-no-files-found: ignore

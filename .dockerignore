@@ -1,0 +1,26 @@
+# Keep the Docker build context small and free of secrets and personal data.
+# The images install their own node_modules from the lockfile.
+
+**/node_modules
+**/dist
+**/coverage
+**/.vite
+**/*.log
+**/.DS_Store
+.git
+.github
+
+# Secrets and local settings. Pass configuration at run time instead.
+**/.env
+**/.env.*
+!.env.example
+
+# Real contracts and local data never go into an image.
+private/
+.data/
+evals/results/
+
+# Not needed to build or run the app.
+docs/
+evals/cases/
+infra/docker-compose.yml

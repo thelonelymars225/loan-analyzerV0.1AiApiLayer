@@ -1,0 +1,1010 @@
+<!doctype html>
+<!--
+  Synthetic Qiwa "Unified Employment Contract" (عقد العمل الموحد) for evals and fixtures.
+  Filled by evals/lib/render.ts:
+    {{key}}    text value, HTML-escaped
+    {{{slot}}} pre-built rows (optional rows and Section 15)
+  The page footer ("downloaded at ... by ...", page numbers) is drawn by Chromium's footer
+  template in render.ts, like the real Qiwa export.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Unified Employment Contract (synthetic)</title>
+    <style>
+      {{{css}}}
+    </style>
+  </head>
+  <body>
+    <header class="title">
+      <div class="ar">عقد العمل الموحد</div>
+      <div class="en">Unified Employment Contract</div>
+    </header>
+
+    <div class="row plain intro">
+      <p class="en">
+        This Contract is considered documented and an enforceable instrument under the
+        Documentation Law issued by Royal Decree No. (M/164) dated 19/11/1441 AH.
+      </p>
+      <p class="ar">
+        يُعد هذا العقد موثقًا وسندًا تنفيذيًا بموجب نظام التوثيق الصادر بالمرسوم الملكي
+        رقم (م/164) وتاريخ 19/11/1441هـ.
+      </p>
+    </div>
+
+    <!-- 1 -->
+    <div class="heading">
+      <div class="en">1. Contract Information</div>
+      <div class="ar">1. بيانات العقد</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Contract number:</div>
+      <div class="value">{{contractNumber}}</div>
+      <div class="ar label">رقم العقد :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Contract type:</div>
+      <div class="en value">{{contractType.en}}</div>
+      <div class="ar value">{{contractType.ar}}</div>
+      <div class="ar label">نوع العقد من حيث مدته :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Contract execution date:</div>
+      <div class="value">{{executionDate}}</div>
+      <div class="ar label">تاريخ إبرام العقد :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Commencement date:</div>
+      <div class="value">{{commencementDate}}</div>
+      <div class="ar label">تاريخ مباشرة العمل :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Starting date:</div>
+      <div class="value">{{startDate}}</div>
+      <div class="ar label">تاريخ بداية العقد :</div>
+    </div>
+    {{{endDateRow}}}
+    <div class="row pair">
+      <div class="en label">Contract execution location:</div>
+      <div class="en value">{{location.en}}</div>
+      <div class="ar value">{{location.ar}}</div>
+      <div class="ar label">مكان إبرام العقد :</div>
+    </div>
+
+    <!-- 2 -->
+    <div class="heading">
+      <div class="en">2. First Party’s Information</div>
+      <div class="ar">2. بيانات الطرف الأول</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Establishment Name (Employer):</div>
+      <div class="en value">{{employerName.en}}</div>
+      <div class="ar value">{{employerName.ar}}</div>
+      <div class="ar label">اسم المنشأة (صاحب العمل) :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Establishment type:</div>
+      <div class="en value">{{employerType.en}}</div>
+      <div class="ar value">{{employerType.ar}}</div>
+      <div class="ar label">نوع المنشأة :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Unified national no.:</div>
+      <div class="value">{{unifiedNo}}</div>
+      <div class="ar label">الرقم الوطني الموحد :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">National address:</div>
+      <div class="value">{{employerAddress}}</div>
+      <div class="ar label">العنوان الوطني المختصر :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Establishment phone number:</div>
+      <div class="value">{{employerPhone}}</div>
+      <div class="ar label">رقم هاتف المنشأة :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Mobile number:</div>
+      <div class="value">{{employerMobile}}</div>
+      <div class="ar label">رقم الجوال :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Official Email of the establishment:</div>
+      <div class="value">{{employerEmail}}</div>
+      <div class="ar label">البريد الإلكتروني الرسمي للمنشأة :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Signatory representative:</div>
+      <div class="en value">{{signatoryName.en}}</div>
+      <div class="ar value">{{signatoryName.ar}}</div>
+      <div class="ar label">يمثله في توقيع هذا العقد :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">ID no.:</div>
+      <div class="value">{{signatoryId}}</div>
+      <div class="ar label">رقم الهوية للممثل :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Capacity:</div>
+      <div class="en value">{{capacity.en}}</div>
+      <div class="ar value">{{capacity.ar}}</div>
+      <div class="ar label">صفته :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Capacity document:</div>
+      <div class="en value">{{capacityDocument.en}}</div>
+      <div class="ar value">{{capacityDocument.ar}}</div>
+      <div class="ar label">مستند الصفة :</div>
+    </div>
+    <div class="row text">
+      <p class="en">Hereinafter referred to as the (“First Party”)</p>
+      <p class="ar">ويُشار إليه في هذا العقد بـ (الطرف الأول).</p>
+    </div>
+
+    <!-- 3 -->
+    <div class="heading">
+      <div class="en">3. Second Party’s Information</div>
+      <div class="ar">3. بيانات الطرف الثاني</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Employee name:</div>
+      <div class="value">{{employeeName}}</div>
+      <div class="ar label">اسم العامل :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Nationality:</div>
+      <div class="en value">{{nationality.en}}</div>
+      <div class="ar value">{{nationality.ar}}</div>
+      <div class="ar label">الجنسية :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">ID type:</div>
+      <div class="en value">{{idType.en}}</div>
+      <div class="ar value">{{idType.ar}}</div>
+      <div class="ar label">نوع الهوية :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">ID no.:</div>
+      <div class="value">{{employeeId}}</div>
+      <div class="ar label">رقم الهوية :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Gender:</div>
+      <div class="en value">{{gender.en}}</div>
+      <div class="ar value">{{gender.ar}}</div>
+      <div class="ar label">الجنس :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Marital status:</div>
+      <div class="en value">{{maritalStatus.en}}</div>
+      <div class="ar value">{{maritalStatus.ar}}</div>
+      <div class="ar label">الحالة الاجتماعية :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Birth date:</div>
+      <div class="value">{{birthDate}}</div>
+      <div class="ar label">تاريخ الميلاد :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">National address:</div>
+      <div class="value">{{employeeAddress}}</div>
+      <div class="ar label">العنوان الوطني المختصر :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Education level:</div>
+      <div class="en value">{{education.en}}</div>
+      <div class="ar value">{{education.ar}}</div>
+      <div class="ar label">مستوى التعليم :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Speciality:</div>
+      <div class="en value">{{speciality.en}}</div>
+      <div class="ar value">{{speciality.ar}}</div>
+      <div class="ar label">التخصص :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">Mobile number:</div>
+      <div class="value">{{employeeMobile}}</div>
+      <div class="ar label">رقم الجوال :</div>
+    </div>
+    <div class="row shared">
+      <div class="en label">E-mail:</div>
+      <div class="value">{{employeeEmail}}</div>
+      <div class="ar label">البريد الإلكتروني :</div>
+    </div>
+    <div class="row text">
+      <p class="en">Hereinafter referred to as the (“Second Party”)</p>
+      <p class="ar">ويُشار إليه في هذا العقد بـ (الطرف الثاني).</p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        Both Parties are, collectively, referred to as the “Parties” and, separately, as
+        the “Party” as per the context.
+      </p>
+      <p class="ar">
+        ويُشار إليهما معًا بـ (الأطراف أو الطرفان)، ولكل منهما بـ (الطرف) بحسب السياق.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        The data mentioned in the above clauses (1 to 3) and the appendix below are
+        considered an integral part of this contract, interpreted and complementary to it.
+      </p>
+      <p class="ar">
+        تُعد البيانات الواردة في البنود أعلاه (من 1 إلى 3) والملحق أدناه جزءًا لا يتجزأ من
+        هذا العقد ومفسرةً ومكملةً له.
+      </p>
+    </div>
+
+    <!-- 4 -->
+    <div class="heading">
+      <div class="en">4. Profession &amp; Work’s Location</div>
+      <div class="ar">4. المهنة ومعلومات العمل</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Occupation:</div>
+      <div class="en value">{{occupation.en}}</div>
+      <div class="ar value">{{occupation.ar}}</div>
+      <div class="ar label">المهنة :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Job title:</div>
+      <div class="en value">{{jobTitle.en}}</div>
+      <div class="ar value">{{jobTitle.ar}}</div>
+      <div class="ar label">المسمى الوظيفي :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Work domain:</div>
+      <div class="en value">{{workDomain.en}}</div>
+      <div class="ar value">{{workDomain.ar}}</div>
+      <div class="ar label">نطاق العمل :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Work location:</div>
+      <div class="en value">{{workLocation.en}}</div>
+      <div class="ar value">{{workLocation.ar}}</div>
+      <div class="ar label">مقر العمل :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Work type:</div>
+      <div class="en value">{{workType.en}}</div>
+      <div class="ar value">{{workType.ar}}</div>
+      <div class="ar label">نوع عقد العمل :</div>
+    </div>
+
+    <!-- 5 -->
+    <div class="heading">
+      <div class="en">5. Contract Period</div>
+      <div class="ar">5. مدة العقد</div>
+    </div>
+    <div class="row text">
+      <p class="en">{{period.en}}</p>
+      <p class="ar">{{period.ar}}</p>
+    </div>
+
+    <!-- 6 -->
+    <div class="heading">
+      <div class="en">6. Probationary Period</div>
+      <div class="ar">6. مدة التجربة</div>
+    </div>
+    <div class="row text">
+      <p class="en">{{probation.en}}</p>
+      <p class="ar">{{probation.ar}}</p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        6.2 Either party may terminate this contract during the probationary period via
+        the Portal.
+      </p>
+      <p class="ar">
+        6.2 يحق لأي من الطرفين إنهاء هذا العقد خلال فترة التجربة عبر المنصة.
+      </p>
+    </div>
+
+    <!-- 7 -->
+    <div class="heading">
+      <div class="en">7. Work Hours &amp; Weekly Rest</div>
+      <div class="ar">7. ساعات العمل والراحة الأسبوعية</div>
+    </div>
+    <div class="row text">
+      <p class="en">{{hours.en}}</p>
+      <p class="ar">{{hours.ar}}</p>
+    </div>
+
+    <!-- 8 -->
+    <div class="heading">
+      <div class="en">8. Annual Leaves</div>
+      <div class="ar">8. الإجازات السنوية</div>
+    </div>
+    <div class="row text">
+      <p class="en">
+        8.1 The Second Party shall be entitled to a pre-paid vacation of {{leaveDays}}
+        calendar days, each year.
+      </p>
+      <p class="ar">
+        8.1 يستحق الطرف الثاني عن كل عام إجازة سنوية مدفوعة الأجر مقدمًا مدتها
+        {{leaveDays}} يومًا تقويميًا.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        8.2 The Second Party’s right to receive payment for accrued vacation days that
+        were not taken during their service shall not be forfeited. The Second Party is
+        entitled to financial compensation for these vacation days upon the termination of
+        their service with the First Party.
+      </p>
+      <p class="ar">
+        8.2 لا يسقط حق الطرف الثاني في الحصول على أجر أيام الإجازة المستحقة التي لم يحصل
+        عليها أثناء خدمته، ويستحق تعويضًا ماليًا عنها عند انتهاء خدمته لدى الطرف الأول.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        8.3 The First Party has the right to determine the dates of the annual leave, and
+        the First Party has the right to postpone the annual leave after the end of its
+        entitlement year if the work conditions require that for a period not exceeding
+        (90) days. If work conditions necessitate further postponement, written consent
+        from the employee shall be obtained, provided that the postponement does not
+        extend beyond the end of the following year of the leave entitlement.
+      </p>
+      <p class="ar">
+        8.3 للطرف الأول تحديد مواعيد الإجازة السنوية، وله تأجيلها بعد نهاية سنة استحقاقها
+        إذا اقتضت ظروف العمل ذلك لمدة لا تزيد على (90) يومًا، فإذا اقتضت ظروف العمل
+        استمرار التأجيل وجب الحصول على موافقة العامل كتابةً، على ألا يتجاوز التأجيل نهاية
+        السنة التالية لسنة استحقاق الإجازة.
+      </p>
+    </div>
+
+    <!-- 9 -->
+    <div class="heading">
+      <div class="en">9. Wage &amp; Benefits</div>
+      <div class="ar">9. الأجر والمزايا</div>
+    </div>
+    <div class="row text">
+      <p class="en">
+        9.1 The First Party shall pay the Second Party the wages, benefits, and allowances
+        on the due date as clarified below:
+      </p>
+      <p class="ar">
+        9.1 يدفع الطرف الأول للطرف الثاني الأجر والمزايا والبدلات في تاريخ الاستحقاق كما
+        هو موضح أدناه:
+      </p>
+    </div>
+    <div class="heading sub">
+      <div class="en">9.1.1 Wage:</div>
+      <div class="ar">9.1.1 الأجر :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">9.1.1.1 Basic Wage:</div>
+      <div class="en value">{{basic.en}}</div>
+      <div class="ar value">{{basic.ar}}</div>
+      <div class="ar label">9.1.1.1 الأجر الأساسي :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">9.1.1.2 Housing Allowance:</div>
+      <div class="en value">{{housing.en}}</div>
+      <div class="ar value">{{housing.ar}}</div>
+      <div class="ar label">9.1.1.2 بدل السكن :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">9.1.1.3 Transportation Allowance:</div>
+      <div class="en value">{{transport.en}}</div>
+      <div class="ar value">{{transport.ar}}</div>
+      <div class="ar label">9.1.1.3 بدل النقل :</div>
+    </div>
+    {{{otherAllowanceRow}}}
+    <div class="row pair">
+      <div class="en label">9.1.1.5 Total Wage:</div>
+      <div class="en value">{{total.en}}</div>
+      <div class="ar value">{{total.ar}}</div>
+      <div class="ar label">9.1.1.5 إجمالي الأجر :</div>
+    </div>
+    <div class="row text">
+      <p class="en">
+        9.1.2 The first party is obligated to pay the net wage on the due date, using the
+        payment method approved by the Ministry of Human Resources and Social Development
+        (HRSD)
+      </p>
+      <p class="ar">
+        9.1.2 يلتزم الطرف الأول بدفع صافي الأجر في تاريخ الاستحقاق، وذلك من خلال وسيلة
+        السداد المعتمدة لدى وزارة الموارد البشرية والتنمية الاجتماعية.
+      </p>
+    </div>
+    <div class="row pair">
+      <div class="en label">Due Date:</div>
+      <div class="en value">{{dueDate.en}}</div>
+      <div class="ar value">{{dueDate.ar}}</div>
+      <div class="ar label">تاريخ الاستحقاق :</div>
+    </div>
+
+    <!-- 10 -->
+    <div class="heading">
+      <div class="en">10. Second Party’s Bank Account Information</div>
+      <div class="ar">10. معلومات الحساب البنكي للطرف الثاني</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Bank name:</div>
+      <div class="en value">{{bankName.en}}</div>
+      <div class="ar value">{{bankName.ar}}</div>
+      <div class="ar label">اسم البنك :</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">IBAN:</div>
+      <div class="en value">{{iban}}</div>
+      <div class="ar value" dir="ltr" style="text-align: left">{{iban}}</div>
+      <div class="ar label">رقم الآيبان :</div>
+    </div>
+
+    <!-- 11 -->
+    <div class="heading">
+      <div class="en">11. First Party’s Obligations</div>
+      <div class="ar">11. التزامات الطرف الأول</div>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.1 The First Party shall pay the Second Party's wage mentioned in Clause No. (9)
+        and document the payment via the wage Portal approved by the HRSD.
+      </p>
+      <p class="ar">
+        11.1 يلتزم الطرف الأول بدفع أجر الطرف الثاني المذكور في البند (9)، وتوثيق الدفع
+        عبر منصة الأجور المعتمدة لدى وزارة الموارد البشرية والتنمية الاجتماعية.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.4 When assigning the Second Party to additional working hours, the First Party
+        is obligated to assign them to the Second Party in writing (or electronically),
+        and the First Party pays an additional wage for the additional working hours equal
+        to the total hourly wage plus ({{overtimePct}}%) of the basic hourly wage, to be
+        paid through the payment method mentioned in Clause No. (9).
+      </p>
+      <p class="ar">
+        11.4 عند تكليف الطرف الثاني بساعات عمل إضافية يلتزم الطرف الأول بتكليفه بها
+        كتابيًا (أو إلكترونيًا)، ويدفع له عن ساعات العمل الإضافية أجرًا إضافيًا يوازي أجر
+        الساعة الإجمالي مضافًا إليه ({{overtimePct}}%) من أجر الساعة الأساسي، ويُدفع من
+        خلال وسيلة الدفع المذكورة في البند رقم (9).
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.4.1 The First Party, with the written (or electronic) consent of the Second
+        Party, may count paid compensatory leave days for the Second Party instead of the
+        wages due for the additional working hours in accordance with the provisions of
+        the Executive Regulations of the Labor Law.
+      </p>
+      <p class="ar">
+        11.4.1 للطرف الأول، بموافقة الطرف الثاني الكتابية (أو الإلكترونية)، احتساب أيام
+        إجازة تعويضية مدفوعة الأجر للطرف الثاني بدلًا من أجر ساعات العمل الإضافية، وفقًا
+        لأحكام اللائحة التنفيذية لنظام العمل.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.4.2 The First Party is obligated not to exceed the maximum limit of additional
+        working hours specified in the Labor Law and its Executive Regulations when
+        assigning the Second Party, and with the written (or electronic) consent of the
+        Second Party, the number of additional hours may be increased beyond the maximum
+        limit.
+      </p>
+      <p class="ar">
+        11.4.2 يلتزم الطرف الأول عند تكليف الطرف الثاني بعدم تجاوز الحد الأعلى لساعات
+        العمل الإضافية المحدد في نظام العمل ولائحته التنفيذية، ويجوز بموافقة الطرف الثاني
+        الكتابية (أو الإلكترونية) زيادة عدد الساعات الإضافية على هذا الحد.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.5 The First Party shall provide the Second Party with preventive and curative
+        health care in accordance with the regulations of the Cooperative Health Insurance
+        Law.
+      </p>
+      <p class="ar">
+        11.5 يلتزم الطرف الأول بتوفير الرعاية الصحية الوقائية والعلاجية للطرف الثاني وفقًا
+        لأحكام نظام الضمان الصحي التعاوني.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.6 The First Party shall pay contributions to the General Organization for
+        Social Insurance as per its regulations
+      </p>
+      <p class="ar">
+        11.6 يلتزم الطرف الأول بسداد الاشتراكات للمؤسسة العامة للتأمينات الاجتماعية وفقًا
+        لأنظمتها.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.7 The First Party shall grant the Second Party annual leave stipulated in
+        Paragraph (8.1), and official holidays, sick leaves, and other leaves stipulated
+        in the Labor Law and the work policy approved by the Ministry of Human Resources
+        and Social Development.
+      </p>
+      <p class="ar">
+        11.7 يلتزم الطرف الأول بمنح الطرف الثاني الإجازة السنوية المنصوص عليها في الفقرة
+        (8.1)، والعطلات الرسمية والإجازات المرضية وغيرها من الإجازات المنصوص عليها في نظام
+        العمل ولائحة تنظيم العمل المعتمدة من وزارة الموارد البشرية والتنمية الاجتماعية.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.8 The First Party shall return to the Second Party all certificates or
+        documents that have been submitted during the period stipulated in Paragraph
+        (11.9) hereof.
+      </p>
+      <p class="ar">
+        11.8 يلتزم الطرف الأول بأن يعيد إلى الطرف الثاني جميع ما أودعه لديه من شهادات أو
+        وثائق خلال المدة المنصوص عليها في الفقرة (11.9) من هذا العقد.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.9 The First Party shall pay the Second Party’s wage and settle its entitlements
+        within a maximum period of one week from the contract end date. If the Second
+        Party ends the contract, the First Party shall settle all the Second Party’s
+        entitlements within a period not exceeding two weeks as of the Contract
+        Termination Date.
+      </p>
+      <p class="ar">
+        11.9 يلتزم الطرف الأول بدفع أجر الطرف الثاني وتصفية حقوقه خلال مدة أقصاها أسبوع من
+        تاريخ انتهاء العقد، وإذا أنهى الطرف الثاني العقد فيلتزم الطرف الأول بتصفية جميع
+        حقوقه خلال مدة لا تزيد على أسبوعين من تاريخ انتهاء العقد.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.10 The First Party shall pay the Second Party an end-of-service remuneration
+        upon the end of the contract within the period stipulated in paragraph (11.9),
+        except for the termination of the contract during the probationary period,
+        resignation by the Second Party with less than two consecutive years of service,
+        or termination of the contract in accordance with any of the cases stated in
+        Article (80) of the Labor Law.
+      </p>
+      <p class="ar">
+        11.10 يلتزم الطرف الأول بدفع مكافأة نهاية الخدمة للطرف الثاني عند انتهاء العقد
+        خلال المدة المنصوص عليها في الفقرة (11.9)، باستثناء إنهاء العقد خلال فترة التجربة،
+        أو استقالة الطرف الثاني قبل إكمال سنتين متتاليتين في الخدمة، أو إنهاء العقد وفقًا
+        لأي من الحالات الواردة في المادة (80) من نظام العمل.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        11.11 The First Party shall pay all the costs and expenses incurred by the Second
+        Party to complete the tasks assigned by the First Party.
+      </p>
+      <p class="ar">
+        11.11 يتحمل الطرف الأول جميع التكاليف والمصروفات التي يتكبدها الطرف الثاني لإنجاز
+        المهام التي يكلفه بها.
+      </p>
+    </div>
+
+    <!-- 12 -->
+    <div class="heading">
+      <div class="en">12. Second Party’s Obligations</div>
+      <div class="ar">12. التزامات الطرف الثاني</div>
+    </div>
+    <div class="row text">
+      <p class="en">
+        12.1 The Second Party is obliged to finish the assigned work in accordance with
+        the principles of the profession and the instructions of the First Party, if these
+        instructions do not violate the contract, Law, or public morals, or have a
+        potential danger.
+      </p>
+      <p class="ar">
+        12.1 يلتزم الطرف الثاني بإنجاز العمل الموكل إليه وفقًا لأصول المهنة وتعليمات الطرف
+        الأول، ما لم تخالف هذه التعليمات العقد أو النظام أو الآداب العامة، أو يترتب على
+        تنفيذها خطر.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        12.2 The Second Party is obliged to take adequate care of the tools and tasks
+        assigned and the First Party’s stores that are at the Second Party’s disposal or
+        are in his/her custody, and restore to the First Party the materials that were not
+        used.
+      </p>
+      <p class="ar">
+        12.2 يلتزم الطرف الثاني بالعناية الكافية بالأدوات والمهمات المسندة إليه والخامات
+        المملوكة للطرف الأول الموضوعة تحت تصرفه أو في عهدته، وأن يعيد إلى الطرف الأول
+        المواد غير المستعملة.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        12.3 The Second Party is obliged to commit to good behavior and ethics at work,
+        adhere to laws, customs, rules, and etiquette in the Kingdom of Saudi Arabia,
+        along with the rules, regulations, and directives enforced by the First Party, and
+        bear all fines resulting from breaching these laws.
+      </p>
+      <p class="ar">
+        12.3 يلتزم الطرف الثاني بحسن السلوك والأخلاق أثناء العمل، وباحترام الأنظمة
+        والأعراف والآداب المرعية في المملكة العربية السعودية، والقواعد واللوائح والتعليمات
+        المعمول بها لدى الطرف الأول، ويتحمل جميع الغرامات الناتجة عن مخالفتها.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        12.4 The Second Party is obliged to provide all assistance and support without
+        requiring additional wages in the event of disasters and threats to the safety of
+        the place of work or the people working in it.
+      </p>
+      <p class="ar">
+        12.4 يلتزم الطرف الثاني بتقديم كل عون ومساعدة دون أن يشترط أجرًا إضافيًا في حالات
+        الكوارث والأخطار التي تهدد سلامة مكان العمل أو الأشخاص العاملين فيه.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        12.5 The Second Party is obliged to undergo medical examination, according to the
+        First Party’s request, prior to or during work to ascertain whether it does not
+        suffer from occupational or communicable diseases.
+      </p>
+      <p class="ar">
+        12.5 يلتزم الطرف الثاني بالخضوع للفحص الطبي بناءً على طلب الطرف الأول قبل الالتحاق
+        بالعمل أو أثناءه، للتحقق من خلوه من الأمراض المهنية أو السارية.
+      </p>
+    </div>
+
+    <!-- 13 -->
+    <div class="heading">
+      <div class="en">13. Applicable Law and Settlement of Disputes</div>
+      <div class="ar">13. النظام الواجب التطبيق وتسوية النزاعات</div>
+    </div>
+    <div class="row text">
+      <p class="en">
+        13.1 The Labor Law, its Executive Regulations, ministerial regulations and
+        decisions, and the work policy approved by the Ministry of Human Resources and
+        Social Development shall apply to this contract and to everything not stated in
+        this contract. This contract supersedes all previous agreements and contracts,
+        whether verbal or written, between the parties, if any.
+      </p>
+      <p class="ar">
+        13.1 يسري على هذا العقد وعلى كل ما لم يرد فيه نص نظامُ العمل ولائحته التنفيذية
+        والقرارات واللوائح الوزارية ولائحة تنظيم العمل المعتمدة من وزارة الموارد البشرية
+        والتنمية الاجتماعية، ويحل هذا العقد محل جميع الاتفاقيات والعقود السابقة الشفهية أو
+        المكتوبة بين الطرفين إن وجدت.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        13.2 This contract is governed by and construed in accordance with the laws and
+        regulations in force in the Kingdom of Saudi Arabia.
+      </p>
+      <p class="ar">
+        13.2 يخضع هذا العقد ويُفسر وفقًا للأنظمة واللوائح المعمول بها في المملكة العربية
+        السعودية.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        13.3 This contract is considered an executive document, and the jurisdiction shall
+        be vested in the Enforcement Court for the following matters:
+      </p>
+      <p class="ar">
+        13.3 يُعد هذا العقد سندًا تنفيذيًا، وينعقد الاختصاص لمحكمة التنفيذ في المسائل
+        التالية:
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        13.3.1 The first party's commitment to pay the net wage on the specified date
+      </p>
+      <p class="ar">13.3.1 التزام الطرف الأول بدفع صافي الأجر في الموعد المحدد.</p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        13.4 Except for the applicable rights and obligations stated in Paragraph (13.3)
+        of this clause, which are under the jurisdiction of the Enforcement Court in
+        accordance with the Enforcement Law, any dispute or disagreement arising from or
+        related to this contract in any form, including any terms and conditions agreed
+        upon by the parties in the Additional Conditions clause if any, shall initially be
+        resolved through amicable settlement. If a settlement cannot be reached, the
+        jurisdiction to consider the dispute shall lie with the labor courts in the
+        Kingdom of Saudi Arabia.
+      </p>
+      <p class="ar">
+        13.4 باستثناء الحقوق والالتزامات الواردة في الفقرة (13.3) من هذا البند التي تختص
+        بها محكمة التنفيذ وفقًا لنظام التنفيذ، يُحل أي نزاع أو خلاف ينشأ عن هذا العقد أو
+        يتعلق به بأي شكل، بما في ذلك الشروط والأحكام التي يتفق عليها الطرفان في بند الشروط
+        الإضافية إن وجدت، بالتسوية الودية ابتداءً، فإن تعذرت التسوية انعقد الاختصاص بنظر
+        النزاع للمحاكم العمالية في المملكة العربية السعودية.
+      </p>
+    </div>
+
+    <!-- 14 -->
+    <div class="heading">
+      <div class="en">14. General Provisions</div>
+      <div class="ar">14. أحكام عامة</div>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.1 The Parties agree that no notices or correspondence issued for any reason, as
+        per the request of the Party(ies), in relation hereto, will be legally effective
+        unless carried out via the services, methods, or forms approved by the Portal for
+        this purpose and in accordance with its terms and requirements, provided that the
+        same shall be documented on the Portal. This shall apply to all notifications,
+        notices, correspondences, letters, and communications directed by one party to the
+        other or to the government or judicial authorities. The same will not be legally
+        effective unless carried out accordingly.
+      </p>
+      <p class="ar">
+        14.1 يتفق الطرفان على أنه لا يُعتد نظامًا بأي إشعار أو مراسلة تصدر لأي سبب بناءً
+        على طلب أحد الطرفين أو كليهما فيما يتعلق بهذا العقد، ما لم تتم من خلال الخدمات أو
+        الوسائل أو النماذج المعتمدة في المنصة لهذا الغرض ووفقًا لشروطها ومتطلباتها، على أن
+        توثق في المنصة. ويسري ذلك على جميع الإخطارات والإشعارات والمراسلات والخطابات
+        والمخاطبات الموجهة من أحد الطرفين إلى الآخر أو إلى الجهات الحكومية أو القضائية،
+        ولا يُعتد بها نظامًا ما لم تتم على هذا النحو.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.2 Except as mentioned in Paragraph (11.1) of Clause No. (11) and
+        notwithstanding Paragraph (14.1) of this clause, the Parties shall have the right
+        to, in case there are no services available to document their actions on the
+        Portal, send notifications, alerts, and other communications via the National
+        Address, registered or express mail, phone, email, or by hand delivery with a
+        receipt acknowledgment to the address specified in the parties’ information in
+        this contract, or by any legally recognized means.
+      </p>
+      <p class="ar">
+        14.2 باستثناء ما ورد في الفقرة (11.1) من البند رقم (11)، واستثناءً من الفقرة
+        (14.1) من هذا البند، يحق للطرفين عند عدم توفر خدمات لتوثيق إجراءاتهما في المنصة
+        إرسال الإخطارات والتنبيهات وغيرها من المراسلات عبر العنوان الوطني، أو البريد
+        المسجل أو الممتاز، أو الهاتف، أو البريد الإلكتروني، أو التسليم باليد مع إقرار
+        بالاستلام على العنوان المحدد في بيانات الطرفين في هذا العقد، أو بأي وسيلة معتبرة
+        نظامًا.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.3 The Parties acknowledge that they have known and understood all the terms and
+        conditions of this contract.
+      </p>
+      <p class="ar">
+        14.3 يقر الطرفان بأنهما اطلعا على جميع شروط هذا العقد وأحكامه وفهماها.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.4 The Second Party approves that the First Party will deduct a certain
+        percentage from its monthly wage as a contribution to the GOSI.
+      </p>
+      <p class="ar">
+        14.4 يوافق الطرف الثاني على أن يقتطع الطرف الأول نسبة محددة من أجره الشهري
+        اشتراكًا في المؤسسة العامة للتأمينات الاجتماعية.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.5 The Parties may add additional terms and conditions in Additional Terms
+        Clause, provided that they shall not contradict the terms and conditions hereof,
+        the Labor Law and its Executive Regulations, the internal work policy approved by
+        the HRSD, otherwise the Additional Terms will be deemed null and void.
+      </p>
+      <p class="ar">
+        14.5 يجوز للطرفين إضافة شروط وأحكام في بند الشروط الإضافية، على ألا تتعارض مع شروط
+        هذا العقد وأحكامه، أو مع نظام العمل ولائحته التنفيذية، أو مع لائحة تنظيم العمل
+        المعتمدة من الوزارة، وإلا عُدت الشروط الإضافية باطلة.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.6 The (Gregorian) calendar shall apply with regard to all matters related to
+        the implementation of this Contract.
+      </p>
+      <p class="ar">14.6 يُعمل بالتقويم الميلادي في جميع ما يتعلق بتنفيذ هذا العقد.</p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.7 Arabic shall be the official language for the execution and interpretation of
+        this contract. The Parties may use another language alongside Arabic, but in the
+        event of any discrepancy, the Arabic text shall prevail.
+      </p>
+      <p class="ar">
+        14.7 اللغة العربية هي اللغة المعتمدة في تنفيذ هذا العقد وتفسيره، ويجوز للطرفين
+        استخدام لغة أخرى إلى جانبها، وعند الاختلاف يُعتد بالنص العربي.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.8 The data mentioned in the clauses below may be amended with the consent of
+        both parties in accordance with the terms and procedures approved through the
+        Portal, provided that such amendments do not conflict with the Labor Law, its
+        Executive Regulations, the internal work policy, and related ministerial
+        decisions:
+      </p>
+      <p class="ar">
+        14.8 يجوز تعديل البيانات الواردة في البنود التالية بموافقة الطرفين وفقًا للشروط
+        والإجراءات المعتمدة في المنصة، على ألا تتعارض التعديلات مع نظام العمل ولائحته
+        التنفيذية ولائحة تنظيم العمل والقرارات الوزارية ذات العلاقة:
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">14.8.1 Contract type information as stated in Clause No. (1).</p>
+      <p class="ar">14.8.1 بيانات نوع العقد الواردة في البند رقم (1).</p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.8.2 The information stated in Clause No. (4) regarding the profession and
+        employment details.
+      </p>
+      <p class="ar">
+        14.8.2 البيانات الواردة في البند رقم (4) بشأن المهنة وتفاصيل العمل.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">14.8.3 The annual leave as stated in Clause No. (8).</p>
+      <p class="ar">14.8.3 الإجازة السنوية الواردة في البند رقم (8).</p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.8.4 The wage and benefits information as stated in Paragraphs No. (9.1.1 -
+        9.1.2) of Clause No. (9).
+      </p>
+      <p class="ar">
+        14.8.4 بيانات الأجر والمزايا الواردة في الفقرتين رقم (9.1.1 - 9.1.2) من البند رقم
+        (9).
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">14.8.5 The bank account information as stated in Clause No. (10).</p>
+      <p class="ar">14.8.5 بيانات الحساب البنكي الواردة في البند رقم (10).</p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.9 The First Party shall document any amendment as per Paragraph (14.8) through
+        the Portal.
+      </p>
+      <p class="ar">
+        14.9 يلتزم الطرف الأول بتوثيق أي تعديل وفقًا للفقرة (14.8) عبر المنصة.
+      </p>
+    </div>
+    <div class="row text">
+      <p class="en">
+        14.10 This Contract is made and concluded as an identical electronic counterpart
+        for the Employer and the Employee, who signed it electronically. Each Party has
+        received one copy for necessary action. The Parties agree that the Portal has the
+        right to share the data on this Contract, the financial transaction history, and
+        other matters resulting from the implementation thereof.
+      </p>
+      <p class="ar">
+        14.10 حُرر هذا العقد من نسخة إلكترونية متطابقة لصاحب العمل والعامل، ووقّعه الطرفان
+        إلكترونيًا، واستلم كل طرف نسخة منه للعمل بموجبها. ويوافق الطرفان على حق المنصة في
+        مشاركة بيانات هذا العقد وسجل المعاملات المالية وغيرها مما ينتج عن تنفيذه.
+      </p>
+    </div>
+
+    <!-- 15 -->
+    <div class="heading">
+      <div class="en">15. Additional Terms</div>
+      <div class="ar">15. الشروط الإضافية</div>
+    </div>
+    {{{section15Rows}}}
+
+    <!-- 16 -->
+    <div class="heading">
+      <div class="en">16. Appendix</div>
+      <div class="ar">16. الملحق</div>
+    </div>
+    <div class="row text">
+      <p class="en">
+        The following table illustrates the meaning of some of the terms mentioned in this
+        Contract:
+      </p>
+      <p class="ar">يوضح الجدول التالي المقصود ببعض المصطلحات الواردة في هذا العقد:</p>
+    </div>
+    <div class="row pair">
+      <div class="en label">Portal</div>
+      <div class="en value">
+        The digital platform approved by the HRSD, which provides all services of the
+        labor system in the Kingdom of Saudi Arabia, enabling various stakeholders
+        (employees, governmental and private entities) to organize and monitor all their
+        transactions in an automated and immediate manner.
+      </div>
+      <div class="ar value">
+        المنصة الرقمية المعتمدة لدى وزارة الموارد البشرية والتنمية الاجتماعية، التي توفر
+        جميع خدمات منظومة العمل في المملكة العربية السعودية، وتمكّن مختلف الأطراف
+        (الموظفين والجهات الحكومية والخاصة) من تنظيم جميع تعاملاتهم ومتابعتها بطريقة آلية
+        وفورية.
+      </div>
+      <div class="ar label">المنصة</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Date of Contract Conclusion</div>
+      <div class="en value">
+        The date of the parties’ conclusion of this contract through the platform, as
+        specified in Clause No. 1.
+      </div>
+      <div class="ar value">
+        تاريخ إبرام الطرفين لهذا العقد عبر المنصة كما هو محدد في البند رقم 1.
+      </div>
+      <div class="ar label">تاريخ إبرام العقد</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Place of Contract Conclusion</div>
+      <div class="en value">The city where the contract was concluded.</div>
+      <div class="ar value">المدينة التي أُبرم فيها العقد.</div>
+      <div class="ar label">مكان إبرام العقد</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Date of Commencement of Work</div>
+      <div class="en value">
+        The specific day and date on which the Second Party commences work.
+      </div>
+      <div class="ar value">اليوم والتاريخ المحددان لمباشرة الطرف الثاني العمل.</div>
+      <div class="ar label">تاريخ مباشرة العمل</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Notice</div>
+      <div class="en value">
+        Any correspondence issued through the Portal for any purpose based on the will of
+        the sending party and related to this contract.
+      </div>
+      <div class="ar value">
+        أي مراسلة تصدر عبر المنصة لأي غرض بإرادة الطرف المرسل وتتعلق بهذا العقد.
+      </div>
+      <div class="ar label">الإشعار</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Net Wage</div>
+      <div class="en value">
+        It is the basic wage plus all allowances referred to in paragraph (9.1.1) of
+        clause (9) of this contract, less the Public Organization for Social Insurance
+        subscription deduction and any other deductions as per Article (92) of the Labor
+        Law, if any. This amount shall be paid by the First Party according to the due
+        date throughout the contract's validity period. Net wage does not include in-kind
+        wages and commissions.
+      </div>
+      <div class="ar value">
+        هو الأجر الأساسي مضافًا إليه جميع البدلات المشار إليها في الفقرة (9.1.1) من البند
+        (9) من هذا العقد، مخصومًا منه اشتراك المؤسسة العامة للتأمينات الاجتماعية وأي
+        استقطاعات أخرى وفقًا للمادة (92) من نظام العمل إن وجدت. ويدفعه الطرف الأول في
+        تاريخ الاستحقاق طوال مدة سريان العقد، ولا يشمل الأجور العينية والعمولات.
+      </div>
+      <div class="ar label">صافي الأجر</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Place of work</div>
+      <div class="en value">
+        The place where the Employee performs the agreed-upon work.
+      </div>
+      <div class="ar value">المكان الذي يؤدي فيه العامل العمل المتفق عليه.</div>
+      <div class="ar label">مقر العمل</div>
+    </div>
+    <div class="row pair">
+      <div class="en label">Day</div>
+      <div class="en value">
+        The term "day" mentioned in this contract refers to a calendar day.
+      </div>
+      <div class="ar value">يُقصد بكلمة "يوم" الواردة في هذا العقد يوم تقويمي.</div>
+      <div class="ar label">يوم</div>
+    </div>
+
+    <div class="closing">
+      <div class="row plain">
+        <p class="en">
+          This contract was exported electronically and is accessible to both parties via
+          Qiwa platforms.
+        </p>
+        <p class="ar">
+          تم تصدير هذا العقد إلكترونيًا، وهو متاح لكلا الطرفين عبر منصة قوى.
+        </p>
+      </div>
+      <div class="row plain">
+        <p class="en">
+          This contract is approved by the Ministry of Human Resources and Social
+          Development
+        </p>
+        <p class="ar">هذا العقد معتمد من وزارة الموارد البشرية والتنمية الاجتماعية</p>
+      </div>
+      <div class="row plain">
+        <p class="en">This contract was created by {{createdBy}} at {{createdAt.en}}</p>
+        <p class="ar">تم إنشاء هذا العقد بواسطة {{createdBy}} في {{createdAt.ar}}</p>
+      </div>
+      <div class="row plain">
+        <p class="en">This contract is Active as in {{activeAt.en}}</p>
+        <p class="ar">حالة هذا العقد سارٍ كما هو في تاريخ {{activeAt.ar}}</p>
+      </div>
+    </div>
+  </body>
+</html>

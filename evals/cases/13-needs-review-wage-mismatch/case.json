@@ -1,0 +1,90 @@
+{
+  "id": "13-needs-review-wage-mismatch",
+  "contract": {
+    "number": "10001301",
+    "type": "fixed_term",
+    "executionDate": "2026-05-20",
+    "commencementDate": "2026-06-01",
+    "termMonths": 12,
+    "autoRenew": true,
+    "renewalNoticeDays": 30,
+    "location": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Example Trading Co.",
+      "ar": "شركة المثال للتجارة"
+    },
+    "unifiedNo": "7000001301",
+    "signatory": {
+      "name": {
+        "en": "Fahad Al-Mithali",
+        "ar": "فهد المثالي"
+      },
+      "idNo": "1000001302"
+    }
+  },
+  "employee": {
+    "name": "خالد المطيري",
+    "idNo": "1000001301",
+    "gender": {
+      "en": "Male",
+      "ar": "ذكر"
+    },
+    "maritalStatus": {
+      "en": "Single",
+      "ar": "أعزب"
+    },
+    "birthDate": "2001-02-11",
+    "speciality": {
+      "en": "Business Administration",
+      "ar": "إدارة الأعمال"
+    },
+    "email": "khalid.m@example.com",
+    "mobile": "+966 50 000 1301"
+  },
+  "job": {
+    "occupation": {
+      "en": "Customer Service Representative",
+      "ar": "ممثل خدمة عملاء"
+    },
+    "jobTitle": {
+      "en": "Customer Service Representative",
+      "ar": "ممثل خدمة عملاء"
+    },
+    "workLocation": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "probationDays": 90,
+  "hours": {
+    "workDaysPerWeek": 5,
+    "dailyHours": 8,
+    "restDaysPerWeek": 2
+  },
+  "annualLeaveDays": 21,
+  "wage": {
+    "basic": 7000,
+    "housing": 1750,
+    "transport": 700,
+    "total": 10000
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "The employee agrees to work at any of the employer's sites or projects throughout the Kingdom as assigned.",
+      "ar": "يوافق الموظف على العمل في أي من مواقع صاحب العمل أو مشاريعه في جميع أنحاء المملكة حسب التكليف."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-09-12 08:30",
+    "downloadedByName": "خالد المطيري",
+    "downloadedById": "1000001301",
+    "createdAt": "2026-05-20 09:00",
+    "activeAt": "2026-05-21 09:30"
+  }
+}

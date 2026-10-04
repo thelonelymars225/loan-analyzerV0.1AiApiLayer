@@ -1,0 +1,34 @@
+{
+  "kind": "other_document",
+  "id": "14-rejected-company-agreement",
+  "title": {
+    "en": "Employment Agreement",
+    "ar": "اتفاقية توظيف"
+  },
+  "paragraphs": [
+    {
+      "en": "This agreement is made between Example Holding Co. (the Company) and Hadi Example (the Employee).",
+      "ar": "أبرمت هذه الاتفاقية بين شركة المثال القابضة (الشركة) وهادي المثال (الموظف)."
+    },
+    {
+      "en": "Position: Operations Coordinator. Place of work: Riyadh. Start date: 1 March 2026.",
+      "ar": "الوظيفة: منسق عمليات. مكان العمل: الرياض. تاريخ المباشرة: 1 مارس 2026."
+    },
+    {
+      "en": "Monthly salary: SAR 9,000 basic, SAR 2,250 housing allowance and SAR 900 transportation allowance.",
+      "ar": "الراتب الشهري: 9,000 ريال أساسي، و2,250 ريال بدل سكن، و900 ريال بدل نقل."
+    },
+    {
+      "en": "Probation: 90 days. Annual leave: 21 days. Working hours: 8 hours a day, 5 days a week.",
+      "ar": "فترة التجربة: 90 يومًا. الإجازة السنوية: 21 يومًا. ساعات العمل: 8 ساعات يوميًا لمدة 5 أيام في الأسبوع."
+    },
+    {
+      "en": "The end-of-service award shall be calculated on the basis of the basic salary only.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس الراتب الأساسي فقط."
+    },
+    {
+      "en": "This agreement is the Company's own form and is not registered on the Qiwa platform.",
+      "ar": "هذه الاتفاقية نموذج خاص بالشركة وغير موثقة في منصة قوى."
+    }
+  ]
+}

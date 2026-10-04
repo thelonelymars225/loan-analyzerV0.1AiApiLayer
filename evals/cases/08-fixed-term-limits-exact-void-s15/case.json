@@ -1,0 +1,95 @@
+{
+  "id": "08-fixed-term-limits-exact-void-s15",
+  "contract": {
+    "number": "10000801",
+    "type": "fixed_term",
+    "executionDate": "2026-08-20",
+    "commencementDate": "2026-09-01",
+    "termMonths": 24,
+    "autoRenew": true,
+    "renewalNoticeDays": 45,
+    "location": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Example Financial Services Co.",
+      "ar": "شركة المثال للخدمات المالية"
+    },
+    "unifiedNo": "7000000801",
+    "email": "hr@finance.example.com",
+    "signatory": {
+      "name": {
+        "en": "Ahmed Al-Mithali",
+        "ar": "أحمد المثالي"
+      },
+      "idNo": "1000000802"
+    }
+  },
+  "employee": {
+    "name": "نوف القحطاني",
+    "idNo": "1000000801",
+    "maritalStatus": {
+      "en": "Married",
+      "ar": "متزوجة"
+    },
+    "birthDate": "1995-05-25",
+    "speciality": {
+      "en": "Human Resources",
+      "ar": "الموارد البشرية"
+    },
+    "email": "nouf.q@example.com",
+    "mobile": "+966 55 000 0801"
+  },
+  "job": {
+    "occupation": {
+      "en": "Human Resources Specialist",
+      "ar": "أخصائي موارد بشرية"
+    },
+    "jobTitle": {
+      "en": "HR Specialist",
+      "ar": "أخصائية موارد بشرية"
+    },
+    "workLocation": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "probationDays": 180,
+  "hours": {
+    "workDaysPerWeek": 6,
+    "dailyHours": 8,
+    "restDaysPerWeek": 1
+  },
+  "annualLeaveDays": 21,
+  "wage": {
+    "basic": 8000,
+    "housing": 1600,
+    "transport": 560,
+    "other": 400
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "The end-of-service award shall be calculated on the basis of the basic salary only.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس الراتب الأساسي فقط."
+    },
+    {
+      "en": "For three (3) years following the termination of employment, the employee shall not join any competitor anywhere.",
+      "ar": "لا يجوز للموظف الالتحاق بأي منافس في أي مكان لمدة ثلاث سنوات بعد انتهاء علاقة العمل."
+    },
+    {
+      "en": "Compensation for terminating this contract without a valid reason is fixed at two months of the basic wage, payable by the party that terminates it.",
+      "ar": "يُحدَّد التعويض عن إنهاء هذا العقد دون سبب مشروع بما يعادل الأجر الأساسي لشهرين، ويدفعه الطرف الذي أنهى العقد."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-09-25 10:05",
+    "downloadedByName": "نوف القحطاني",
+    "downloadedById": "1000000801",
+    "createdAt": "2026-08-20 15:30",
+    "activeAt": "2026-08-23 09:10"
+  }
+}

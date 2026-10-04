@@ -2,7 +2,11 @@ import { z } from "zod";
 import { Confidence, ScoreCategory, Severity } from "./enums";
 
 /** The official documents the law corpus is built from. */
-export const LawSource = z.enum(["labor_law", "implementing_regulations", "qiwa_template"]);
+export const LawSource = z.enum([
+  "labor_law",
+  "implementing_regulations",
+  "qiwa_template",
+]);
 export type LawSource = z.infer<typeof LawSource>;
 
 /** A pointer into the law corpus, used for rule-first article lookup. */

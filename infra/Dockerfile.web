@@ -1,0 +1,30 @@
+# The web app: built with Vite, served as static files by nginx, which also proxies /api to
+# the API so the browser talks to one origin (session cookie and server-sent events just work).
+#
+#   docker build -f infra/Dockerfile.web -t contract-rater-web .
+#
+# Build from the repository root. nginx listens on 8080 and expects the API at api:3000
+# (see infra/nginx.conf).
+
+ARG NODE_IMAGE=node:22-bookworm-slim
+ARG NGINX_IMAGE=nginxinc/nginx-unprivileged:1.30-alpine
+
+# ---- build: install the web app and its workspace dependencies, then run vite build -------
+FROM ${NODE_IMAGE} AS build
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+    npm_config_update_notifier=false
+WORKDIR /app
+COPY package.json ./
+RUN corepack enable && corepack install
+# Only the lockfile first, so the download layer stays cached until a dependency changes.
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm fetch --frozen-lockfile
+COPY . .
+RUN pnpm install --offline --frozen-lockfile --filter "@rater/web..." \
+ && pnpm --filter @rater/web build
+
+# ---- web: nginx as an unprivileged user ----------------------------------------------------
+FROM ${NGINX_IMAGE} AS web
+COPY infra/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+EXPOSE 8080

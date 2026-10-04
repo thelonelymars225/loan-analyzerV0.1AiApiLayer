@@ -45,5 +45,11 @@ export const OrgRole = z.enum(["owner", "admin", "member"]);
 export type OrgRole = z.infer<typeof OrgRole>;
 
 /** Where a finding came from in the pipeline. */
-export const FindingSource = z.enum(["field_rule", "clause", "cross_check", "info", "market"]);
+export const FindingSource = z.enum([
+  "field_rule",
+  "clause",
+  "cross_check",
+  "info",
+  "market",
+]);
 export type FindingSource = z.infer<typeof FindingSource>;

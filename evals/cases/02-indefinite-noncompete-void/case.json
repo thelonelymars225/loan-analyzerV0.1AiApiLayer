@@ -1,0 +1,111 @@
+{
+  "id": "02-indefinite-noncompete-void",
+  "contract": {
+    "number": "10000201",
+    "type": "indefinite",
+    "executionDate": "2026-07-20",
+    "commencementDate": "2026-08-02",
+    "location": {
+      "en": "Dammam",
+      "ar": "الدمام"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Sample Retail Trading Est.",
+      "ar": "مؤسسة العينة للتجارة"
+    },
+    "type": {
+      "en": "Establishment",
+      "ar": "مؤسسة"
+    },
+    "unifiedNo": "7000000201",
+    "email": "hr@retail.example.com",
+    "signatory": {
+      "name": {
+        "en": "Saad Al-Namuthaji",
+        "ar": "سعد النموذجي"
+      },
+      "idNo": "1000000202"
+    }
+  },
+  "employee": {
+    "name": "Arjun Menon",
+    "nationality": {
+      "en": "Indian",
+      "ar": "هندي"
+    },
+    "idNo": "2000000201",
+    "gender": {
+      "en": "Male",
+      "ar": "ذكر"
+    },
+    "maritalStatus": {
+      "en": "Married",
+      "ar": "متزوج"
+    },
+    "birthDate": "1994-09-03",
+    "education": {
+      "en": "Diploma",
+      "ar": "دبلوم"
+    },
+    "speciality": {
+      "en": "Marketing",
+      "ar": "التسويق"
+    },
+    "email": "arjun.m@example.com",
+    "mobile": "+966 56 000 0201"
+  },
+  "job": {
+    "occupation": {
+      "en": "Sales Representative",
+      "ar": "مندوب مبيعات"
+    },
+    "jobTitle": {
+      "en": "Sales Executive",
+      "ar": "تنفيذي مبيعات"
+    },
+    "workLocation": {
+      "en": "Dammam",
+      "ar": "الدمام"
+    }
+  },
+  "probationDays": 90,
+  "hours": {
+    "workDaysPerWeek": 6,
+    "dailyHours": 8,
+    "restDaysPerWeek": 1
+  },
+  "annualLeaveDays": 21,
+  "wage": {
+    "basic": 7000,
+    "housing": 1000,
+    "transport": 700
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "After the contract ends, the employee shall not work for any competitor for three years.",
+      "ar": "لا يجوز للموظف بعد انتهاء العقد العمل لدى أي منافس لمدة ثلاث سنوات."
+    },
+    {
+      "en": "The end-of-service gratuity will be based on the employee's last total wage, including all allowances, as provided in the Labor Law.",
+      "ar": "تُحتسب مكافأة نهاية الخدمة على أساس آخر أجر إجمالي يتقاضاه الموظف شاملًا جميع البدلات، وفقًا لما نص عليه نظام العمل."
+    },
+    {
+      "en": "The employee shall not disclose any information about the employer's business at any time, during or after employment.",
+      "ar": "لا يجوز للموظف الإفصاح عن أي معلومات تخص أعمال صاحب العمل في أي وقت، سواء أثناء العمل أو بعد انتهائه."
+    },
+    {
+      "en": "The employee must follow the employer's code of conduct and wear the company uniform.",
+      "ar": "يجب على الموظف الالتزام بمدونة سلوك صاحب العمل وارتداء الزي الرسمي للشركة."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-09-28 11:20",
+    "downloadedByName": "Arjun Menon",
+    "downloadedById": "2000000201",
+    "createdAt": "2026-07-20 13:00",
+    "activeAt": "2026-07-21 08:30"
+  }
+}

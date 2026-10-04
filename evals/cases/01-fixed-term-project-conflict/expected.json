@@ -1,0 +1,150 @@
+{
+  "id": "01-fixed-term-project-conflict",
+  "description": "Same shape as test #1: fixed-term, auto-renewing, Saudi employee, fair sections 1-14, and a Section 15 that claims an unlimited project-based term, bases end-of-service on basic wage, fixes Art. 77 compensation at two months' basic, allows transfer anywhere, forbids leave carry-over and has a confidentiality duty with no time limit (worded 'not allowed to share').",
+  "today": "2026-10-04",
+  "status": "done",
+  "fields": {
+    "contractType": "fixed_term",
+    "commencementDate": "2025-11-16",
+    "endDate": "2026-11-15",
+    "termMonths": 12,
+    "autoRenew": true,
+    "renewalNoticeDays": 30,
+    "probationDays": 180,
+    "probationExcludedDays": [
+      "eid_al_fitr",
+      "eid_al_adha",
+      "national_day",
+      "foundation_day",
+      "sick_leave"
+    ],
+    "workDaysPerWeek": 5,
+    "dailyHours": 8,
+    "weeklyHours": 40,
+    "annualLeaveDays": 22,
+    "wage": {
+      "basic": 12000,
+      "housing": 3000,
+      "transport": 1200,
+      "other": 0,
+      "total": 16200
+    },
+    "overtimePremiumPct": 50,
+    "nationality": "saudi"
+  },
+  "findings": [
+    {
+      "ruleId": "TYPE-ART57-01",
+      "clause": "15.1",
+      "verdict": "unclear",
+      "severity": "high"
+    },
+    {
+      "ruleId": "TYPE-CONFLICT-01",
+      "clause": "15.1",
+      "verdict": "conflict",
+      "severity": "high"
+    },
+    {
+      "ruleId": "CONFIDENTIAL-01",
+      "clause": "15.2",
+      "verdict": "unclear",
+      "severity": "low"
+    },
+    {
+      "ruleId": "TRANSFER-KSA-01",
+      "clause": "15.3",
+      "verdict": "worse_than_default",
+      "severity": "medium"
+    },
+    {
+      "ruleId": "COMP-ART77-01",
+      "clause": "15.4",
+      "verdict": "worse_than_default",
+      "severity": "high"
+    },
+    {
+      "ruleId": "LEAVE-FORFEIT-01",
+      "clause": "15.5",
+      "verdict": "unclear",
+      "severity": "low"
+    },
+    {
+      "ruleId": "EOS-BASE-01",
+      "clause": "15.6",
+      "verdict": "likely_void",
+      "severity": "high"
+    },
+    {
+      "ruleId": "PROB-MAX-01",
+      "clause": "6.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-EXCL-01",
+      "clause": "6.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "LEAVE-MIN-01",
+      "clause": "8.1",
+      "verdict": "better_than_law",
+      "severity": "none"
+    },
+    {
+      "ruleId": "HOURS-MAX-01",
+      "clause": "7",
+      "verdict": "better_than_law",
+      "severity": "none"
+    },
+    {
+      "ruleId": "OT-RATE-01",
+      "clause": "11.2",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "MARKET-ALLOW-01",
+      "clause": "9.1.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "RENEW-CONVERT-01",
+      "clause": "5.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-NOCOMP-01",
+      "clause": "6.2",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "SETTLE-TIME-01",
+      "clause": null,
+      "verdict": "compliant",
+      "severity": "none"
+    }
+  ],
+  "mustNot": [
+    "NONCOMPETE-01",
+    "PROB-MAX-01",
+    "LEAVE-MIN-01",
+    "HOURS-MAX-01",
+    "OT-RATE-01"
+  ],
+  "deadlines": [
+    {
+      "ruleId": "RENEW-DEADLINE-01",
+      "date": "2026-10-16"
+    }
+  ],
+  "score": {
+    "employee": [59, 69],
+    "hr": [56, 66]
+  }
+}

@@ -1,0 +1,111 @@
+{
+  "id": "03-fixed-term-field-rules-fail",
+  "description": "Fixed-term contract without auto-renewal whose sections 1-14 break the law: 270 days' probation, probation paused for unpaid leave, 15 days' leave, 9 hours a day / 54 a week and a 25% overtime premium. Section 15 is harmless. Still on probation, so its end date is a deadline.",
+  "today": "2026-10-04",
+  "status": "done",
+  "fields": {
+    "contractType": "fixed_term",
+    "commencementDate": "2026-03-01",
+    "endDate": "2028-02-29",
+    "termMonths": 24,
+    "autoRenew": false,
+    "renewalNoticeDays": null,
+    "probationDays": 270,
+    "probationExcludedDays": [
+      "eid_al_fitr",
+      "eid_al_adha",
+      "national_day",
+      "foundation_day",
+      "sick_leave",
+      "other"
+    ],
+    "workDaysPerWeek": 6,
+    "dailyHours": 9,
+    "weeklyHours": 54,
+    "restDaysPerWeek": 1,
+    "annualLeaveDays": 15,
+    "wage": {
+      "basic": 6000,
+      "housing": 1500,
+      "transport": 600,
+      "other": 0,
+      "total": 8100
+    },
+    "overtimePremiumPct": 25,
+    "nationality": "saudi"
+  },
+  "findings": [
+    {
+      "ruleId": "PROB-MAX-01",
+      "clause": "6.1",
+      "verdict": "likely_void",
+      "severity": "high"
+    },
+    {
+      "ruleId": "PROB-EXCL-01",
+      "clause": "6.1",
+      "verdict": "likely_void",
+      "severity": "medium"
+    },
+    {
+      "ruleId": "LEAVE-MIN-01",
+      "clause": "8.1",
+      "verdict": "likely_void",
+      "severity": "high"
+    },
+    {
+      "ruleId": "HOURS-MAX-01",
+      "clause": "7",
+      "verdict": "likely_void",
+      "severity": "high"
+    },
+    {
+      "ruleId": "OT-RATE-01",
+      "clause": "11.2",
+      "verdict": "likely_void",
+      "severity": "high"
+    },
+    {
+      "ruleId": "MARKET-ALLOW-01",
+      "clause": "9.1.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "RENEW-CONVERT-01",
+      "clause": "5.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-NOCOMP-01",
+      "clause": "6.2",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "SETTLE-TIME-01",
+      "clause": null,
+      "verdict": "compliant",
+      "severity": "none"
+    }
+  ],
+  "mustNot": [
+    "EOS-BASE-01",
+    "TRANSFER-KSA-01",
+    "NONCOMPETE-01",
+    "TYPE-CONFLICT-01",
+    "CONFIDENTIAL-01",
+    "MARKET-ALLOW-01"
+  ],
+  "deadlines": [
+    {
+      "ruleId": "PROB-NOCOMP-01",
+      "date": "2026-11-25"
+    }
+  ],
+  "score": {
+    "employee": [60, 70],
+    "hr": [42, 52]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "id": "14-rejected-company-agreement",
+  "description": "An employer's own employment agreement, not the Qiwa Unified Employment Contract. It has wage, leave and end-of-service terms (one of them unlawful), but v1 rates Qiwa contracts only, so it must be rejected with no findings and no score.",
+  "today": "2026-10-04",
+  "status": "rejected",
+  "fields": {},
+  "findings": [],
+  "mustNot": [],
+  "deadlines": []
+}

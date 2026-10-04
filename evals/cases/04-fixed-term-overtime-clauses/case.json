@@ -1,0 +1,106 @@
+{
+  "id": "04-fixed-term-overtime-clauses",
+  "contract": {
+    "number": "10000401",
+    "type": "fixed_term",
+    "executionDate": "2025-11-20",
+    "commencementDate": "2025-12-01",
+    "termMonths": 12,
+    "autoRenew": true,
+    "renewalNoticeDays": 60,
+    "location": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Sample Accounting Office",
+      "ar": "مكتب العينة للمحاسبة"
+    },
+    "type": {
+      "en": "Establishment",
+      "ar": "مؤسسة"
+    },
+    "unifiedNo": "7000000401",
+    "email": "office@accounting.example.com",
+    "signatory": {
+      "name": {
+        "en": "Nasser Al-Namuthaji",
+        "ar": "ناصر النموذجي"
+      },
+      "idNo": "1000000402"
+    }
+  },
+  "employee": {
+    "name": "Mona Farouk",
+    "nationality": {
+      "en": "Egyptian",
+      "ar": "مصرية"
+    },
+    "idNo": "2000000401",
+    "maritalStatus": {
+      "en": "Married",
+      "ar": "متزوجة"
+    },
+    "birthDate": "1990-02-14",
+    "speciality": {
+      "en": "Accounting",
+      "ar": "المحاسبة"
+    },
+    "email": "mona.f@example.com",
+    "mobile": "+966 54 000 0401"
+  },
+  "job": {
+    "occupation": {
+      "en": "Accountant",
+      "ar": "محاسب"
+    },
+    "jobTitle": {
+      "en": "Senior Accountant",
+      "ar": "محاسبة أولى"
+    },
+    "workLocation": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "probationDays": 120,
+  "hours": {
+    "workDaysPerWeek": 5,
+    "dailyHours": 8,
+    "restDaysPerWeek": 2
+  },
+  "annualLeaveDays": 25,
+  "wage": {
+    "basic": 9000,
+    "housing": 3000,
+    "transport": 1000
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "Each overtime hour is paid at the hourly rate plus 25 percent of the basic hourly wage.",
+      "ar": "تُدفع كل ساعة عمل إضافية بأجر الساعة مضافًا إليه 25% من أجر الساعة الأساسي."
+    },
+    {
+      "en": "Overtime hours will be compensated with time off in lieu at the employer's discretion.",
+      "ar": "تُعوَّض ساعات العمل الإضافية بإجازة بدل وفق تقدير صاحب العمل."
+    },
+    {
+      "en": "The employee shall work additional hours whenever business needs require.",
+      "ar": "يلتزم الموظف بالعمل ساعات إضافية كلما اقتضت حاجة العمل ذلك."
+    },
+    {
+      "en": "Any annual leave not taken by the end of the year is forfeited without compensation.",
+      "ar": "يسقط حق الموظف في أي إجازة سنوية لم يتمتع بها حتى نهاية السنة دون تعويض."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-10-02 07:55",
+    "downloadedByName": "Mona Farouk",
+    "downloadedById": "2000000401",
+    "createdAt": "2025-11-20 16:10",
+    "activeAt": "2025-11-23 09:00"
+  }
+}

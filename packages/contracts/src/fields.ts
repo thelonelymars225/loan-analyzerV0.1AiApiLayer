@@ -4,7 +4,12 @@ import { Confidence } from "./enums";
 /** ISO calendar date, YYYY-MM-DD (Gregorian; Qiwa uses Gregorian per clause 14.6). */
 export const IsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
-export const ContractType = z.enum(["fixed_term", "indefinite", "specific_work", "unknown"]);
+export const ContractType = z.enum([
+  "fixed_term",
+  "indefinite",
+  "specific_work",
+  "unknown",
+]);
 export type ContractType = z.infer<typeof ContractType>;
 
 /** Days the law allows to be excluded from probation (Art. 53). */

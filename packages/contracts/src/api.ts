@@ -190,6 +190,12 @@ export const MemberResponse = z.object({
 });
 export type MemberResponse = z.infer<typeof MemberResponse>;
 
+/** GET /orgs/{id}/members: the org's members (used by the web org settings page). */
+export const ListMembersResponse = z.object({
+  items: z.array(MemberResponse),
+});
+export type ListMembersResponse = z.infer<typeof ListMembersResponse>;
+
 export const RulesResponse = z.object({
   rulesetVersion: z.string(),
   lawVersion: z.string(),

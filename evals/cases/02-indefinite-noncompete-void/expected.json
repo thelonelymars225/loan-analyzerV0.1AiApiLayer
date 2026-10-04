@@ -1,0 +1,120 @@
+{
+  "id": "02-indefinite-noncompete-void",
+  "description": "Indefinite contract for a non-Saudi employee still on probation: a three-year non-compete with no limits (likely void), confidentiality with no time limit, a lawful end-of-service clause, and a housing allowance below the market norm. 48-hour week and 21 days' leave sit exactly at the legal limits.",
+  "today": "2026-10-04",
+  "status": "done",
+  "fields": {
+    "contractType": "indefinite",
+    "commencementDate": "2026-08-02",
+    "endDate": null,
+    "termMonths": null,
+    "autoRenew": null,
+    "probationDays": 90,
+    "workDaysPerWeek": 6,
+    "dailyHours": 8,
+    "weeklyHours": 48,
+    "restDaysPerWeek": 1,
+    "annualLeaveDays": 21,
+    "wage": {
+      "basic": 7000,
+      "housing": 1000,
+      "transport": 700,
+      "other": 0,
+      "total": 8700
+    },
+    "overtimePremiumPct": 50,
+    "nationality": "non_saudi"
+  },
+  "findings": [
+    {
+      "ruleId": "NONCOMPETE-01",
+      "clause": "15.1",
+      "verdict": "likely_void",
+      "severity": "high"
+    },
+    {
+      "ruleId": "CONFIDENTIAL-01",
+      "clause": "15.3",
+      "verdict": "unclear",
+      "severity": "low"
+    },
+    {
+      "ruleId": "MARKET-ALLOW-01",
+      "clause": "9.1.1",
+      "verdict": "worse_than_default",
+      "severity": "low"
+    },
+    {
+      "ruleId": "EOS-BASE-01",
+      "clause": "15.2",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-MAX-01",
+      "clause": "6.1",
+      "verdict": "better_than_law",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-EXCL-01",
+      "clause": "6.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "LEAVE-MIN-01",
+      "clause": "8.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "HOURS-MAX-01",
+      "clause": "7",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "OT-RATE-01",
+      "clause": "11.2",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "NOTICE-INDEF-01",
+      "clause": null,
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-NOCOMP-01",
+      "clause": "6.2",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "SETTLE-TIME-01",
+      "clause": null,
+      "verdict": "compliant",
+      "severity": "none"
+    }
+  ],
+  "mustNot": [
+    "TRANSFER-KSA-01",
+    "EOS-BASE-01",
+    "TYPE-CONFLICT-01",
+    "TYPE-ART57-01",
+    "LEAVE-MIN-01",
+    "HOURS-MAX-01"
+  ],
+  "deadlines": [
+    {
+      "ruleId": "PROB-NOCOMP-01",
+      "date": "2026-10-30"
+    }
+  ],
+  "score": {
+    "employee": [86, 96],
+    "hr": [83, 93]
+  }
+}

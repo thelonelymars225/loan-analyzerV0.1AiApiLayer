@@ -6,6 +6,7 @@ import type {
   Deadline,
   FieldProvenance,
   Finding,
+  ImpactKind,
   ImpactParams,
   LawArticle,
   Score,
@@ -61,15 +62,22 @@ export interface ExtractionResult {
    * Used only to build the redaction context. Never persisted, never logged.
    */
   identifyingStrings: string[];
+  /**
+   * Placeholder for each identifying string (employer name → "[EMPLOYER]", employee name →
+   * "[EMPLOYEE]"). Strings missing here are redacted as "[NAME]". Same privacy rules as above.
+   */
+  namePlaceholders?: Record<string, NamePlaceholder>;
   issues: ExtractionIssue[];
   /** True when a required field is missing or the wage parts don't sum to the total. */
   needsReview: boolean;
 }
 
+export type NamePlaceholder = "[EMPLOYER]" | "[EMPLOYEE]" | "[NAME]";
+
 /** Step 3 input. */
 export interface RedactionContext {
   /** Names to replace, with the placeholder to use for each. */
-  names: { text: string; placeholder: "[EMPLOYER]" | "[EMPLOYEE]" | "[NAME]" }[];
+  names: { text: string; placeholder: NamePlaceholder }[];
 }
 
 /** Rule-first law lookup with vector search as backstop. */
@@ -87,6 +95,8 @@ export interface ClauseCache {
 /** A finding from step 4b plus the numbers the impact step needs. */
 export interface AnalysedFinding extends Finding {
   impactParams?: ImpactParams;
+  /** The rule's impact formula (Rule.impact), so applyImpact needs no rules table. */
+  impactKind?: ImpactKind;
 }
 
 export interface StepVersions {

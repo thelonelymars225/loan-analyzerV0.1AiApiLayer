@@ -19,7 +19,11 @@
     "dev:web": "pnpm --filter @rater/web dev",
     "db:generate": "pnpm --filter @rater/db generate",
     "db:migrate": "pnpm --filter @rater/db migrate",
-    "law:ingest": "pnpm --filter @rater/law ingest"
+    "law:ingest": "pnpm --filter @rater/law ingest",
+    "dev:db": "docker compose -f infra/docker-compose.yml up -d postgres",
+    "docker:up": "docker compose -f infra/docker-compose.yml up --build -d --wait",
+    "docker:down": "docker compose -f infra/docker-compose.yml down",
+    "docker:logs": "docker compose -f infra/docker-compose.yml logs -f"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

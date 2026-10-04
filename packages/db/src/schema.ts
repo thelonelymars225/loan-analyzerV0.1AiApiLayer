@@ -29,7 +29,8 @@ export * from "./auth-schema";
  * through its rating), and every query is scoped by it.
  */
 
-const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
+const createdAt = () =>
+  timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
 /** An uploaded PDF. The file lives in the bucket; this row only points at it. */
 export const documents = pgTable(
@@ -52,6 +53,7 @@ export const documents = pgTable(
   },
   (t) => [
     index("documents_org_idx").on(t.orgId),
+    index("documents_uploaded_by_idx").on(t.uploadedBy),
     index("documents_delete_after_idx").on(t.deleteAfter),
   ],
 );
@@ -92,6 +94,7 @@ export const ratings = pgTable(
   (t) => [
     index("ratings_org_created_idx").on(t.orgId, t.createdAt),
     index("ratings_created_by_idx").on(t.createdBy, t.createdAt),
+    index("ratings_document_idx").on(t.documentId),
   ],
 );
 
@@ -174,7 +177,10 @@ export const lawArticles = pgTable(
   },
   (t) => [
     index("law_articles_version_article_idx").on(t.lawVersion, t.article),
-    index("law_articles_embedding_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
+    index("law_articles_embedding_idx").using(
+      "hnsw",
+      t.embedding.op("vector_cosine_ops"),
+    ),
     uniqueIndex("law_articles_unique_idx").on(
       t.lawVersion,
       t.sourceDoc,
@@ -198,6 +204,7 @@ export const clauseCache = pgTable(
   },
   (t) => [
     primaryKey({
+      name: "clause_cache_pk",
       columns: [t.textHash, t.lawVersion, t.rulesetVersion, t.promptVersion, t.model],
     }),
   ],

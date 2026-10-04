@@ -10,7 +10,6 @@ import type { SweepResult } from "./retention";
 export const RateJobData = z.object({ ratingId: z.string().min(1) });
 export type RateJobData = z.infer<typeof RateJobData>;
 
-
 /** The retention sweep runs every hour, on the hour (UTC). */
 export const RETENTION_CRON = "0 * * * *";
 

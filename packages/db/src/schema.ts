@@ -83,6 +83,8 @@ export const ratings = pgTable(
     scoreMarket: integer("score_market"),
     scoreClarity: integer("score_clarity"),
     deadlines: jsonb("deadlines").$type<Deadline[]>(),
+    /** Why the rating is needs_review: extraction issues, in plain English. */
+    reviewReasons: jsonb("review_reasons").$type<string[]>(),
     /** LLM token usage for cost tracking. */
     usage: jsonb("usage").$type<{ inputTokens: number; outputTokens: number }>(),
     errorCode: text("error_code"),

@@ -153,6 +153,7 @@ export function syntheticReport(view: View): RatingReport {
     createdAt: "2026-10-01T09:00:00Z",
     finishedAt: "2026-10-01T09:01:10Z",
     error: null,
+    reviewReasons: [],
     score:
       view === "employee"
         ? {

@@ -8,6 +8,17 @@ export const QUEUES = {
   retention: "retention-sweep",
 } as const;
 
+/**
+ * Options for the rating queue. The API and the worker both create the queue, and pg-boss
+ * keeps whichever options arrive first, so both must pass the same ones.
+ */
+export const RATE_QUEUE_OPTIONS = {
+  retryLimit: 2,
+  retryDelay: 15,
+  retryBackoff: true,
+  expireInSeconds: 15 * 60,
+} as const;
+
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const RATINGS_PER_USER_PER_DAY = 20;
 export const DEFAULT_RETENTION_DAYS = 30;

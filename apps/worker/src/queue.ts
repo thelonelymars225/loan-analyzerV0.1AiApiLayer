@@ -1,5 +1,5 @@
-import { QUEUES } from "@rater/contracts";
-import type { JobWithMetadata, PgBoss, Queue } from "pg-boss";
+import { QUEUES, RATE_QUEUE_OPTIONS } from "@rater/contracts";
+import type { JobWithMetadata, PgBoss } from "pg-boss";
 import { z } from "zod";
 import { processRating } from "./rate-job";
 import type { RateJobDeps, RatingOutcome } from "./rate-job";
@@ -10,17 +10,6 @@ import type { SweepResult } from "./retention";
 export const RateJobData = z.object({ ratingId: z.string().min(1) });
 export type RateJobData = z.infer<typeof RateJobData>;
 
-/**
- * Rating queue settings. pg-boss keeps an existing queue as it is, so these apply only when
- * this process is the first to create the queue; handleRateJob reads the job's own retry limit.
- */
-export const RATE_QUEUE_OPTIONS = {
-  retryLimit: 2,
-  // Back off from about 15 s, for a rate-limited or briefly unavailable LLM API.
-  retryDelay: 15,
-  retryBackoff: true,
-  expireInSeconds: 15 * 60,
-} satisfies Omit<Queue, "name">;
 
 /** The retention sweep runs every hour, on the hour (UTC). */
 export const RETENTION_CRON = "0 * * * *";
@@ -31,7 +20,7 @@ export async function registerJobs(
   deps: RateJobDeps,
   concurrency: number,
 ): Promise<void> {
-  await boss.createQueue(QUEUES.rate, RATE_QUEUE_OPTIONS);
+  await boss.createQueue(QUEUES.rate, { ...RATE_QUEUE_OPTIONS });
   await boss.createQueue(QUEUES.retention, { retryLimit: 1 });
 
   await boss.work(

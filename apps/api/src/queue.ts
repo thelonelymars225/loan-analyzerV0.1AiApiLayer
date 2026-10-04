@@ -1,6 +1,6 @@
 import { PgBoss } from "pg-boss";
 import type { Logger } from "pino";
-import { QUEUES } from "@rater/contracts";
+import { QUEUES, RATE_QUEUE_OPTIONS } from "@rater/contracts";
 import { errorForLog } from "./logger";
 
 /** Hands ratings to the worker. Tests use an in-memory fake. */
@@ -30,9 +30,8 @@ export class PgBossQueue implements RatingQueue {
       logger.error({ err: errorForLog(error) }, "pg-boss error"),
     );
     await boss.start();
-    // createQueue is "insert if missing": when the worker created the queue first with its
-    // own retry options, those stay.
-    await boss.createQueue(QUEUES.rate);
+    // createQueue is "insert if missing", so the API passes the same options as the worker.
+    await boss.createQueue(QUEUES.rate, { ...RATE_QUEUE_OPTIONS });
     return new PgBossQueue(boss);
   }
 

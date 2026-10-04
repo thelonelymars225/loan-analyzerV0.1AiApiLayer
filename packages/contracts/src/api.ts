@@ -102,6 +102,8 @@ export const RatingReport = z.object({
   info: z.array(ViewFinding),
   fields: ContractFields.nullable(),
   versions: Versions.nullable(),
+  /** Why a needs_review rating needs a human look (e.g. wage parts that do not add up). */
+  reviewReasons: z.array(z.string()),
   disclaimer: z.string(),
 });
 export type RatingReport = z.infer<typeof RatingReport>;

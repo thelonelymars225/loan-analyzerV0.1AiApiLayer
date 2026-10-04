@@ -42,6 +42,8 @@ export interface RenderReportInput {
   versions: Versions | null;
   rules: Rule[];
   locale?: "en" | "ar";
+  /** Reasons stored with a needs_review rating (extraction issues). */
+  reviewReasons?: string[];
 }
 
 /** Statuses whose findings are final enough to score. */
@@ -87,6 +89,7 @@ export function renderReport(input: RenderReportInput): RatingReport {
     info: info.map((finding) => present(finding, false)),
     fields,
     versions: input.versions,
+    reviewReasons: input.reviewReasons ?? [],
     disclaimer: input.locale === "ar" ? DISCLAIMER_AR : DISCLAIMER_EN,
   };
 }

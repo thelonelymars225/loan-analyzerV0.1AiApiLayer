@@ -70,7 +70,7 @@ export const ratings = pgTable(
     }),
     createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
     status: text("status").$type<RatingStatus>().notNull().default("queued"),
-    /** Last pipeline step that finished, so a retried job resumes after it. */
+    /** Last pipeline step that finished. Diagnostic only: a retry re-runs the whole job. */
     lastStep: text("last_step"),
     defaultView: text("default_view").$type<View>().notNull(),
     lawVersion: text("law_version"),
@@ -224,5 +224,9 @@ export const auditEvents = pgTable(
     meta: jsonb("meta"),
     at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index("audit_events_org_at_idx").on(t.orgId, t.at)],
+  (t) => [
+    index("audit_events_org_at_idx").on(t.orgId, t.at),
+    // The daily upload limit counts "upload" events per user, so deleting ratings frees nothing.
+    index("audit_events_user_action_at_idx").on(t.userId, t.action, t.at),
+  ],
 );

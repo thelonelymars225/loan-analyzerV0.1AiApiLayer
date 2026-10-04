@@ -1,0 +1,1 @@
+CREATE INDEX "audit_events_user_action_at_idx" ON "audit_events" USING btree ("user_id","action","at");

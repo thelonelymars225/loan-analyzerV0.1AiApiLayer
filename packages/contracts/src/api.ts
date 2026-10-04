@@ -171,13 +171,49 @@ export const InviteBody = z.object({
 });
 export type InviteBody = z.infer<typeof InviteBody>;
 
+/**
+ * A pending invitation. No email is sent in v1: an owner or admin copies `acceptPath`
+ * (a link into the web app) and shares it. Only the invited email address can accept.
+ */
 export const InviteResponse = z.object({
   id: z.string(),
   email: z.string(),
   role: OrgRole,
   status: z.string(),
+  expiresAt: z.string(),
+  /** Web path the invitee opens to accept, e.g. "/invite/<id>". */
+  acceptPath: z.string(),
 });
 export type InviteResponse = z.infer<typeof InviteResponse>;
+
+/** GET /orgs/{id}/invites (owner or admin): pending invitations of the workspace. */
+export const ListInvitesResponse = z.object({
+  items: z.array(InviteResponse),
+});
+export type ListInvitesResponse = z.infer<typeof ListInvitesResponse>;
+
+/** GET /invites/{id}: what the invitee sees before accepting. 404 for anyone else. */
+export const InvitePreview = z.object({
+  id: z.string(),
+  orgName: z.string(),
+  role: OrgRole,
+  email: z.string(),
+  status: z.string(),
+  expiresAt: z.string(),
+});
+export type InvitePreview = z.infer<typeof InvitePreview>;
+
+/** PUT /me/active-org: switch the session's workspace. Returns MeResponse. */
+export const SetActiveOrgBody = z.object({
+  orgId: z.string().min(1),
+});
+export type SetActiveOrgBody = z.infer<typeof SetActiveOrgBody>;
+
+/**
+ * Header the web app sends on every mutating request with the workspace it is showing.
+ * The API answers 409 conflict when it differs from the session's active workspace.
+ */
+export const ORG_HEADER = "x-org-id";
 
 export const UpdateMemberBody = z.object({
   role: OrgRole,

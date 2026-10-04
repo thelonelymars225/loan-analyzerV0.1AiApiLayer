@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { setActiveOrg } from "../../lib/auth";
+import { api } from "../../lib/api";
 import { useSession, workspaceName } from "../../lib/session";
 import { Button } from "../ui/button";
 import { Select } from "../ui/select";
@@ -29,7 +29,7 @@ export function WorkspaceSwitcher() {
     if (!org || org.id === activeOrg?.id) return;
     setSwitching(true);
     try {
-      await setActiveOrg(org.id);
+      await api.setActiveOrg(org.id);
       // Every cached query belongs to the old workspace.
       await queryClient.invalidateQueries();
       toast({

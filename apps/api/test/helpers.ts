@@ -84,7 +84,7 @@ export async function createTestContext(options: TestOptions = {}): Promise<Test
     DATABASE_URL: url.toString(),
     BETTER_AUTH_SECRET: "test-secret-for-the-api-tests-only-0123456789",
     LOG_LEVEL: "silent",
-    MIGRATE_ON_START: "false",
+    DB_MIGRATE_ON_START: "false",
     ...options.env,
   });
   const app = await buildApp({
@@ -124,13 +124,18 @@ export interface TestUser {
 
 let userCount = 0;
 
+/** A made-up address no other test uses. */
+export function uniqueEmail(): string {
+  userCount += 1;
+  return `user${userCount}.${randomBytes(3).toString("hex")}@example.com`;
+}
+
 /** Signs up through Better Auth and returns the session cookie. */
 export async function signUp(
   app: FastifyInstance,
   name = "Nour Al-Harbi",
+  email = uniqueEmail(),
 ): Promise<TestUser> {
-  userCount += 1;
-  const email = `user${userCount}.${randomBytes(3).toString("hex")}@example.com`;
   const response = await app.inject({
     method: "POST",
     url: "/api/auth/sign-up/email",
@@ -165,18 +170,13 @@ export function sessionCookie(response: LightMyRequestResponse): string {
   return cookies.map((cookie) => cookie.split(";")[0]).join("; ");
 }
 
-/** Makes `orgId` the session's active org, like the web app's organization.setActive. */
+/** Makes `orgId` the session's active org (PUT /me/active-org), like the web app. */
 export async function setActiveOrg(
   app: FastifyInstance,
   cookie: string,
-  organizationId: string,
+  orgId: string,
 ): Promise<void> {
-  const response = await app.inject({
-    method: "POST",
-    url: "/api/auth/organization/set-active",
-    headers: { origin: ORIGIN, cookie, "content-type": "application/json" },
-    payload: { organizationId },
-  });
+  const response = await api(app, cookie, "PUT", "/me/active-org", { orgId });
   if (response.statusCode !== 200) {
     throw new Error(`set-active failed: ${response.statusCode} ${response.body}`);
   }
@@ -222,7 +222,7 @@ export async function upload(
 export function api(
   app: FastifyInstance,
   cookie: string,
-  method: "GET" | "POST" | "PATCH" | "DELETE",
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
   url: string,
   payload?: object,
   headers: Record<string, string> = {},

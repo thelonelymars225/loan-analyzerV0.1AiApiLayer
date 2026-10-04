@@ -12,10 +12,10 @@ import { detectQiwa } from "./detect";
 import { addUsage, ZERO_USAGE } from "./engine/verdicts";
 import { attachArabicOcr, extractContract } from "./extract";
 import { applyImpact } from "./impact";
-import { buildRedactionContext, redactClauses } from "./redact";
+import { buildRedactionContext, redactClauses, redactText } from "./redact";
 import { runFieldRules } from "./rules";
 import { scoreFindings } from "./score";
-import { analyseSection15, crossCheckSection15 } from "./section15";
+import { analyseSection15, clauseHasText, crossCheckSection15 } from "./section15";
 import type {
   AnalysedFinding,
   ArticleLookup,
@@ -71,9 +71,15 @@ export async function runPipeline(input: PipelineInput): Promise<PipelineResult>
 
   const extraction = extractContract(input.pages);
   const ocr = await addArabicText(extraction, input.ocrArabic);
-  // Only redacted text goes to the analyser, the cache and the stored result.
-  const clauses = redactClauses(ocr.clauses, buildRedactionContext(extraction));
-  const issues = ocr.issue ? [...extraction.issues, ocr.issue] : extraction.issues;
+  // Only redacted text goes to the analyser, the cache and the stored result. An Arabic-only
+  // clause the OCR found nothing for has no text left; its extraction issue already asks for review.
+  const redaction = buildRedactionContext(extraction);
+  const clauses = redactClauses(ocr.clauses.filter(clauseHasText), redaction);
+  // Issue messages can quote raw contract text (an unreadable date or contract type), and the
+  // worker stores them as review reasons, so they are redacted too.
+  const issues = (ocr.issue ? [...extraction.issues, ocr.issue] : extraction.issues).map(
+    (issue) => ({ ...issue, message: redactText(issue.message, redaction) }),
+  );
   const { fields } = extraction;
 
   const field = runFieldRules(fields, rules.rules, { today: input.today });

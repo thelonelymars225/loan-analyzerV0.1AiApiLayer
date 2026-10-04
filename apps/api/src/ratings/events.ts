@@ -11,7 +11,7 @@ export const FINAL_STATUSES: ReadonlySet<RatingStatus> = new Set([
 
 export interface StatusStreamOptions {
   ratingId: string;
-  /** Current status, or null once the rating has been deleted. */
+  /** Current status, or null once the rating is deleted or no longer visible to the caller. */
   readStatus: () => Promise<RatingStatus | null>;
   pollMs: number;
   /** Aborted when the server shuts down. */
@@ -46,8 +46,10 @@ export async function streamRatingStatus(
     "x-accel-buffering": "no", // stop nginx from buffering the stream
   });
 
+  // Polling stops as soon as the client goes away (or the server shuts down).
   const clientGone = new AbortController();
   response.on("close", () => clientGone.abort());
+  if (response.destroyed) clientGone.abort(); // it left before the listener was attached
   const stop = AbortSignal.any([clientGone.signal, options.shutdown]);
   const deadline = Date.now() + MAX_STREAM_MS;
 

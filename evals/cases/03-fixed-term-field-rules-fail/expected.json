@@ -1,6 +1,6 @@
 {
   "id": "03-fixed-term-field-rules-fail",
-  "description": "Fixed-term contract without auto-renewal whose sections 1-14 break the law: 270 days' probation, probation paused for unpaid leave, 15 days' leave, 9 hours a day / 54 a week and a 25% overtime premium. Section 15 is harmless. Still on probation, so its end date is a deadline.",
+  "description": "Fixed-term contract without auto-renewal whose sections 1-14 break the law: 270 days' probation, probation paused for unpaid leave, 15 days' leave, 9 hours a day / 54 a week and a 25% overtime premium. Section 15 is harmless. Probation started on 2026-03-01: the 90 days past the 180-day cap (Art. 53) are void, so the lawful probation ended on 2026-08-27 and no probation deadline is shown. Score: the rubric gives employee 65 and HR 47; four high-severity likely-void findings cap the overall score at 59 (three or more), so the employee view expects 54-59 and HR stays at 42-52.",
   "today": "2026-10-04",
   "status": "done",
   "fields": {
@@ -98,14 +98,9 @@
     "CONFIDENTIAL-01",
     "MARKET-ALLOW-01"
   ],
-  "deadlines": [
-    {
-      "ruleId": "PROB-NOCOMP-01",
-      "date": "2026-11-25"
-    }
-  ],
+  "deadlines": [],
   "score": {
-    "employee": [60, 70],
+    "employee": [54, 59],
     "hr": [42, 52]
   }
 }

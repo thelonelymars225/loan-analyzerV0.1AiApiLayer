@@ -7,6 +7,7 @@ import {
   CreateOrgBody,
   InviteBody,
   InviteResponse,
+  ListInvitesResponse,
   ListMembersResponse,
   MemberResponse,
   OrgSummary,
@@ -16,12 +17,14 @@ import {
 import { orgs } from "@rater/db";
 import type { AppDeps } from "../deps";
 import { conflict, notFound } from "../errors";
+import { cancelInvite, listPendingInvites, toInviteResponse } from "../invites";
 import { changeMemberRole, listMembers, removeMember } from "../members";
-import { findUserOrg, insertOrgWithOwner, parseRole } from "../orgs";
+import { findUserOrg, insertOrgWithOwner } from "../orgs";
 import { requireActiveOrg, requireRole } from "../plugins/access";
 
 const OrgParams = z.object({ id: z.string().min(1).max(64) });
 const MemberParams = OrgParams.extend({ userId: z.string().min(1).max(64) });
+const InviteParams = OrgParams.extend({ inviteId: z.string().min(1).max(64) });
 
 /** Better Auth answers these with 400; for the API they are conflicts with existing state. */
 const ALREADY_THERE = new Set([
@@ -31,10 +34,10 @@ const ALREADY_THERE = new Set([
 
 /**
  * Workspaces. Org routes act on the session's active org: `{id}` must be that org.
- * Switching the active org is Better Auth's organization.setActive.
+ * Switching the active org is PUT /me/active-org.
  */
 export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
-  const { db, auth } = deps;
+  const { db, auth, now } = deps;
 
   app.post(
     "/orgs",
@@ -98,14 +101,32 @@ export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     },
   );
 
+  app.get(
+    "/orgs/:id/invites",
+    {
+      schema: {
+        summary: "List the workspace's pending invitations (owner or admin)",
+        params: OrgParams,
+        response: { 200: ListInvitesResponse },
+      },
+    },
+    async (request) => {
+      const { ctx } = request;
+      requireActiveOrg(ctx, request.params.id);
+      requireRole(ctx, "owner", "admin");
+      return { items: await listPendingInvites(db, ctx.orgId, now()) };
+    },
+  );
+
   app.post(
     "/orgs/:id/invites",
     {
       schema: {
         summary: "Invite someone by email (owner or admin, company workspaces only)",
         description:
-          "Creates a Better Auth invitation. No email is sent in v1: the invitee signs up " +
-          "with that address and accepts it through Better Auth's organization API.",
+          "No email is sent in v1: share `acceptPath` (a page of the web app) with the " +
+          "invitee. They sign in or sign up with the invited address and accept there " +
+          "(GET /invites/{id}, POST /invites/{id}/accept).",
         params: OrgParams,
         body: InviteBody,
         response: { 201: InviteResponse },
@@ -131,18 +152,30 @@ export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
             organizationId: ctx.orgId,
           },
         });
-        return reply.code(201).send({
-          id: invitation.id,
-          email: invitation.email,
-          role: parseRole(invitation.role),
-          status: invitation.status,
-        });
+        return reply.code(201).send(toInviteResponse(invitation));
       } catch (error) {
         if (isAPIError(error) && ALREADY_THERE.has(error.body?.code ?? "")) {
           throw conflict(error.body?.message ?? "Already a member or invited.");
         }
         throw error;
       }
+    },
+  );
+
+  app.delete(
+    "/orgs/:id/invites/:inviteId",
+    {
+      schema: {
+        summary: "Cancel a pending invitation (owner or admin)",
+        params: InviteParams,
+      },
+    },
+    async (request, reply) => {
+      const { ctx } = request;
+      requireActiveOrg(ctx, request.params.id);
+      requireRole(ctx, "owner", "admin");
+      await cancelInvite(db, ctx.orgId, request.params.inviteId);
+      return reply.code(204).send();
     },
   );
 

@@ -1,5 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { Clause, ContractFieldName, Finding } from "@rater/contracts";
+import { REVIEW_RULE_ID } from "@rater/core";
 import type { ExtractionResult, PipelineResult } from "@rater/core";
 import { clauses, contractFields, documents, findings, newId, ratings } from "@rater/db";
 import type { Db } from "@rater/db";
@@ -12,8 +13,12 @@ import type { Db } from "@rater/db";
 export type RatingRow = typeof ratings.$inferSelect;
 export type DocumentRow = typeof documents.$inferSelect;
 
-/** error_code of a failed rating. */
-export type RatingErrorCode = "unsupported_document" | "document_missing" | "internal";
+/**
+ * error_code of a failed rating. "timeout" is set by the hourly sweep (stuck-ratings.ts) when a
+ * rating's job stopped without finishing.
+ */
+export type RatingErrorCode =
+  "unsupported_document" | "document_missing" | "internal" | "timeout";
 
 /** A pipeline result that rated the contract (not rejected). */
 export type RatedResult = Omit<
@@ -129,6 +134,8 @@ export async function saveResult(
         scoreMarket: score.market,
         scoreClarity: score.clarity,
         deadlines: result.deadlines,
+        // Always set, so a retried job that ends done clears what an earlier attempt stored.
+        reviewReasons: reviewReasonsFor(result),
         usage: result.usage,
         errorCode: null,
         error: null,
@@ -137,6 +144,30 @@ export async function saveResult(
       .where(eq(ratings.id, ratingId));
     return true;
   });
+}
+
+/** The reason shown when a REVIEW-00 finding exists: the analyser failed on a clause twice. */
+export const UNANALYSED_CLAUSE_REASON =
+  "One or more Section 15 clauses could not be analysed automatically; check them by hand.";
+
+/**
+ * Why a needs_review rating needs a human look, in plain English: the extraction issues (a
+ * missing field, wage parts that don't add up), plus one line when a Section 15 clause could
+ * not be analysed. Empty for a done rating. The messages can quote values from the user's
+ * contract, such as a wage total, so they go into their report and never into a log.
+ */
+export function reviewReasonsFor(result: {
+  status: RatedResult["status"];
+  extraction: Pick<ExtractionResult, "issues">;
+  findings: Pick<Finding, "ruleId">[];
+}): string[] {
+  if (result.status === "done") return [];
+  const reasons = result.extraction.issues.map((issue) => issue.message);
+  if (result.findings.some((finding) => finding.ruleId === REVIEW_RULE_ID)) {
+    reasons.push(UNANALYSED_CLAUSE_REASON);
+  }
+  // The same sentence twice tells the reader nothing more.
+  return [...new Set(reasons)];
 }
 
 /**

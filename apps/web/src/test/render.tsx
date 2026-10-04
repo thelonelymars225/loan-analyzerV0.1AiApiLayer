@@ -54,6 +54,15 @@ export function jsonResponse(
   });
 }
 
+/** A problem+json error answer, as the API sends it. */
+export function problemResponse(status: number, code: string, detail?: string): Response {
+  return jsonResponse(
+    { type: "about:blank", title: code, status, code, detail },
+    status,
+    "application/problem+json",
+  );
+}
+
 type Handler = (url: URL, init: RequestInit | undefined) => Response | Promise<Response>;
 
 /**

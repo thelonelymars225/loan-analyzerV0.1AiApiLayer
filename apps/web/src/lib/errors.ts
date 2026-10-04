@@ -1,4 +1,4 @@
-import type { TFunction } from "i18next";
+import i18n, { type TFunction } from "i18next";
 import { ApiError, type ApiErrorCode } from "./api";
 import { MAX_UPLOAD_MB, type UploadProblem } from "./upload";
 
@@ -16,15 +16,36 @@ const API_ERROR_KEYS: Record<ApiErrorCode, string> = {
   invalid_response: "errors.invalid_response",
 };
 
-/** A friendly, translated sentence for any error the API layer can throw. */
+/**
+ * The API explains each error in English (problem+json `detail`, or the stored message of a
+ * failed rating). That text is more precise than our per-code copy: the real upload limit, or
+ * that a PDF is damaged rather than not a Qiwa contract. English readers get it; Arabic readers
+ * get the translated copy for the code, which is written to be true in every case.
+ */
+function canShowServerText(text: string | undefined): text is string {
+  return Boolean(text?.trim()) && !i18n.language?.startsWith("ar");
+}
+
+/** A friendly sentence for any error the API layer can throw. */
 export function errorMessage(t: TFunction, error: unknown): string {
   if (!(error instanceof ApiError)) return t("errors.unknown");
+  if (canShowServerText(error.detail)) return error.detail;
   return t(API_ERROR_KEYS[error.code]);
 }
 
-/** Translates a stored rating error code (ratings.error.code); unknown codes get a generic line. */
-export function ratingErrorMessage(t: TFunction, code: string): string {
-  const key = API_ERROR_KEYS[code as ApiErrorCode];
+/** Error codes only a failed rating carries (set by the worker). */
+const RATING_ERROR_KEYS: Record<string, string> = {
+  timeout: "errors.rating_timeout",
+  document_missing: "errors.document_missing",
+};
+
+/** Explains a failed rating (report.error); codes the web does not know get a generic line. */
+export function ratingErrorMessage(
+  t: TFunction,
+  error: { code: string; message: string },
+): string {
+  if (canShowServerText(error.message)) return error.message;
+  const key = RATING_ERROR_KEYS[error.code] ?? API_ERROR_KEYS[error.code as ApiErrorCode];
   return key ? t(key) : t("errors.rating_failed");
 }
 

@@ -26,7 +26,7 @@ import type {
 } from "./types";
 
 /** Name stored as the "model" of ratings made offline. Bump it when detector behaviour changes. */
-export const HEURISTIC_MODEL = "heuristic-v1";
+export const HEURISTIC_MODEL = "heuristic-v2";
 
 const NO_USAGE: LlmUsage = { inputTokens: 0, outputTokens: 0 };
 

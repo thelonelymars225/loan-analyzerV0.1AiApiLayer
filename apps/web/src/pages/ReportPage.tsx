@@ -36,7 +36,7 @@ export function ReportPage() {
   });
 
   const running = isInProgress(rating.data?.status);
-  const { live } = useRatingEvents(running ? [id] : []);
+  const { live } = useRatingEvents(running ? id : null);
   usePolling(rating.refetch, pollInterval(running, live));
 
   function changeView(view: View) {
@@ -127,9 +127,7 @@ function ReportBody({ rating, live, onViewChange }: ReportBodyProps) {
       <ErrorState
         title={t("report.failedTitle")}
         message={
-          report.error
-            ? ratingErrorMessage(t, report.error.code)
-            : t("errors.rating_failed")
+          report.error ? ratingErrorMessage(t, report.error) : t("errors.rating_failed")
         }
       >
         <Link

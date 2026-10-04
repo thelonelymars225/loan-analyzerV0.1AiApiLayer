@@ -121,6 +121,37 @@ describe("ReportView", () => {
     expect(screen.getByText("Rating aid, not legal advice.")).toBeInTheDocument();
   });
 
+  it("says why a needs-review rating needs a person, in the API's words", () => {
+    const reasons = [
+      "Wage parts do not add up to the total wage.",
+      "One Section 15 clause could not be analysed reliably.",
+    ];
+    render(
+      <ReportView
+        report={{
+          ...syntheticReport("employee"),
+          status: "needs_review",
+          reviewReasons: reasons,
+        }}
+        onViewChange={() => {}}
+      />,
+    );
+
+    const note = screen.getByRole("note");
+    expect(note).toHaveTextContent(/need a person to check them/);
+    const list = within(note).getByRole("list", { name: "Reasons for review" });
+    expect(
+      within(list)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual(reasons);
+  });
+
+  it("shows no review note on a finished rating", () => {
+    render(<ReportView report={syntheticReport("employee")} onViewChange={() => {}} />);
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+  });
+
   it("asks for the other view when a tab is chosen", async () => {
     const onViewChange = vi.fn();
     render(

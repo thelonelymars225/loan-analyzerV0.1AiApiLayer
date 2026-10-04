@@ -29,6 +29,7 @@ import { withSpan } from "./telemetry";
  *                        analysis, impact and scores
  *          → done | needs_review   everything saved in one transaction
  *          → failed      with error_code unsupported_document, document_missing or internal
+ *                        (or timeout, set by the hourly sweep when a job was lost: stuck-ratings.ts)
  *
  * Retries: an unexpected error is rethrown so pg-boss retries the job. The rating is marked
  * failed only on the final attempt, so the user never sees "failed" flip back to "extracting".

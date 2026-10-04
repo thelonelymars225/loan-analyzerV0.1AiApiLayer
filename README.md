@@ -30,8 +30,9 @@ worker adds the I/O and saves the results.
    English column and an Arabic column. The English column is read by its labels: contract
    type, dates, probation, hours, leave, wage split, overtime premium, renewal notice. Section
    15 ("Additional Terms") becomes a list of clauses. Its Arabic text comes from OCR
-   (Tesseract), because the Arabic prevails. If the wage parts do not add up, or a required
-   field is missing, the rating ends as `needs_review`.
+   (Tesseract), because the Arabic prevails. If the wage parts do not add up, a required
+   field is missing, or a Section 15 item has Arabic text but no English (or the Section 15
+   heading is missing between sections that were found), the rating ends as `needs_review`.
 3. **Redact.** National IDs, IBANs, phone numbers, e-mail addresses and the names of both
    parties become placeholders such as `[ID]` and `[EMPLOYEE]`. Only redacted text goes further.
 4. **Check.**
@@ -45,14 +46,26 @@ worker adds the I/O and saves the results.
    - Cross-check: Section 15 statements that contradict sections 1-14, such as a "project"
      clause in a fixed-term contract.
 5. **Impact.** Plain formulas give the SAR effect: the end-of-service gap, Art. 77
-   compensation, and the value of missing leave days.
+   compensation, and the value of missing leave days. An Art. 77 clause that pays at least
+   what the law's default would is marked compliant, not a problem.
 6. **Score.** Each sub-score starts at 100. A problem finding subtracts 20 (high), 8 (medium)
    or 3 (low). A finding better than the law adds 2. The overall score weights the sub-scores
    per view (employee 40/35/25, HR 60/10/30). Bands: 80+ Good, 60-79 Fair, 40-59 Weak,
-   under 40 Poor.
+   under 40 Poor. In both views the overall score is capped: one or two high-severity findings
+   that are likely void or conflict with the contract cap it at 79 (never "Good"), and three
+   or more cap it at 59 ("Weak" at best).
 
 The status moves `queued` → `extracting` → `analysing` → `done`, or ends as `needs_review` or
 `failed`. The web app follows it over server-sent events.
+
+A `needs_review` report still shows its findings, and lists in plain English why a person
+should check it: each extraction problem (such as a missing field, or wage parts that do not
+add up), plus one line when a Section 15 clause could not be analysed automatically.
+
+A rating whose job was lost (the worker was killed mid-job, or the queue gave up on it) would
+show "in progress" forever. An hourly sweep in the worker marks it `failed` with the error
+code `timeout` once it has been extracting or analysing for over an hour, or queued for over
+a day. The user is asked to upload the contract again.
 
 ## Architecture
 
@@ -67,20 +80,20 @@ TypeScript on Node 22 end to end, in one pnpm monorepo. Packages export their Ty
 sources directly and the apps run them with `tsx`, so there is no build step except for the
 web app.
 
-| Path                 | What it is                                                                    |
-| -------------------- | ----------------------------------------------------------------------------- |
-| `apps/api`           | Fastify REST API under `/api/v1`, Better Auth accounts and orgs, uploads, SSE |
-| `apps/worker`        | pg-boss consumer: runs the rating pipeline, deletes expired PDFs hourly       |
-| `apps/web`           | React + Vite app, both views, English and Arabic (RTL)                        |
-| `packages/contracts` | Shared Zod schemas: API types, Finding, Rule, Rating, constants               |
-| `packages/core`      | The pipeline as pure functions: detect, extract, redact, rules, impact, score |
-| `packages/pdf`       | Wrappers for `pdftotext`, `pdftoppm` and `tesseract`                          |
-| `packages/llm`       | `LlmClient`: the Claude adapter, the offline analyser, versioned prompts      |
-| `packages/law`       | The rules table, the law corpus, article lookup, the ingest script            |
-| `packages/db`        | Drizzle schema and migrations (Postgres 16 + pgvector)                        |
-| `packages/storage`   | Encrypted file storage: S3 bucket or local disk                               |
-| `evals`              | Synthetic contracts, the Qiwa template, the eval runner                       |
-| `infra`              | Docker Compose stack, Dockerfiles, nginx config                               |
+| Path                 | What it is                                                                     |
+| -------------------- | ------------------------------------------------------------------------------ |
+| `apps/api`           | Fastify REST API under `/api/v1`: accounts, workspaces, uploads, reports, SSE  |
+| `apps/worker`        | pg-boss consumer: runs the pipeline, deletes expired PDFs, fails stuck ratings |
+| `apps/web`           | React + Vite app, both views, English and Arabic (RTL)                         |
+| `packages/contracts` | Shared Zod schemas: API types, Finding, Rule, Rating, constants                |
+| `packages/core`      | The pipeline as pure functions: detect, extract, redact, rules, impact, score  |
+| `packages/pdf`       | Wrappers for `pdftotext`, `pdftoppm` and `tesseract`                           |
+| `packages/llm`       | `LlmClient`: the Claude adapter, the offline analyser, versioned prompts       |
+| `packages/law`       | The rules table, the law corpus, article lookup, the ingest script             |
+| `packages/db`        | Drizzle schema and migrations (Postgres 16 + pgvector)                         |
+| `packages/storage`   | Encrypted file storage: S3 bucket or local disk                                |
+| `evals`              | Synthetic contracts, the Qiwa template, the eval runner                        |
+| `infra`              | Docker Compose stack, Dockerfiles, nginx config                                |
 
 Request flow: the web app uploads a PDF. The API checks it, stores it in the bucket, creates
 a `queued` rating and sends a job. The worker fetches the PDF, runs the pipeline and writes
@@ -88,6 +101,24 @@ fields, clauses and findings to Postgres. The web app renders the report in eith
 
 Postgres holds the app data, the job queue (pg-boss) and the law vectors (pgvector). The PDFs
 live only in the bucket.
+
+## Accounts and workspaces
+
+- **Workspaces.** Every account gets a personal workspace of one. An HR team creates a company
+  workspace, whose members are owners, admins or members. Ratings belong to a workspace.
+- **Switching.** The header menu switches the active workspace (`PUT /api/v1/me/active-org`).
+  The active workspace is kept in the session, so it changes in every open tab. Each tab sends
+  the workspace it shows in the `x-org-id` header with every change. If another tab has
+  switched in the meantime, the API refuses the change (`409`) and nothing is saved; the tab
+  then moves to the new workspace and says why.
+- **Invitations by link.** No email is sent in v1. An owner or admin of a company workspace
+  invites an email address and gets a link (`/invite/<id>`) to share however they like. Only
+  someone signed in with that email address (in any letter case) can open the link and
+  accept; anyone else gets "not found". Accepting adds them with the invited role and switches them to the workspace.
+  A link expires after 48 hours, and owners and admins can list and cancel pending ones.
+- **One place for workspace rules.** Over HTTP, Better Auth only serves sign-up, sign-in,
+  sign-out and the session. Its own organization endpoints answer `404`, so every workspace
+  change goes through `/api/v1`, where the role checks live.
 
 ## Quick start with Docker
 
@@ -102,8 +133,13 @@ contracts in `evals/cases/*/contract.pdf` work well for a first try.
 
 The stack runs Postgres + pgvector, MinIO (an S3 stand-in, encrypted at rest), a one-shot job
 that migrates the database and loads the law corpus, the API, the worker, and nginx serving
-the web app. Everything is published on localhost only. If a port is taken, set `WEB_PORT`,
-`API_PORT`, `POSTGRES_PORT`, `MINIO_PORT` or `MINIO_CONSOLE_PORT`.
+the web app. Because that job migrates, the API and the worker start with
+`DB_MIGRATE_ON_START=false`. Everything is published on localhost only. If a port is taken,
+set `WEB_PORT`, `API_PORT`, `POSTGRES_PORT`, `MINIO_PORT` or `MINIO_CONSOLE_PORT`.
+
+nginx passes the client's address to the API in `X-Forwarded-For`, replacing any value the
+client sent, so sign-in rate limiting works per client. That assumes nginx faces the clients.
+Behind a load balancer, set nginx's real-IP settings first (see `infra/nginx.conf`).
 
 | What       | Where                                   |
 | ---------- | --------------------------------------- |
@@ -129,9 +165,8 @@ pnpm install
 pnpm dev:db           # Postgres + pgvector in Docker (or use your own)
 
 export DATABASE_URL=postgres://postgres:postgres@localhost:5432/rater
-export LOCAL_STORAGE_DIR="$PWD/.data/storage"   # the API and the worker must share it
 
-pnpm db:migrate       # create the tables
+pnpm db:migrate       # create the tables (the API and the worker also do it when they start)
 pnpm law:ingest       # load the law corpus into law_articles
 
 pnpm dev:api          # http://localhost:3000
@@ -139,22 +174,28 @@ pnpm dev:worker
 pnpm dev:web          # http://localhost:5173 (proxies /api to the API)
 ```
 
+Uploaded PDFs go to `.data/storage` in the repository root (encrypted, ignored by git). The
+API and the worker find the same folder whichever directory they run from; set
+`LOCAL_STORAGE_DIR` to put it elsewhere. `DB_MIGRATE_ON_START=false` stops the API and the
+worker from applying migrations when they start.
+
 Every setting is listed in [.env.example](.env.example). The apps read real environment
 variables only. To use a file: `cp .env.example .env`, edit it, then run
 `set -a; . ./.env; set +a` in each terminal before `pnpm dev:*`.
 
 ## With or without an API key
 
-Without `ANTHROPIC_API_KEY`, the worker uses the offline analyser (`heuristic-v1`). It
+Without `ANTHROPIC_API_KEY`, the worker uses the offline analyser (`heuristic-v2`). It
 matches Section 15 clauses against known patterns in English and Arabic. It needs no network,
 gives the same answer every time, and covers the clause library in the eval set. Unusual
 wording can slip past it.
 
 With `ANTHROPIC_API_KEY` set, the worker sends each redacted Section 15 clause to Claude
 (`claude-opus-5-5` unless `LLM_MODEL` says otherwise). Claude reads unfamiliar wording better.
-Each reply is checked against a schema and against the articles it was given. Identical
-clauses are cached per law, ruleset, prompt and model version, so boilerplate is analysed
-once.
+Each reply is checked against a schema and against the articles it was given. A reply is
+cached per clause text (English and Arabic), contract terms, law, ruleset, prompt and model
+version, so rating the same contract again does not ask twice, and one contract's answer is
+never reused for another contract's terms.
 
 `LLM_PROVIDER=heuristic` forces the offline analyser even when a key is set.
 `LLM_PROVIDER=claude` fails at start-up when the key is missing.
@@ -181,9 +222,10 @@ pnpm eval             # rate every synthetic case and compare with expected.json
 - The case PDFs are generated from `case.json` with Playwright Chromium:
   `pnpm --filter @rater/evals generate`. They are committed, so evals need no browser.
 
-CI (`.github/workflows/ci.yml`) runs the same checks and the web build on every push and pull
-request. It runs the eval set when `packages/core`, `packages/law`, `packages/llm` or `evals`
-change.
+CI (`.github/workflows/ci.yml`) runs the same checks and the web build on pull requests and
+on pushes to `main` (a push to a pull request's branch runs once, as the pull request). It
+runs the eval set when `packages/core`, `packages/law`, `packages/llm` or `evals` change, and
+fails if a PDF other than the synthetic ones is committed.
 
 ## Privacy and PDPL
 
@@ -197,19 +239,30 @@ in:
   turns on default encryption for the bucket.
 - **Little personal data in Postgres.** The database keeps the extracted fields (no names, IDs
   or IBANs), the redacted clauses, the findings and a storage key. PDFs stay in the bucket.
-- **Retention.** Each PDF gets a delete date: upload time plus the org's retention days
+- **Retention.** Each PDF gets a delete date: upload time plus the workspace's retention days
   (default 30, between 1 and 365). The worker deletes expired PDFs every hour.
 - **Delete at any time.** `DELETE /api/v1/ratings/{id}` removes the rating, its findings and
   its PDF.
-- **Org scoping and roles.** Every query is scoped by the session's org. Role checks live in
-  one place (`apps/api/src/plugins/access.ts`).
+- **Delete my data.** The account page's "Delete my data" (`DELETE /api/v1/me/data`) removes
+  every rating, finding, document record and stored PDF in the user's personal workspace,
+  whichever workspace is active, and then signs them out. Ratings in a company workspace
+  belong to that company and stay. Each deletion is audited.
+- **Workspace scoping and roles.** Every query is scoped by the session's active workspace.
+  Role checks live in one place (`apps/api/src/plugins/access.ts`).
+- **Daily upload limit.** Each user can upload `RATE_LIMIT_PER_DAY` contracts (default 20)
+  in any 24 hours, across all their workspaces. Uploads are counted from the audit log, so
+  deleting a rating does not give one back, while a rejected upload does not count. The
+  count and the new upload happen under a per-user lock, so parallel uploads cannot slip past
+  the limit. Over it, the API answers `429` with `Retry-After`.
 - **Audit.** Uploads, report views, downloads and deletes (manual and automatic) are written
   to `audit_events`.
 - **Logs.** Logs carry IDs, never request bodies, file names or contract text. Cookies and
   authorization headers are redacted.
 - **Consent and disclaimer.** The upload form asks for consent. Every report carries the "not
   legal advice" disclaimer, in English or Arabic.
-- **No real data in the repository.** Fixtures and eval cases are synthetic.
+- **No real data in the repository.** Fixtures and eval cases are synthetic. Git ignores
+  every PDF except those, and the Docker build leaves out all PDFs and every `private/` and
+  `.data/` folder.
 
 Not done yet: hosting in a KSA region (see the open questions).
 
@@ -222,11 +275,12 @@ Every rating records the four versions that produced it, and the report footer s
 | Law     | `2025-11`  | `packages/law/src/versions.ts` and every corpus entry              |
 | Ruleset | `0.1.0`    | `packages/law/rules/rules.json` and `packages/law/src/versions.ts` |
 | Prompt  | `s15-v1`   | `packages/llm/prompts/` (a prompt change bumps the version)        |
-| Model   | per rating | `heuristic-v1`, or the pinned Claude model id                      |
+| Model   | per rating | `heuristic-v2`, or the pinned Claude model id                      |
 
-The clause cache is keyed by the clause text and all four versions. A change to any of them
-re-analyses the clause. Old ratings stay explainable: law rows of older versions stay in
-`law_articles`.
+The clause cache is keyed by a hash of the redacted clause text (English and Arabic, since the
+Arabic prevails) and the field summary the analyser is given, plus all four versions. A change
+to any of them re-analyses the clause. Old ratings stay explainable: law rows of older
+versions stay in `law_articles`.
 
 ## Open questions
 

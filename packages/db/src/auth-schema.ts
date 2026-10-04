@@ -7,6 +7,7 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { DEFAULT_RETENTION_DAYS } from "@rater/contracts";
 import type { OrgKind } from "@rater/contracts";
 
 /**
@@ -110,7 +111,7 @@ export const orgs = pgTable("orgs", {
   metadata: text("metadata"),
   kind: text("kind").$type<OrgKind>().notNull().default("personal"),
   /** Raw PDFs are deleted from the bucket this many days after upload. */
-  retentionDays: integer("retention_days").notNull().default(30),
+  retentionDays: integer("retention_days").notNull().default(DEFAULT_RETENTION_DAYS),
 });
 
 /** Better Auth's "member". `role` may hold several roles, comma separated. */

@@ -1,6 +1,6 @@
 {
   "id": "06-fixed-term-s15-overrides-template",
-  "description": "18-month fixed-term contract whose sections 1-14 are lawful (90 days' probation, 21 days' leave) but whose Section 15 sets 270 days' probation and 15 days' leave (field rules caught in Section 15) and fixes Art. 77 compensation at three months' total wage (escalated to high against an 18-month term). End-of-service clause is lawful.",
+  "description": "18-month fixed-term contract whose sections 1-14 are lawful (90 days' probation, 21 days' leave) but whose Section 15 sets 270 days' probation and 15 days' leave (field rules caught in Section 15) and fixes Art. 77 compensation at three months' total wage (escalated to high against an 18-month term). End-of-service clause is lawful. Score: the rubric gives employee 79 and HR 76; the two high-severity void Section 15 clauses cap the overall score at 79, so neither range goes above 79.",
   "today": "2026-10-04",
   "status": "done",
   "fields": {
@@ -120,7 +120,7 @@
     }
   ],
   "score": {
-    "employee": [74, 84],
-    "hr": [71, 81]
+    "employee": [74, 79],
+    "hr": [71, 79]
   }
 }

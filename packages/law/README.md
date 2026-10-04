@@ -7,7 +7,6 @@ The rules table, the law corpus, and the lookup the rating engine uses to cite a
 | `rules/rules.json`               | The rules table (`RulesFile`). One entry per check. Code implements only the check function named by the rule ID.                                                 |
 | `corpus/articles.json`           | The law corpus (`LawArticle[]`): Labor Law articles (one entry per article, or per paragraph for long ones), Implementing Regulations, and Qiwa template clauses. |
 | `src/load.ts`                    | `loadRules()`, `loadCorpus()`: read and validate the JSON once per process.                                                                                       |
-| `src/citation.ts`                | `formatCitation()`: "Art. 83(1)", "Exec. Reg. Art. 20", "Contract cl. 14.5". `packages/core` keeps an identical copy.                                             |
 | `src/embedder.ts`, `src/text.ts` | `HashEmbedder`: an offline embedder (feature hashing of normalised words and character trigrams, Arabic-aware).                                                   |
 | `src/lookup.ts`                  | `MemoryArticleLookup`: `byRefs()` for rule-first lookup, `search()` for vector search as the backstop.                                                            |
 | `src/ingest.ts`                  | CLI that embeds the corpus and upserts it into `law_articles`.                                                                                                    |

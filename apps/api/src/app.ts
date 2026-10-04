@@ -18,6 +18,7 @@ import { sessionHook, type RequestContext } from "./plugins/session";
 import type { RatingQueue } from "./queue";
 import { docsRoutes } from "./routes/docs";
 import { healthRoutes } from "./routes/health";
+import { inviteRoutes } from "./routes/invites";
 import { meRoutes } from "./routes/me";
 import { orgRoutes } from "./routes/orgs";
 import { ratingRoutes } from "./routes/ratings";
@@ -41,7 +42,7 @@ export interface BuildAppOptions {
 /**
  * The whole HTTP API, without listening: main.ts starts it, tests call `app.inject()`.
  *
- *   /api/auth/*   Better Auth (sign-up, sign-in, sessions, organizations)
+ *   /api/auth/*   Better Auth: sign-up, sign-in, sign-out, session (nothing else is reachable)
  *   /api/v1/*     the REST API (session cookie; problem+json errors)
  *   /api/docs     Swagger UI; the spec is /api/v1/openapi.json
  */
@@ -58,10 +59,13 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   };
 
   const logger: FastifyBaseLogger = options.logger ?? createLogger(config.LOG_LEVEL);
+  // In production the API sits behind exactly one proxy (nginx). Trusting only that first hop
+  // means the client address is the one nginx saw, not anything a client wrote into the
+  // X-Forwarded-For header. Locally no proxy is trusted.
+  const trustOneProxyHop = (_address: string, hop: number) => hop < 1;
   const app = Fastify({
     loggerInstance: logger,
-    // Behind a load balancer, take protocol and client address from X-Forwarded-*.
-    trustProxy: config.NODE_ENV === "production",
+    trustProxy: config.NODE_ENV === "production" ? trustOneProxyHop : false,
   });
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
@@ -72,7 +76,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(fastifyCors, {
     origin: trustedOrigins(config),
     credentials: true,
-    methods: ["GET", "POST", "PATCH", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   });
   await app.register(fastifyMultipart);
   await registerDocs(app);
@@ -87,6 +91,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await v1.register(meRoutes, deps);
       await v1.register(ratingRoutes, deps);
       await v1.register(orgRoutes, deps);
+      await v1.register(inviteRoutes, deps);
     },
     { prefix: API_BASE },
   );

@@ -15,18 +15,52 @@ import { findPercentages, findQuantities, formatNumber, toMonths } from "./text"
 
 const END_OF_SERVICE =
   /\bend[- ]of[- ]service\b|\beos\b|\bgratuity\b|\bservice (?:award|benefits?|reward|bonus|indemnity)\b|\bseverance\b|\bterminal benefits?\b/;
-const BASIC_PLUS_ALL_ALLOWANCES =
-  /\b(?:basic|base)\s+(?:monthly\s+)?(?:salary|wage|pay)\s+(?:plus|and|including|inclusive of|together with|in addition to)\s+(?:all\s+)?(?:the\s+|its\s+|fixed\s+|regular\s+)*allowances\b/;
-const BASIC_PLUS_ONE_ALLOWANCE =
-  /\b(?:basic|base)\s+(?:monthly\s+)?(?:salary|wage|pay)\s+(?:plus|and|including|together with|in addition to)\s+(?:the\s+)?(?:housing|transport(?:ation)?|food|phone|mobile|living)\b/;
+
+/*
+ * Wage mentions that are not the base, removed before the base is read:
+ * - a wage the clause rules out: "and not on the basic salary", "not on the basic salary alone";
+ * - the basic salary named as a part of a full wage: "the total salary, including the basic salary".
+ * Without this, any clause that mentions the basic salary at all would read as "basic only".
+ */
+const RULED_OUT_WAGE =
+  /\bnot (?:\S+ ){0,4}?(?:the )?(?:last )?(?:basic|base|actual|total|full|gross) (?:monthly )?(?:salary|wage|pay|remuneration)(?: (?:alone|only))?\b/g;
+const BASIC_AS_PART_OF_FULL_WAGE =
+  /\b((?:actual|total|full|gross|entire|whole|complete) (?:monthly )?(?:salary|wage|pay|remuneration)),? (?:including|inclusive of|which includes?|comprising|consisting of|made up of) (?:the )?(?:basic|base) (?:monthly )?(?:salary|wage|pay)\b/g;
+
+/** The clause text without wages that are not the base. */
+function withoutNonBaseWages(text: string): string {
+  return text.replace(RULED_OUT_WAGE, " ").replace(BASIC_AS_PART_OF_FULL_WAGE, "$1");
+}
+
+// Pieces of "basic salary plus <allowances>", the ways contracts list the parts of a base.
+const BASIC = String.raw`\b(?:basic|base)\s+(?:monthly\s+)?(?:salary|wage|pay)`;
+/** What joins two parts: "plus", "and", "including", or a comma. */
+const AND = String.raw`(?:\s*,\s*(?:and\s+|plus\s+)?|\s+(?:plus|and|including|inclusive of|together with|in addition to)\s+)(?:the\s+|its\s+)?`;
+const HOUSING = String.raw`housing(?:\s+allowance)?`;
+const TRANSPORT = String.raw`transport(?:ation)?(?:\s+allowance)?`;
+
+const BASIC_PLUS_ALL_ALLOWANCES = new RegExp(
+  String.raw`${BASIC}${AND}(?:all\s+)?(?:the\s+|its\s+|fixed\s+|regular\s+)*allowances\b`,
+);
+/** Basic + housing + transport: every part of the wage in a standard Qiwa contract. */
+const BASIC_HOUSING_AND_TRANSPORT = new RegExp(
+  String.raw`${BASIC}${AND}(?:${HOUSING}${AND}${TRANSPORT}|${TRANSPORT}${AND}${HOUSING})(?:\s+allowances)?\b`,
+);
+const BASIC_PLUS_ONE_ALLOWANCE = new RegExp(
+  String.raw`${BASIC}${AND}(?:housing|transport(?:ation)?|food|phone|mobile|living)\b`,
+);
 const EXCLUDING_ALLOWANCES =
   /\b(?:excluding|without|exclusive of|not including|apart from)\s+(?:any\s+|all\s+|the\s+)?(?:allowances|housing|transport(?:ation)? allowance)\b/;
 
 type EosBase = NonNullable<ImpactParams["eosBase"]>;
+/** The base a clause states. "qiwa_wage" is basic + housing + transport, counted as the actual wage. */
+type StatedEosBase = EosBase | "qiwa_wage";
 
 /** What the clause bases the award on, or null when it does not say. */
-function eosBaseOf(text: string): EosBase | null {
+function eosBaseOf(clauseText: string): StatedEosBase | null {
+  const text = withoutNonBaseWages(clauseText);
   if (BASIC_PLUS_ALL_ALLOWANCES.test(text)) return "actual";
+  if (BASIC_HOUSING_AND_TRANSPORT.test(text)) return "qiwa_wage";
   if (BASIC_PLUS_ONE_ALLOWANCE.test(text)) return "other";
   if (BASIC_WAGE.test(text)) return "basic";
   if (EXCLUDING_ALLOWANCES.test(text)) return "basic";
@@ -59,6 +93,15 @@ export function detectEosBase({ text }: ClauseText): Detection | null {
         "compliant",
         "This clause calculates the end-of-service award on the last actual wage, as the Labor Law requires.",
         "high",
+        { eosBase: "actual" },
+      );
+    case "qiwa_wage":
+      // Medium confidence: a contract that also pays other fixed allowances would need them in
+      // the base too, and the clause alone does not show whether it does.
+      return passes(
+        "compliant",
+        "This clause calculates the end-of-service award on the basic salary plus the housing and transport allowances, which is the whole wage in a standard Qiwa contract. The Labor Law calculates it on the last actual wage, so any other fixed allowance the contract pays should count too.",
+        "medium",
         { eosBase: "actual" },
       );
     case null:

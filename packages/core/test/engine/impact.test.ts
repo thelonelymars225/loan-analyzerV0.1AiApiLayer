@@ -118,6 +118,63 @@ describe("applyImpact: Art. 77 compensation gap", () => {
     expect(result?.severity).toBe("medium");
   });
 
+  it("works out a fixed term from the dates when clause 5.1 gave none, and escalates", () => {
+    const unreadTerm = test1Fields({
+      termMonths: null,
+      commencementDate: "2026-01-01",
+      endDate: "2027-12-31",
+    });
+    const [result] = applyImpact([art77()], unreadTerm);
+    // 24 months: 24 × 13500 = 324000 against two months' basic (20000).
+    expect(result?.impact?.sar).toEqual({
+      contract: 20000,
+      default: 324000,
+      gap: 304000,
+    });
+    expect(result?.impact?.note).toContain("up to 24 months");
+    expect(result?.severity).toBe("high");
+  });
+
+  it.each([
+    ["2026-01-11", "2027-01-10", 12],
+    ["2026-01-31", "2026-02-27", 1],
+    ["2026-03-02", "2026-09-01", 6],
+  ])("counts %s to %s (end date inclusive) as %i months", (start, end, months) => {
+    const fields = test1Fields({
+      termMonths: null,
+      commencementDate: start,
+      endDate: end,
+    });
+    const [result] = applyImpact([art77()], fields);
+    expect(result?.impact?.sar.default).toBe(months * 13500);
+  });
+
+  it("is not a problem when the clause pays at least the legal default", () => {
+    const indefinite = test1Fields({
+      contractType: "indefinite",
+      termMonths: null,
+      endDate: null,
+    });
+    const threeMonthsTotal = art77({
+      impactParams: { compensationMonths: 3, compensationBase: "actual" },
+      askFor: "Ask for more.",
+      suggestedWording: "Pay more.",
+    });
+    const [result] = applyImpact([threeMonthsTotal], indefinite);
+    // The default is the two-month floor: 27000 against 40500 in the contract.
+    expect(result).toMatchObject({
+      verdict: "compliant",
+      severity: "none",
+      impact: { sar: { contract: 40500, default: 27000, gap: -13500 } },
+    });
+    expect(result).not.toHaveProperty("askFor");
+    expect(result).not.toHaveProperty("suggestedWording");
+
+    // Exactly the default (gap 0) is not a problem either.
+    const twoMonthsTotal = art77({ impactParams: { compensationMonths: 2 } });
+    expect(applyImpact([twoMonthsTotal], indefinite)[0]?.verdict).toBe("compliant");
+  });
+
   it("has no impact without the number of months", () => {
     expect(
       applyImpact([art77({ impactParams: {} })], test1Fields())[0]?.impact,
@@ -142,6 +199,12 @@ describe("applyImpact: leave value", () => {
     expect(
       applyImpact([leave], test1Fields({ annualLeaveDays: 21 }))[0]?.impact,
     ).toBeNull();
+  });
+
+  it("does not give a Section 15 leave finding clause 8.1's shortfall", () => {
+    const clauseFinding = { ...leave, clause: "15.3", source: "clause" as const };
+    const [result] = applyImpact([clauseFinding], test1Fields({ annualLeaveDays: 18 }));
+    expect(result?.impact).toBeNull();
   });
 });
 

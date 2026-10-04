@@ -1,13 +1,6 @@
 import { z } from "zod";
 import { MAX_UPLOAD_BYTES, RATINGS_PER_USER_PER_DAY } from "@rater/contracts";
 
-/** "true"/"false" environment flags. */
-const flag = (fallback: boolean) =>
-  z
-    .enum(["true", "false"])
-    .default(fallback ? "true" : "false")
-    .transform((value) => value === "true");
-
 const Env = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -34,8 +27,11 @@ const Env = z
       .positive()
       .default(RATINGS_PER_USER_PER_DAY),
     MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(MAX_UPLOAD_BYTES),
-    /** Apply database migrations on start-up (safe when the worker does it too). */
-    MIGRATE_ON_START: flag(true),
+    /**
+     * Apply database migrations on start-up (safe when the worker does it too). Same name and
+     * parser as the worker's, so one shared env file controls both ("true"/"false").
+     */
+    DB_MIGRATE_ON_START: z.stringbool().default(true),
   })
   .refine((env) => env.NODE_ENV !== "production" || env.BETTER_AUTH_SECRET, {
     message: "BETTER_AUTH_SECRET is required in production",
@@ -62,14 +58,15 @@ function withoutEmptyValues(env: NodeJS.ProcessEnv): Record<string, string> {
   return Object.fromEntries(entries);
 }
 
-const VITE_DEV_ORIGIN = "http://localhost:5173";
+/** `vite` (dev server) and `vite preview` (the built app), both proxying /api to the API. */
+const VITE_ORIGINS = ["http://localhost:5173", "http://localhost:4173"];
 
 /**
  * Origins allowed to call the API with cookies (CORS and Better Auth's origin check): the
- * configured web app, plus Vite's dev server outside production.
+ * configured web app, plus Vite's dev and preview servers outside production.
  */
 export function trustedOrigins(config: Config): string[] {
   const origins = [new URL(config.WEB_ORIGIN).origin];
-  if (config.NODE_ENV !== "production") origins.push(VITE_DEV_ORIGIN);
+  if (config.NODE_ENV !== "production") origins.push(...VITE_ORIGINS);
   return [...new Set(origins)];
 }

@@ -1,13 +1,9 @@
-import {
-  InviteBody,
-  type MemberResponse,
-  type OrgRole,
-  type OrgSummary,
-} from "@rater/contracts";
+import type { MemberResponse, OrgRole, OrgSummary } from "@rater/contracts";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Building2, Trash2, Users } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
+import { Invites } from "../components/org/Invites";
 import { EmptyState, ErrorState, LoadingState } from "../components/states/states";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -182,7 +178,7 @@ function MembersCard({ org }: { org: OrgSummary }) {
       </CardHeader>
       <CardContent className="space-y-6">
         <MembersList org={org} manage={manage} />
-        {manage && <InviteForm orgId={org.id} />}
+        {manage && <Invites orgId={org.id} />}
       </CardContent>
     </Card>
   );
@@ -323,74 +319,5 @@ function MemberRow({
         <Badge>{t(`roles.${member.role}`)}</Badge>
       )}
     </li>
-  );
-}
-
-function InviteForm({ orgId }: { orgId: string }) {
-  const { t } = useTranslation();
-  const toast = useToast();
-  const ids = { email: useId(), role: useId(), error: useId() };
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState<InviteBody["role"]>("member");
-  const [invalid, setInvalid] = useState(false);
-
-  const invite = useMutation({
-    mutationFn: (body: InviteBody) => api.invite(orgId, body),
-    onSuccess: (sent) => {
-      setEmail("");
-      toast({ kind: "success", message: t("org.invited", { email: sent.email }) });
-    },
-  });
-
-  function onSubmit(event: FormEvent) {
-    event.preventDefault();
-    const parsed = InviteBody.safeParse({ email: email.trim(), role });
-    setInvalid(!parsed.success);
-    if (parsed.success) invite.mutate(parsed.data);
-  }
-
-  return (
-    <form onSubmit={onSubmit} noValidate className="space-y-3 rounded-lg bg-muted/50 p-4">
-      <h3 className="font-medium">{t("org.invite")}</h3>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="grid flex-1 gap-1.5">
-          <Label htmlFor={ids.email}>{t("org.inviteEmail")}</Label>
-          <Input
-            id={ids.email}
-            type="email"
-            dir="ltr"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            aria-invalid={invalid || undefined}
-            aria-describedby={invalid ? ids.error : undefined}
-            autoComplete="off"
-          />
-        </div>
-        <div className="grid gap-1.5 sm:w-36">
-          <Label htmlFor={ids.role}>{t("org.inviteRole")}</Label>
-          <Select
-            id={ids.role}
-            value={role}
-            onChange={(event) => setRole(event.target.value as InviteBody["role"])}
-          >
-            <option value="member">{t("roles.member")}</option>
-            <option value="admin">{t("roles.admin")}</option>
-          </Select>
-        </div>
-        <Button type="submit" loading={invite.isPending}>
-          {t("org.inviteSubmit")}
-        </Button>
-      </div>
-      {invalid && (
-        <p id={ids.error} className="text-sm text-critical-ink">
-          {t("org.inviteInvalidEmail")}
-        </p>
-      )}
-      {invite.isError && (
-        <p role="alert" className="text-sm text-critical-ink">
-          {errorMessage(t, invite.error)}
-        </p>
-      )}
-    </form>
   );
 }

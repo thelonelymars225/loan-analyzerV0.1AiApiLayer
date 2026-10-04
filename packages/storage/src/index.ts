@@ -5,7 +5,7 @@ import type { ObjectStorage } from "./types";
 export * from "./types";
 export { assertValidKey } from "./keys";
 export { loadEncryptionKey } from "./encryption";
-export { DEFAULT_LOCAL_STORAGE_DIR, LocalStorage } from "./local";
+export { defaultLocalStorageDir, findWorkspaceRoot, LocalStorage } from "./local";
 export type { LocalStorageOptions } from "./local";
 export { S3Storage, s3ConfigFromEnv } from "./s3";
 

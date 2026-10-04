@@ -4,8 +4,9 @@ import { startTelemetry } from "./telemetry";
 import { startWorker } from "./worker";
 
 /*
- * The rating worker: consumes QUEUES.rate (one rating per job) and runs the hourly retention
- * sweep. Logs are JSON lines; pipe them through `pnpm exec pino-pretty` to read them locally.
+ * The rating worker: consumes QUEUES.rate (one rating per job) and runs the hourly sweep
+ * (fails ratings whose job was lost, deletes PDFs past their retention). Logs are JSON lines;
+ * pipe them through `pnpm exec pino-pretty` to read them locally.
  */
 
 async function main(): Promise<void> {

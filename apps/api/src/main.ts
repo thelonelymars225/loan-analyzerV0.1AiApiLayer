@@ -12,7 +12,7 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const logger = createLogger(config.LOG_LEVEL);
 
-  if (config.MIGRATE_ON_START) await migrate(config.DATABASE_URL);
+  if (config.DB_MIGRATE_ON_START) await migrate(config.DATABASE_URL);
   const { db, pool } = createDb(config.DATABASE_URL, {
     onIdleError: (error) =>
       logger.error({ err: errorForLog(error) }, "idle database connection failed"),

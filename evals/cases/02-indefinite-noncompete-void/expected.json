@@ -1,6 +1,6 @@
 {
   "id": "02-indefinite-noncompete-void",
-  "description": "Indefinite contract for a non-Saudi employee still on probation: a three-year non-compete with no limits (likely void), confidentiality with no time limit, a lawful end-of-service clause, and a housing allowance below the market norm. 48-hour week and 21 days' leave sit exactly at the legal limits.",
+  "description": "Indefinite contract for a non-Saudi employee still on probation: a three-year non-compete with no limits (likely void), confidentiality with no time limit, a lawful end-of-service clause, and a housing allowance below the market norm. 48-hour week and 21 days' leave sit exactly at the legal limits. Score: the rubric gives employee 91 and HR 88, but the high-severity void non-compete caps the overall score at 79 (one or two high likely-void or conflict findings), so both views expect 74-79.",
   "today": "2026-10-04",
   "status": "done",
   "fields": {
@@ -114,7 +114,7 @@
     }
   ],
   "score": {
-    "employee": [86, 96],
-    "hr": [83, 93]
+    "employee": [74, 79],
+    "hr": [74, 79]
   }
 }

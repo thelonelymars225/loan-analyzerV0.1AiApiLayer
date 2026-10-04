@@ -122,6 +122,22 @@ describe("runFieldRules: field checks", () => {
     expect(finding?.explanation).toContain("48 a week");
   });
 
+  it.each([
+    [45, "better_than_law"],
+    [48, "compliant"],
+    [50, "likely_void"],
+  ] as const)(
+    "applies only the 48-hour cap to a contract on the weekly criterion (%i a week)",
+    (weeklyHours, verdict) => {
+      const finding = findingFor(
+        test1Fields({ dailyHours: null, weeklyHours, workDaysPerWeek: 5 }),
+        "HOURS-MAX-01",
+      );
+      expect(finding?.verdict).toBe(verdict);
+      expect(finding?.explanation).toContain("48 a week under the weekly criterion");
+    },
+  );
+
   it("uses the rule's problem messages, ask and wording for a failing check", () => {
     const finding = findingFor(test1Fields({ probationDays: 270 }), "PROB-MAX-01");
     expect(finding).toMatchObject({
@@ -300,8 +316,28 @@ describe("runFieldRules: deadlines", () => {
   });
 
   it("does not roll when renewal is unknown, and gives no deadline when the contract does not renew", () => {
-    expect(renewal({ endDate: "2026-03-01", autoRenew: null })?.date).toBe("2026-01-30");
+    expect(renewal({ endDate: "2027-01-10", autoRenew: null })?.date).toBe("2026-12-11");
     expect(renewal({ endDate: "2026-03-01", autoRenew: false })).toBeUndefined();
+  });
+
+  it("gives no renewal deadline that has already passed and cannot be rolled forward", () => {
+    // Renewal unknown: no roll-forward, and a passed date is nothing to act on.
+    expect(renewal({ endDate: "2026-03-01", autoRenew: null })).toBeUndefined();
+    // Notice window already closed though the end date is ahead.
+    expect(
+      renewal({ endDate: "2026-11-01", renewalNoticeDays: 60, autoRenew: null }),
+    ).toBeUndefined();
+  });
+
+  it("rolls forward with the term worked out from the dates when clause 5.1 gave none", () => {
+    expect(
+      renewal({
+        commencementDate: "2025-03-02",
+        endDate: "2026-03-01",
+        renewalNoticeDays: 30,
+        termMonths: null,
+      })?.date,
+    ).toBe("2027-01-30");
   });
 
   it("gives no renewal deadline without an end date or a notice period", () => {
@@ -316,6 +352,15 @@ describe("runFieldRules: deadlines", () => {
     }).find((d) => d.kind === "probation_end");
     expect(probation).toMatchObject({ ruleId: "PROB-NOCOMP-01", date: "2027-02-27" });
     expect(probation?.employeeMsg).toContain("2027-02-27");
+  });
+
+  it("ends probation at the 180-day legal cap when the contract states more", () => {
+    const probation = deadlines({
+      commencementDate: "2026-09-01",
+      probationDays: 270,
+    }).find((d) => d.kind === "probation_end");
+    // The same day as a 180-day probation: Art. 53 voids the 90 extra days.
+    expect(probation?.date).toBe("2027-02-27");
   });
 
   it("drops a probation that has ended or does not exist", () => {

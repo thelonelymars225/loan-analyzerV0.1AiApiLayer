@@ -41,6 +41,8 @@ export async function loadReport(
     versions: ratingVersions(rating),
     rules: loadRules().rules,
     locale,
+    // Why a needs_review rating needs a human look; stored by the worker.
+    reviewReasons: rating.reviewReasons ?? [],
   });
 }
 

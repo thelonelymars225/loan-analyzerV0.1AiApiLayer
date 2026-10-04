@@ -9,26 +9,25 @@ import { findQuantities, formatNumber, splitSentences, toDays } from "./text";
  * check sections 1-14 too; here they match only when a Section 15 clause sets the term itself.
  */
 
+/**
+ * A count of days that is a deadline, not a length of time: "30 days in advance", "15 days'
+ * notice", "15 days written notice". Probation and leave detectors both skip these.
+ */
+const DEADLINE_AFTER =
+  /^\s*(?:'s?\s+)?(?:(?:written|prior|advance)\s+)?(?:in advance|before|prior|notice|ahead)\b/;
+
 // ---------------------------------------------------------------------------------------------
 // PROB-MAX-01: probation longer than 180 days in total
 // ---------------------------------------------------------------------------------------------
 
 const PROBATION = /\bprobation\w*|\btrial period\b|\btest period\b/;
-const EXTENSION =
-  /\bextend\w*|\bextension\b|\bprolong\w*|\b(?:additional|further|another)\s+(?:probation\w*\s+)?(?:period|\d+|[a-z]+(?:\s+\(\d+\))?\s+days)\b/;
-const STATED_AS_TOTAL =
-  /\bin total\b|\ba total of\b|\btotal(?:ling)?\b|\bnot (?:to )?exceed\w*|\bat most\b|\bmaximum\b/;
 const PROBATION_LIMIT_DAYS = 180;
 
 export function detectProbation({ text, probationDays }: ClauseText): Detection | null {
   if (!PROBATION.test(text)) return null;
-  const periods = findQuantities(text)
-    .map(toDays)
-    .filter((days): days is number => days !== null);
-  const first = periods[0];
-  if (first === undefined) return null;
+  const total = totalProbation(text, probationDays);
+  if (total === null) return null;
 
-  const total = totalProbation(text, periods, probationDays);
   if (total > PROBATION_LIMIT_DAYS) {
     return problem(
       "likely_void",
@@ -49,19 +48,80 @@ export function detectProbation({ text, probationDays }: ClauseText): Detection 
 }
 
 /**
- * Probation days the clause adds up to. "180 days, extendable by 90" is 270; an extension on
- * its own ("may be extended by 90 days") adds to the probation already in clause 6.1.
+ * What a day count in a probation clause is: the probation's length ("probation is 90 days"),
+ * days added to it ("may be extended by 90 days") or its total ("extendable to 180 days").
  */
-function totalProbation(
-  text: string,
-  periods: number[],
-  probationDays: number | null,
-): number {
-  const [first = 0, second] = periods;
-  if (!EXTENSION.test(text)) return first;
-  if (STATED_AS_TOTAL.test(text)) return Math.max(...periods);
-  if (second !== undefined) return first + second;
-  return (probationDays ?? 0) + first;
+type CountKind = "length" | "added" | "total";
+
+/** Words that lengthen the probation: "extended", "renewed", "in addition to". */
+const EXTENSION =
+  /\bextend\w*|\bextensions?\b|\bprolong\w*|\brenew\w*|\bin addition to\b/;
+/** "may be repeated once", "may be renewed": with no days stated, the probation is served twice. */
+const SERVED_TWICE = /\brepeat\w*|\brenew\w*|\bthe same (?:period|duration)\b/;
+
+// The words just before (or after) a day count say which kind it is.
+/** "a further 90 days", "another probation of 90 days", "an extension of 90 days". */
+const ADDED_BEFORE =
+  /\b(?:additional|further|another|extra|second)\s+(?:probation\w*\s+|trial\s+)?(?:period\s+)?(?:of\s+)?(?:up to\s+)?$|\bextension (?:period )?of\s+(?:up to\s+)?$/;
+/** "a total of 180 days", or anywhere earlier "including any extension". */
+const TOTAL_BEFORE =
+  /\btotal(?:ling)?(?: of)?\s+$|\bincluding (?:any |all |the )?extensions?\b/;
+/** "180 days in total". */
+const TOTAL_AFTER = /^\s*(?:in total|in all|altogether)\b/;
+/** After an extension word: "extended by 90 days", "renewed for a period not exceeding 90 days". */
+const BY_OR_FOR_BEFORE = /\b(?:by|for)\s+(?:[a-z'-]+\s+){0,5}$/;
+/** A limit on the probation: "extended to 180 days", "shall not exceed 180 days". */
+const LIMIT_BEFORE =
+  /\b(?:to|up to|beyond|not (?:to )?exceed(?:ing)?|no (?:more|longer) than|at most|(?:a )?maximum(?: of)?)\s+$/;
+/** "notice of 15 days" (the "15 days' notice" order is DEADLINE_AFTER). */
+const NOTICE_BEFORE = /\bnotice(?: period)? of\s+$/;
+
+/**
+ * Probation days in total, or null when the clause states none. A stated total wins. Otherwise
+ * it is the length the clause states (or clause 6.1's, when the clause only extends it) plus
+ * the days added: "may be extended by 90 days" on top of 6.1's 90 days is 180.
+ */
+function totalProbation(text: string, probationDays: number | null): number | null {
+  const counts = probationCounts(text);
+  const daysOf = (kind: CountKind) =>
+    counts.filter((count) => count.kind === kind).map((count) => count.days);
+
+  const totals = daysOf("total");
+  if (totals.length > 0) return Math.max(...totals);
+
+  const stated = daysOf("length")[0] ?? null;
+  const added = daysOf("added").reduce((sum, days) => sum + days, 0);
+  if (added > 0) return (stated ?? probationDays ?? 0) + added;
+
+  const base = stated ?? probationDays;
+  if (base !== null && SERVED_TWICE.test(text)) return base * 2;
+  return stated;
+}
+
+/** Every day count in the clause, with its kind. Notice periods are left out. */
+function probationCounts(text: string): { days: number; kind: CountKind }[] {
+  return splitSentences(text).flatMap((sentence) =>
+    findQuantities(sentence).flatMap((quantity) => {
+      const days = toDays(quantity);
+      const before = sentence.slice(0, quantity.index);
+      const after = sentence.slice(quantity.end);
+      if (days === null || NOTICE_BEFORE.test(before) || DEADLINE_AFTER.test(after)) {
+        return [];
+      }
+      return [{ days, kind: countKind(before, after) }];
+    }),
+  );
+}
+
+/** The kind of one day count, from the sentence text before and after it. */
+function countKind(before: string, after: string): CountKind {
+  const afterExtension = EXTENSION.test(before);
+  if (ADDED_BEFORE.test(before)) return "added";
+  if (TOTAL_BEFORE.test(before) || TOTAL_AFTER.test(after)) return "total";
+  if (afterExtension && BY_OR_FOR_BEFORE.test(before)) return "added";
+  if (LIMIT_BEFORE.test(before)) return "total";
+  // Any other count after an extension word is what it adds: "renewed once, 120 days".
+  return afterExtension ? "added" : "length";
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -113,9 +173,6 @@ export function detectLeaveMinimum({ text }: ClauseText): Detection | null {
     `This clause gives ${base} days of annual leave, more than the legal minimum of ${MIN_LEAVE_DAYS} days.`,
   );
 }
-
-/** A count of days that is a deadline, not leave: "30 days in advance", "15 days' notice". */
-const DEADLINE_AFTER = /^\s*(?:'s?\s+)?(?:in advance|before|prior|notice|ahead)\b/;
 
 /**
  * Day counts the clause grants as leave. Counts in a sentence about carrying leave forward

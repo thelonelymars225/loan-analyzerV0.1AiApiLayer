@@ -97,6 +97,6 @@ describe("App routes", () => {
     expect(screen.queryByLabelText("Role for Lina Example")).not.toBeInTheDocument();
     // Only the owner changes retention.
     expect(screen.getByLabelText("Delete PDFs after (days)")).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Send invite" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Create invite" })).toBeInTheDocument();
   });
 });

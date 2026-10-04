@@ -96,7 +96,9 @@ Together the first ten cover all 19 seed rules, each field rule both failing and
 info rule, an allowance below the market norm, and both kinds of deadline.
 
 Expected scores were set by applying the scoring rubric (high −20, medium −8, low −3,
-better-than-law +2, per-view weights) by hand to the expected findings, ±5.
+better-than-law +2, per-view weights) by hand to the expected findings, ±5, then the overall
+cap: at most 79 with one or two high-severity likely-void or conflict findings, at most 59 with
+three or more. A range never goes above the cap that applies.
 
 ## expected.json
 

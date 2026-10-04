@@ -1,7 +1,8 @@
 import { pino } from "pino";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { formatCitation } from "@rater/core";
 import { lawArticles } from "@rater/db";
-import { formatCitation, loadRules, MemoryArticleLookup } from "@rater/law";
+import { loadRules, MemoryArticleLookup } from "@rater/law";
 import { createArticleLookup, PgArticleLookup } from "../src/pg-article-lookup";
 import { createTestDatabase, DATABASE_URL, ingestCorpus } from "./helpers/test-db";
 import type { TestDatabase } from "./helpers/test-db";

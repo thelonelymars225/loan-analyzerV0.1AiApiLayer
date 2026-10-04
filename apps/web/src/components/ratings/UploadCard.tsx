@@ -194,7 +194,7 @@ export function UploadCard({ defaultView, retentionDays }: UploadCardProps) {
             <div className="space-y-1">
               <p className="font-medium">{t("upload.privacyTitle")}</p>
               <p className="text-muted-foreground">
-                {t("upload.privacyBody", { days: retentionDays })}
+                {t("upload.privacyBody", { count: retentionDays })}
               </p>
             </div>
           </div>

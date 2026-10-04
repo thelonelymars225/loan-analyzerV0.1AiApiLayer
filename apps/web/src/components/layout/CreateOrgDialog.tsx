@@ -4,7 +4,6 @@ import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { api } from "../../lib/api";
-import { setActiveOrg } from "../../lib/auth";
 import { errorMessage } from "../../lib/errors";
 import { Button } from "../ui/button";
 import { Dialog } from "../ui/dialog";
@@ -31,7 +30,7 @@ export function CreateOrgDialog({
   const create = useMutation({
     mutationFn: async (body: CreateOrgBody) => {
       const org = await api.createOrg(body);
-      await setActiveOrg(org.id);
+      await api.setActiveOrg(org.id);
     },
     onSuccess: async (_, body) => {
       await queryClient.invalidateQueries();

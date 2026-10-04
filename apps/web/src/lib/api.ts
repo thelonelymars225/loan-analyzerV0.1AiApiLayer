@@ -1,10 +1,13 @@
 import {
   API_BASE,
   CreateRatingResponse,
+  InvitePreview,
   InviteResponse,
+  ListInvitesResponse,
   ListMembersResponse,
   ListRatingsResponse,
   MeResponse,
+  ORG_HEADER,
   OrgSummary,
   Problem,
   RatingReport,
@@ -14,6 +17,7 @@ import type {
   ErrorCode,
   InviteBody,
   OrgRole,
+  SetActiveOrgBody,
   UpdateMemberBody,
   UpdateOrgBody,
   View,
@@ -25,12 +29,20 @@ export type ApiErrorCode = ErrorCode | "network" | "invalid_response";
 export class ApiError extends Error {
   readonly status: number;
   readonly code: ApiErrorCode;
+  /** The API's own explanation (problem+json `detail`), written for people, in English. */
+  readonly detail: string | undefined;
 
-  constructor(input: { status: number; code: ApiErrorCode; message: string }) {
+  constructor(input: {
+    status: number;
+    code: ApiErrorCode;
+    message: string;
+    detail?: string;
+  }) {
     super(input.message);
     this.name = "ApiError";
     this.status = input.status;
     this.code = input.code;
+    this.detail = input.detail;
   }
 }
 
@@ -46,9 +58,14 @@ interface Schema<T> {
 }
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   json?: unknown;
   form?: FormData;
+  /**
+   * Leave out the x-org-id header: for the few changes that do not act on the shown
+   * workspace (switching it, accepting an invitation, deleting personal data).
+   */
+  withoutOrgHeader?: boolean;
 }
 
 /** Sent with every request so the API can render messages in the reader's language. */
@@ -57,11 +74,26 @@ export function setApiLanguage(language: string): void {
   currentLanguage = language;
 }
 
+/**
+ * The workspace this tab shows (set by <RequireAuth> from /me). The active workspace lives in
+ * the session cookie that every tab shares, so another tab may have switched it. Changes carry
+ * this id in x-org-id and the API refuses them with 409 when it no longer matches, instead of
+ * acting on a workspace the user is not looking at.
+ */
+let shownOrgId: string | null = null;
+export function setShownOrg(orgId: string | null): void {
+  shownOrgId = orgId;
+}
+
 async function send(path: string, options: RequestOptions = {}): Promise<Response> {
+  const method = options.method ?? "GET";
   const headers: Record<string, string> = {
     Accept: "application/json",
     "Accept-Language": currentLanguage,
   };
+  if (method !== "GET" && !options.withoutOrgHeader && shownOrgId) {
+    headers[ORG_HEADER] = shownOrgId;
+  }
   let body: BodyInit | undefined;
   if (options.json !== undefined) {
     headers["Content-Type"] = "application/json";
@@ -73,7 +105,7 @@ async function send(path: string, options: RequestOptions = {}): Promise<Respons
   let response: Response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
-      method: options.method ?? "GET",
+      method,
       headers,
       body,
       credentials: "same-origin",
@@ -129,6 +161,7 @@ export async function toApiError(response: Response): Promise<ApiError> {
       status: response.status,
       code: problem.data.code,
       message: problem.data.detail ?? problem.data.title,
+      detail: problem.data.detail,
     });
   }
   return new ApiError({
@@ -166,6 +199,18 @@ const CreatedOrg = OrgSummary.pick({ id: true });
 
 export const api = {
   me: () => requestJson("/me", MeResponse),
+
+  /** Makes another workspace the session's active one (in every tab). */
+  setActiveOrg: (orgId: string) =>
+    requestJson("/me/active-org", MeResponse, {
+      method: "PUT",
+      json: { orgId } satisfies SetActiveOrgBody,
+      withoutOrgHeader: true,
+    }),
+
+  /** Deletes every rating and PDF in the caller's personal workspace, whichever is active. */
+  deleteMyData: () =>
+    requestEmpty("/me/data", { method: "DELETE", withoutOrgHeader: true }),
 
   listRatings: (cursor?: string | null) =>
     requestJson(
@@ -205,6 +250,23 @@ export const api = {
     requestJson(`/orgs/${enc(orgId)}/invites`, InviteResponse, {
       method: "POST",
       json: body,
+    }),
+
+  listInvites: (orgId: string) =>
+    requestJson(`/orgs/${enc(orgId)}/invites`, ListInvitesResponse),
+
+  cancelInvite: (orgId: string, inviteId: string) =>
+    requestEmpty(`/orgs/${enc(orgId)}/invites/${enc(inviteId)}`, { method: "DELETE" }),
+
+  /** The invitee's view of an invitation; 404 unless it is addressed to the signed-in user. */
+  getInvite: (inviteId: string) =>
+    requestJson(`/invites/${enc(inviteId)}`, InvitePreview),
+
+  /** Joins the workspace and makes it the active one, so the answer is the new /me. */
+  acceptInvite: (inviteId: string) =>
+    requestJson(`/invites/${enc(inviteId)}/accept`, MeResponse, {
+      method: "POST",
+      withoutOrgHeader: true,
     }),
 
   updateMember: (orgId: string, userId: string, role: OrgRole) =>

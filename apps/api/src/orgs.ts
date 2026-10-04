@@ -1,7 +1,8 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import type { OrgKind, OrgRole, OrgSummary } from "@rater/contracts";
-import { memberships, newId, orgs, users } from "@rater/db";
+import { memberships, newId, orgs, sessions, users } from "@rater/db";
 import type { Db, DbTransaction } from "@rater/db";
+import { LOCKS, lockUser } from "./locks";
 
 /**
  * Workspaces ("orgs") and memberships. Better Auth owns these tables; the API writes them
@@ -46,6 +47,21 @@ export async function findUserOrg(
   return all.find((org) => org.id === orgId) ?? null;
 }
 
+/**
+ * Makes `orgId` the session's active workspace (what Better Auth's setActive does). The
+ * caller has checked that the user is a member.
+ */
+export async function setSessionOrg(
+  db: Executor,
+  sessionId: string,
+  orgId: string,
+): Promise<void> {
+  await db
+    .update(sessions)
+    .set({ activeOrganizationId: orgId })
+    .where(eq(sessions.id, sessionId));
+}
+
 /** Creates a workspace with `ownerId` as its only member (role owner). Returns its id. */
 export async function insertOrgWithOwner(
   db: Executor,
@@ -68,9 +84,6 @@ export async function insertOrgWithOwner(
   return id;
 }
 
-/** Any fixed number; namespaces the per-user advisory lock below. */
-const PERSONAL_ORG_LOCK = 4_120_771;
-
 /**
  * Returns the user's personal workspace, creating it ("<name>'s workspace") if it does not
  * exist yet. Safe to call more than once and concurrently: a per-user advisory lock makes
@@ -78,14 +91,21 @@ const PERSONAL_ORG_LOCK = 4_120_771;
  */
 export async function ensurePersonalOrg(db: Db, userId: string): Promise<string> {
   return db.transaction(async (tx) => {
-    await tx.execute(
-      sql`select pg_advisory_xact_lock(${PERSONAL_ORG_LOCK}, hashtext(${userId}))`,
-    );
+    await lockUser(tx, LOCKS.personalOrg, userId);
+    // The user's own personal workspace is the one they own, even if they somehow belong to
+    // someone else's as well.
     const [existing] = await tx
       .select({ id: orgs.id })
       .from(memberships)
       .innerJoin(orgs, eq(memberships.organizationId, orgs.id))
-      .where(and(eq(memberships.userId, userId), eq(orgs.kind, "personal")))
+      .where(
+        and(
+          eq(memberships.userId, userId),
+          eq(memberships.role, "owner"),
+          eq(orgs.kind, "personal"),
+        ),
+      )
+      .orderBy(asc(memberships.createdAt))
       .limit(1);
     if (existing) return existing.id;
 

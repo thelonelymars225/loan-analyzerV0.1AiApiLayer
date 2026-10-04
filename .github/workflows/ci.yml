@@ -1,14 +1,18 @@
-# Lint, typecheck, unit tests and the web build on every push and pull request. The eval set
-# also runs when the rating logic changes (rules, law corpus, prompts, analyser, pipeline).
+# Lint, typecheck, unit tests and the web build on pushes to main and on pull requests. The
+# eval set also runs when the rating logic changes (rules, law corpus, prompts, analyser,
+# pipeline).
 
 name: CI
 
+# Pushes to other branches are left out: a push to a pull request's branch already starts a
+# pull_request run, and a second (push) run would only repeat it.
 on:
   push:
+    branches: [main]
   pull_request:
 
-# One run per branch or pull request: a newer push cancels the older run (except on main,
-# where every commit keeps its result).
+# One run per pull request (or per push to main): a newer push cancels the older run, except
+# on main, where every commit keeps its result.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
@@ -44,6 +48,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Real contracts never go in git. .gitignore keeps stray PDFs out, but `git add -f`
+      # skips it, so check what is tracked: only the synthetic PDFs may be.
+      - name: Check that no other PDF is committed
+        run: |
+          unexpected=$(git ls-files ':(icase)*.pdf' \
+            | grep -vE '^(evals/cases/[^/]+/contract\.pdf|packages/core/test/fixtures/[^/]+\.pdf)$' || true)
+          if [ -n "$unexpected" ]; then
+            echo "Only the synthetic PDFs may be committed. Remove these:"
+            echo "$unexpected"
+            exit 1
+          fi
+
       # Installs the pnpm version pinned in package.json ("packageManager").
       - uses: pnpm/action-setup@v6
 
@@ -66,6 +82,7 @@ jobs:
       - name: Install Chromium for the template test
         run: pnpm --filter @rater/evals exec playwright install --with-deps --only-shell chromium
 
+      # The tests make their own databases; these two steps check that the scripts work.
       - name: Migrate the database
         run: pnpm db:migrate
 

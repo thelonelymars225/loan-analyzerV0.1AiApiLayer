@@ -13,7 +13,7 @@ export type StatedType = "fixed_term" | "indefinite" | "specific_work";
 /** "ends upon completion of the project", "in accordance with Article 57", "project-based". */
 const PROJECT_END = new RegExp(
   [
-    String.raw`\b(?:end|ends|ending|ended|terminat\w*|expir\w*|conclud\w*|lapse\w*|cease\w*|last\w*|continu\w*|valid)\b[^.]*?\b(?:upon|on|with|at|by|after|until|till)\s+(?:the\s+)?(?:completion|end|conclusion|termination|expiry|expiration|finish|close|closure|delivery|handover)\s+of\s+(?:the\s+|this\s+|its\s+|that\s+)?(?:[\w'-]+\s+){0,3}?(?:project|assignment|task|engagement|programme|program|specific work|works)\b`,
+    String.raw`\b(?:end|ends|ending|ended|terminat\w*|expir\w*|conclud\w*|lapse\w*|cease\w*|last\w*|continu\w*|remain\w*|valid)\b[^.]*?\b(?:upon|on|with|at|by|after|until|till)\s+(?:the\s+)?(?:completion|end|conclusion|termination|expiry|expiration|finish|close|closure|delivery|handover)\s+of\s+(?:the\s+|this\s+|its\s+|that\s+)?(?:[\w'-]+\s+){0,3}?(?:project|assignment|task|engagement|programme|program|specific work|works)\b`,
     String.raw`\b(?:when|once|if) the (?:[\w'-]+\s+){0,3}?(?:project|assignment|task|engagement) (?:ends|is completed|is finished|is over|closes|is delivered|comes to an end)\b`,
     String.raw`\b(?:duration|life|term|lifetime|period) of the (?:[\w'-]+\s+){0,3}?(?:project|assignment|engagement)\b`,
     String.raw`\barticle 57\b|\bart\.? ?57\b|\bspecific (?:work|task|project)\b|\bproject[- ]based\b|\btied to the (?:[\w'-]+\s+)?project\b`,
@@ -41,18 +41,32 @@ const FIXED_TERM = new RegExp(
   ].join("|"),
 );
 
-/** A sentence about the contract itself, not about another duty's duration. */
-const ABOUT_CONTRACT = /\b(?:contract|agreement|employment|engagement)\b/;
+/** The contract or the job itself: "this contract", "the employee's services", "hired for". */
+const CONTRACT_WORD =
+  /\b(?:contract|agreement|employment|engagement|services|relationship|hired|employed)\b/;
+/** Pay, which can also run "for the duration of the project" without ending the contract. */
+const PAY_WORD =
+  /\b(?:allowances?|bonus\w*|per diem|salary|salaries|wages?|commission\w*|incentives?)\b/;
 const ABOUT_OTHER_DUTY =
   /\bconfidential\w*|\bdisclos\w*|\bsecrets?\b|\bcompet\w*|\bprobation\w*|\bannual leave\b|\bovertime\b|\bend[- ]of[- ]service\b/;
+
+/**
+ * Whether a sentence is about the contract's own term: it names the contract (or the job) and
+ * names it before any pay. "Site allowance applies for the duration of the project" is about an
+ * allowance, so it says nothing about when the contract ends.
+ */
+function aboutTheContract(sentence: string): boolean {
+  const contractAt = sentence.search(CONTRACT_WORD);
+  const payAt = sentence.search(PAY_WORD);
+  return contractAt !== -1 && (payAt === -1 || contractAt < payAt);
+}
 
 /** The contract types a clause states for the contract as a whole. */
 export function statedContractTypes(text: string): Set<StatedType> {
   const stated = new Set<StatedType>();
   for (const sentence of splitSentences(text)) {
-    if (ABOUT_OTHER_DUTY.test(sentence)) continue;
+    if (ABOUT_OTHER_DUTY.test(sentence) || !aboutTheContract(sentence)) continue;
     if (PROJECT_END.test(sentence)) stated.add("specific_work");
-    if (!ABOUT_CONTRACT.test(sentence)) continue;
     if (INDEFINITE.test(sentence)) stated.add("indefinite");
     if (FIXED_TERM.test(sentence)) stated.add("fixed_term");
   }

@@ -10,10 +10,16 @@ import { HeuristicLlmClient } from "@rater/llm";
 import { loadConfig } from "../src/config";
 import { PgArticleLookup } from "../src/pg-article-lookup";
 import { PgClauseCache } from "../src/pg-clause-cache";
-import { handleRateJob, RETENTION_CRON } from "../src/queue";
+import { handleRateJob, RETENTION_CRON, runHourlySweep } from "../src/queue";
 import type { RateJobDeps } from "../src/rate-job";
 import { startWorker } from "../src/worker";
-import { createTempStorage, readFixturePdf, seedOrg, seedRating } from "./helpers/seed";
+import {
+  createTempStorage,
+  readFixturePdf,
+  seedDocument,
+  seedOrg,
+  seedRating,
+} from "./helpers/seed";
 import type { TempStorage } from "./helpers/seed";
 import { createTestDatabase, DATABASE_URL, ingestCorpus } from "./helpers/test-db";
 import type { TestDatabase } from "./helpers/test-db";
@@ -97,6 +103,28 @@ describe.skipIf(!DATABASE_URL)("rating jobs against Postgres", () => {
         healthy,
       ),
     ).toBe("done");
+  });
+
+  it("runs the hourly sweep: fails stuck ratings and deletes expired PDFs", async () => {
+    const twoHoursAgo = new Date(Date.now() - 2 * 3_600_000);
+    const stuck = await queuedRating();
+    await testDb.db
+      .update(ratings)
+      .set({ status: "analysing", startedAt: twoHoursAgo })
+      .where(eq(ratings.id, stuck));
+    await seedDocument(testDb.db, temp.storage, {
+      ...org,
+      pdf: Buffer.from("%PDF-1.7 synthetic test file"),
+      deleteAfter: twoHoursAgo,
+    });
+
+    expect(
+      await runHourlySweep({ db: testDb.db, storage: temp.storage, logger }),
+    ).toEqual({
+      timedOutRatings: 1,
+      documents: { deleted: 1, failed: 0 },
+    });
+    expect(await status(stuck)).toEqual({ status: "failed", errorCode: "timeout" });
   });
 
   it("starts the worker, rates a job sent the way the API sends it, and stops", async () => {

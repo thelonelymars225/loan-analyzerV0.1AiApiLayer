@@ -9,6 +9,11 @@ coverage/
 # Real contracts never go in git. Keep them in a local folder and run `pnpm eval --private <dir>`.
 private/
 .data/
+# No PDF is tracked except the synthetic ones the evals and tests need, so a contract saved
+# anywhere else in the repository is never picked up by `git add`.
+*.pdf
+!evals/cases/*/contract.pdf
+!packages/core/test/fixtures/*.pdf
 evals/results/*.json
 !evals/results/.gitkeep
 .vite/

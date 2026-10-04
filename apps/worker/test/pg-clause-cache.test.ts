@@ -12,6 +12,8 @@ const clause = {
   textAr: null,
   textHash: "a".repeat(64),
 };
+/** Core keys a clause by its text and the contract's terms (the analyser's field summary). */
+const fieldSummary = "Contract type: fixed-term. Probation: 90 days.";
 const versions = {
   law: "2025-11",
   ruleset: "0.1.0",
@@ -21,8 +23,8 @@ const versions = {
 
 describe("parseCacheKey", () => {
   it("reads the five parts of core's clauseCacheKey", () => {
-    expect(parseCacheKey(clauseCacheKey(clause, versions))).toEqual({
-      textHash: clause.textHash,
+    expect(parseCacheKey(clauseCacheKey(clause, fieldSummary, versions))).toEqual({
+      textHash: expect.stringMatching(/^[0-9a-f]{64}$/),
       lawVersion: "2025-11",
       rulesetVersion: "0.1.0",
       promptVersion: "s15-v1",
@@ -51,7 +53,7 @@ describe.skipIf(!DATABASE_URL)("PgClauseCache", () => {
   }, 60_000);
 
   it("misses, then returns what was stored", async () => {
-    const key = clauseCacheKey(clause, versions);
+    const key = clauseCacheKey(clause, fieldSummary, versions);
     expect(await cache.get(key)).toBeUndefined();
 
     const analysis = { clause: "15.1", matches: [] };
@@ -60,16 +62,21 @@ describe.skipIf(!DATABASE_URL)("PgClauseCache", () => {
   });
 
   it("keeps one row per key and lets a later answer replace it", async () => {
-    const key = clauseCacheKey({ ...clause, textHash: "b".repeat(64) }, versions);
+    const key = clauseCacheKey(
+      { ...clause, textHash: "b".repeat(64) },
+      fieldSummary,
+      versions,
+    );
     await cache.set(key, { clause: "15.1", matches: [], note: "first" });
     await cache.set(key, { clause: "15.1", matches: [], note: "second" });
     expect(await cache.get(key)).toMatchObject({ note: "second" });
     const rows = await testDb.db.select().from(clauseCache);
-    expect(rows.filter((row) => row.textHash === "b".repeat(64))).toHaveLength(1);
+    const { textHash } = parseCacheKey(key);
+    expect(rows.filter((row) => row.textHash === textHash)).toHaveLength(1);
   });
 
   it("separates entries by every version in the key", async () => {
-    const key = clauseCacheKey(clause, versions);
+    const key = clauseCacheKey(clause, fieldSummary, versions);
     await cache.set(key, { clause: "15.1", matches: [] });
     for (const changed of [
       { ...versions, law: "2026-01" },
@@ -77,7 +84,9 @@ describe.skipIf(!DATABASE_URL)("PgClauseCache", () => {
       { ...versions, prompt: "s15-v2" },
       { ...versions, model: "claude-opus-5-5" },
     ]) {
-      expect(await cache.get(clauseCacheKey(clause, changed))).toBeUndefined();
+      expect(
+        await cache.get(clauseCacheKey(clause, fieldSummary, changed)),
+      ).toBeUndefined();
     }
   });
 });

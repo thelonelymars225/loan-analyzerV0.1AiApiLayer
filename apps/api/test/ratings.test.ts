@@ -1,5 +1,5 @@
 import { readdir } from "node:fs/promises";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   DISCLAIMER_AR,
@@ -78,7 +78,8 @@ describe.skipIf(!DATABASE_URL)("POST /ratings", () => {
       sizeBytes: qiwaPdf.length,
     });
     expect(document?.sha256).toMatch(/^[0-9a-f]{64}$/);
-    expect(document?.pages).toBeGreaterThan(0);
+    // The check reads page 1 only; the page count still covers the whole document.
+    expect(document?.pages).toBe(10);
     const retentionMs = (document?.deleteAfter.getTime() ?? 0) - t.clock.now.getTime();
     expect(retentionMs).toBe(30 * 24 * 60 * 60 * 1000);
 
@@ -138,12 +139,15 @@ describe.skipIf(!DATABASE_URL)("POST /ratings", () => {
 
   it("leaves nothing behind when the job cannot be enqueued", async () => {
     const before = await t.db.select().from(ratings);
+    const uploadsBefore = await uploadEvents(t, user.id);
     t.queue.failNext = true;
     const response = await upload(t.app, user.cookie, qiwaPdf);
     expect(response.statusCode).toBe(500);
     expect(Problem.parse(response.json()).code).toBe("internal");
 
     expect(await t.db.select().from(ratings)).toHaveLength(before.length);
+    // Nor does it count towards the daily limit.
+    expect(await uploadEvents(t, user.id)).toHaveLength(uploadsBefore.length);
     const stored = await readdir(t.storageDir, { recursive: true });
     const pdfs = stored.filter((name) => String(name).endsWith(".pdf"));
     expect(pdfs).toHaveLength(before.length);
@@ -215,6 +219,92 @@ describe.skipIf(!DATABASE_URL)("daily limit", () => {
 
     t.clock.now = new Date(start.getTime() + 24 * 60 * 60 * 1000 + 1000);
     expect((await upload(t.app, user.cookie, qiwaPdf)).statusCode).toBe(202);
+  });
+
+  it("gives no quota back when ratings are deleted", async () => {
+    const user = await signUp(t.app);
+    t.clock.now = new Date("2026-10-05T08:00:00Z");
+    for (let round = 0; round < 2; round++) {
+      const accepted = await upload(t.app, user.cookie, qiwaPdf);
+      expect(accepted.statusCode).toBe(202);
+      const id = accepted.json<{ id: string }>().id;
+      expect((await api(t.app, user.cookie, "DELETE", `/ratings/${id}`)).statusCode).toBe(
+        204,
+      );
+    }
+    const limited = await upload(t.app, user.cookie, qiwaPdf);
+    expect(limited.statusCode).toBe(429);
+    expect(Problem.parse(limited.json()).code).toBe("rate_limited");
+  });
+
+  it("lets no more than the limit through when uploads arrive at once", async () => {
+    const user = await signUp(t.app);
+    t.clock.now = new Date("2026-10-06T08:00:00Z");
+    const responses = await Promise.all(
+      Array.from({ length: 6 }, () => upload(t.app, user.cookie, qiwaPdf)),
+    );
+    const statuses = responses.map((response) => response.statusCode).sort();
+    expect(statuses).toEqual([202, 202, 429, 429, 429, 429]);
+
+    const stored = await t.db
+      .select()
+      .from(ratings)
+      .where(eq(ratings.createdBy, user.id));
+    expect(stored).toHaveLength(2);
+    // Every refused upload removed its stored PDF again.
+    const files = await readdir(t.storageDir, { recursive: true });
+    const pdfs = files.filter((name) => String(name).endsWith(".pdf"));
+    expect(pdfs.length).toBe((await t.db.select().from(documents)).length);
+  });
+});
+
+describe.skipIf(!DATABASE_URL)("event stream limits", () => {
+  let t: TestContext;
+  let user: TestUser;
+  let ratingId: string;
+  let address: string;
+
+  beforeAll(async () => {
+    t = await createTestContext();
+    user = await signUp(t.app);
+    // The fake queue never runs it, so the rating stays queued and its streams stay open.
+    const uploaded = await upload(t.app, user.cookie, qiwaPdf);
+    ratingId = uploaded.json<{ id: string }>().id;
+    address = await t.app.listen({ port: 0, host: "127.0.0.1" });
+  });
+  afterAll(async () => {
+    await t?.close();
+  });
+
+  function openStream(signal?: AbortSignal): Promise<Response> {
+    return fetch(`${address}/api/v1/ratings/${ratingId}/events`, {
+      headers: { cookie: user.cookie, origin: ORIGIN },
+      signal,
+    });
+  }
+
+  it("answers 429 over the per-user cap and frees a slot when a client leaves", async () => {
+    const clients = [new AbortController(), new AbortController(), new AbortController()];
+    for (const client of clients) {
+      expect((await openStream(client.signal)).status).toBe(200);
+    }
+
+    const refused = await openStream();
+    expect(refused.status).toBe(429);
+    expect(refused.headers.get("content-type")).toMatch(/^application\/problem\+json/);
+    expect(((await refused.json()) as Problem).code).toBe("rate_limited");
+
+    // Closing one stream stops its polling and gives its slot back.
+    clients[0]?.abort();
+    const replacement = new AbortController();
+    const reopened = await retryUntil(async () => {
+      const response = await openStream(replacement.signal);
+      if (response.status === 200) return response;
+      await response.body?.cancel();
+      return null;
+    });
+    expect(reopened.status).toBe(200);
+    for (const client of [...clients, replacement]) client.abort();
   });
 });
 
@@ -387,7 +477,25 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
       message: "HR: clause 15.6 computes the award on basic wage.",
       action: "The award is calculated on the last actual wage.",
     });
-    expect(hr.score?.overall).not.toBe(employee.score?.overall);
+    // Same findings, so the same sub-scores; each view weighs them its own way.
+    expect(hr.score).toMatchObject({
+      legal: employee.score?.legal,
+      market: employee.score?.market,
+      clarity: employee.score?.clarity,
+    });
+    expect(employee.reviewReasons).toEqual([]);
+  });
+
+  it("says why a rating needs review", async () => {
+    const id = await newRating(owner);
+    const reasons = ["The wage parts do not add up to the total wage."];
+    await t.db
+      .update(ratings)
+      .set({ status: "needs_review", reviewReasons: reasons, finishedAt: new Date() })
+      .where(eq(ratings.id, id));
+    const needsReview = await report(id);
+    expect(needsReview.status).toBe("needs_review");
+    expect(needsReview.reviewReasons).toEqual(reasons);
   });
 
   it("shows the error of a failed rating", async () => {
@@ -514,6 +622,25 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Calls `attempt` every 50 ms until it returns a value (at most 2 seconds). */
+async function retryUntil<T>(attempt: () => Promise<T | null>): Promise<T> {
+  const deadline = Date.now() + 2_000;
+  for (;;) {
+    const result = await attempt();
+    if (result !== null) return result;
+    if (Date.now() > deadline) throw new Error("gave up waiting");
+    await delay(50);
+  }
+}
+
+/** The user's "upload" audit events (what the daily limit counts). */
+function uploadEvents(t: TestContext, userId: string) {
+  return t.db
+    .select()
+    .from(auditEvents)
+    .where(and(eq(auditEvents.userId, userId), eq(auditEvents.action, "upload")));
 }
 
 /** Writes what the worker would: findings, fields, deadlines, versions and status "done". */

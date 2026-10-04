@@ -40,6 +40,8 @@ export function AuthPage({ mode }: { mode: Mode }) {
 
   const isSignUp = mode === "sign-up";
   const from = (location.state as { from?: string } | null)?.from ?? "/";
+  // Arrived from an invitation link: it only works with the invited email address.
+  const fromInvite = from.startsWith("/invite/");
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -86,6 +88,11 @@ export function AuthPage({ mode }: { mode: Mode }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {fromInvite && (
+              <p className="mb-4 rounded-lg bg-info-soft/60 px-3 py-2 text-sm">
+                {t("auth.inviteHint")}
+              </p>
+            )}
             <form
               onSubmit={onSubmit}
               className="space-y-4"

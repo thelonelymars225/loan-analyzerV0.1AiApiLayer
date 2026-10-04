@@ -8,6 +8,8 @@ import {
 } from "@rater/contracts";
 import { recordAudit } from "../audit";
 import type { AppDeps } from "../deps";
+import { tooManyStreams } from "../errors";
+import { ConnectionSlots } from "../limiter";
 import { errorForLog } from "../logger";
 import { loadReport, preferredLocale } from "../report";
 import { decodeCursor } from "../ratings/cursor";
@@ -18,12 +20,19 @@ import {
   deleteRating,
   findVisibleRating,
   listRatings,
-  readRatingStatus,
   readStoredPdf,
+  readVisibleStatus,
 } from "../ratings/store";
 import { checkQiwaPdf, readUpload } from "../ratings/upload";
 
 const RatingParams = z.object({ id: z.string().min(1).max(64) });
+
+/**
+ * Each open event stream re-reads Postgres every poll, so their number is capped per user
+ * and per API process. Over a cap the stream answers 429 and the web app polls instead.
+ */
+const MAX_STREAMS_PER_USER = 3;
+const MAX_STREAMS = 200;
 
 export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
   const { db, storage, queue, config, now } = deps;
@@ -31,6 +40,10 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
   // Open event streams end when the server shuts down, so app.close() does not hang.
   const shutdown = new AbortController();
   app.addHook("preClose", async () => shutdown.abort());
+  const streams = new ConnectionSlots({
+    perUser: MAX_STREAMS_PER_USER,
+    total: MAX_STREAMS,
+  });
 
   app.post(
     "/ratings",
@@ -47,12 +60,15 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     },
     async (request, reply) => {
       const { ctx } = request;
-      await checkDailyLimit(db, ctx.user.id, config.RATE_LIMIT_PER_DAY, now());
+      const dailyLimit = config.RATE_LIMIT_PER_DAY;
+      // A cheap early answer before the upload is read and checked. createRating checks
+      // again under a lock, which is what actually enforces the limit.
+      await checkDailyLimit(db, ctx.user.id, dailyLimit, now());
       const upload = await readUpload(request, config.MAX_UPLOAD_BYTES);
       const { pages } = await checkQiwaPdf(upload.pdf);
       const id = await createRating(
         { db, storage, queue, now },
-        { ctx, pdf: upload.pdf, pages, view: upload.view },
+        { ctx, pdf: upload.pdf, pages, view: upload.view, dailyLimit },
       );
       return reply.code(202).send({ id, status: "queued" });
     },
@@ -109,20 +125,28 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
       schema: {
         summary: "Server-sent events: the rating's status until it is final",
         description:
-          'text/event-stream. Each event is `event: status` with data {"id","status"}.',
+          'text/event-stream. Each event is `event: status` with data {"id","status"}. ' +
+          `429 rate_limited when the user already has ${MAX_STREAMS_PER_USER} streams open ` +
+          "(or the server is at its limit); poll GET /ratings/{id} instead.",
         params: RatingParams,
       },
     },
     async (request, reply) => {
-      const rating = await findVisibleRating(db, request.ctx, request.params.id);
-      await streamRatingStatus(reply, {
-        ratingId: rating.id,
-        readStatus: () => readRatingStatus(db, rating.id),
-        pollMs: deps.eventsPollMs,
-        shutdown: shutdown.signal,
-        onError: (error) =>
-          request.log.warn({ err: errorForLog(error) }, "rating event stream failed"),
-      });
+      const { ctx } = request;
+      const rating = await findVisibleRating(db, ctx, request.params.id);
+      if (!streams.tryTake(ctx.user.id)) throw tooManyStreams();
+      try {
+        await streamRatingStatus(reply, {
+          ratingId: rating.id,
+          readStatus: () => readVisibleStatus(db, ctx, rating.id),
+          pollMs: deps.eventsPollMs,
+          shutdown: shutdown.signal,
+          onError: (error) =>
+            request.log.warn({ err: errorForLog(error) }, "rating event stream failed"),
+        });
+      } finally {
+        streams.release(ctx.user.id);
+      }
     },
   );
 

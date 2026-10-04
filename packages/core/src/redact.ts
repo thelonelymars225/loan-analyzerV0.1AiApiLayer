@@ -107,9 +107,9 @@ export function buildRedactionContext(extraction: ExtractionResult): RedactionCo
 }
 
 /**
- * Redacts both languages of every clause. The hash is recomputed from the redacted English, so the
- * clause cache never holds a hash of personal data and the same clause hits the cache across
- * employers.
+ * Redacts both languages of every clause. The hash is recomputed from the redacted English, so no
+ * stored hash is a hash of personal data. It covers the English only: the clause cache key adds
+ * the Arabic and the field summary (see clauseCacheKey in section15.ts).
  */
 export function redactClauses(clauses: Clause[], ctx: RedactionContext): Clause[] {
   return clauses.map((clause) => {

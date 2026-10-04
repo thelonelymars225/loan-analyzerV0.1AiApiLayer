@@ -38,6 +38,7 @@
     "toSignUp": "Create an account",
     "haveAccount": "Already have an account?",
     "toSignIn": "Sign in",
+    "inviteHint": "You have an invitation to a workspace. Sign in, or create an account, with the email address the invitation is for.",
     "errors": {
       "invalid_credentials": "That email and password don't match. Try again.",
       "invalid_email": "Enter a valid email address.",
@@ -61,9 +62,10 @@
     "namePlaceholder": "Example Trading Co.",
     "nameError": "Enter a name between 2 and 120 characters.",
     "createSubmit": "Create workspace",
-    "created": "Workspace created. You are now working in {{name}}.",
-    "switched": "Switched to {{name}}.",
-    "switchFailed": "Couldn't switch workspace. Try again."
+    "created": "Workspace created. You're now working in {{name}}",
+    "switched": "You're now working in {{name}}",
+    "switchFailed": "Couldn't switch workspace. Try again.",
+    "changedElsewhere": "Your workspace changed to {{name}}, probably in another tab, so nothing was saved here. Check it and try again."
   },
   "upload": {
     "title": "Rate a contract",
@@ -77,7 +79,8 @@
     "viewLabel": "Open the report in",
     "viewHint": "You can switch between the two views on the report at any time.",
     "privacyTitle": "How we handle your contract",
-    "privacyBody": "The PDF is stored encrypted and deleted automatically after {{days}} days. Names, ID numbers, IBANs, phone numbers and emails are removed before any text is analysed. You can delete the rating and its file at any time.",
+    "privacyBody_one": "The PDF is stored encrypted and deleted automatically after {{count}} day. Names, ID numbers, IBANs, phone numbers and emails are removed before any text is analysed. You can delete the rating and its file at any time.",
+    "privacyBody_other": "The PDF is stored encrypted and deleted automatically after {{count}} days. Names, ID numbers, IBANs, phone numbers and emails are removed before any text is analysed. You can delete the rating and its file at any time.",
     "consent": "I agree that Contract Rater may process this contract to produce a rating, as described above.",
     "notLegalAdvice": "Contract Rater is a rating aid, not legal advice.",
     "submit": "Rate contract",
@@ -149,7 +152,7 @@
       "clarity": "Clarity"
     },
     "lowConfidence": "Low confidence",
-    "lowConfidenceHint": "Market fairness only checks allowance ratios and leave for now. There is no salary data by occupation yet.",
+    "lowConfidenceHint": "Market fairness only checks allowance ratios, early-termination compensation (Art. 77) and transfer clauses for now. There is no salary data by occupation yet.",
     "deadlines": "Deadlines",
     "deadlinesEmpty": "No deadlines found in this contract.",
     "deadlineKind": {
@@ -169,7 +172,8 @@
     "why": "Why this verdict",
     "needsReview": "Needs human review",
     "needsReviewHint": "The analyser couldn't give a reliable answer for this clause. Have a person read it.",
-    "needsReviewBanner": "Some values in this contract couldn't be read reliably. Check the findings against your copy of the contract.",
+    "needsReviewBanner": "Parts of this rating need a person to check them. Compare the findings with your copy of the contract.",
+    "reviewReasons": "Reasons for review",
     "good": "What's good",
     "goodEmpty": "Nothing in this contract stood out as better than the law.",
     "rights": "Know your rights",
@@ -271,11 +275,34 @@
     "removeBody": "They will lose access to this workspace and its ratings. Ratings they uploaded stay.",
     "removed": "Member removed.",
     "invite": "Invite a member",
+    "inviteIntro": "No email is sent. You get a link to share with the person yourself. It works for them once they sign in with the invited address.",
     "inviteEmail": "Email",
     "inviteRole": "Role",
-    "inviteSubmit": "Send invite",
+    "inviteSubmit": "Create invite",
     "inviteInvalidEmail": "Enter a valid email address.",
-    "invited": "Invitation sent to {{email}}."
+    "invited": "Invitation created for {{email}}.",
+    "inviteCreatedHint": "Send this link to {{email}}. It works once they sign in or sign up with that address, until {{date}}.",
+    "copyLink": "Copy link",
+    "copyLinkFor": "Copy the invite link for {{email}}",
+    "linkCopied": "Link copied.",
+    "copyFailed": "Couldn't copy the link. Click it to select it, then copy it yourself.",
+    "pendingInvites": "Pending invitations",
+    "pendingEmpty": "No pending invitations.",
+    "inviteExpires": "Expires {{date}}",
+    "cancelInvite": "Cancel invite",
+    "cancelInviteFor": "Cancel the invitation for {{email}}",
+    "inviteCancelled": "Invitation cancelled."
+  },
+  "invite": {
+    "title": "Workspace invitation",
+    "join": "Join {{name}}",
+    "details": "You're invited as {{role}}. The invitation is for {{email}} and expires on {{date}}.",
+    "privacy": "Your personal workspace stays private. Ratings you upload in {{name}} can be seen by its owners and admins.",
+    "accept": "Accept and join",
+    "notNow": "Not now",
+    "joined": "You joined {{name}} and are now working in it.",
+    "notForYouTitle": "Invitation not available",
+    "notForYou": "This invite is not for this account or has expired. You are signed in as {{email}}. To accept it, sign out and sign in with the address the invitation is for."
   },
   "account": {
     "title": "Account",
@@ -299,8 +326,8 @@
     "forbidden": "You don't have permission to do that in this workspace.",
     "not_found": "We couldn't find that. It may have been deleted.",
     "validation_error": "Some of the information isn't valid. Check it and try again.",
-    "unsupported_document": "This doesn't look like a Qiwa Unified Employment Contract. Contract Rater only reads contracts downloaded from Qiwa.",
-    "file_too_large": "The file is larger than 10 MB. Upload the original PDF from Qiwa.",
+    "unsupported_document": "We couldn't read this as a Qiwa Unified Employment Contract. Upload the contract PDF exactly as downloaded from Qiwa: other documents and damaged or password-protected files can't be rated.",
+    "file_too_large": "The file is too large. Upload the original PDF from Qiwa.",
     "rate_limited": "You've reached today's limit of new ratings. Try again tomorrow.",
     "conflict": "That clashes with a recent change. Refresh the page and try again.",
     "internal": "Something went wrong on our side. Try again in a moment.",
@@ -308,6 +335,8 @@
     "invalid_response": "The server sent an unexpected answer. Refresh the page and try again.",
     "unknown": "Something went wrong. Try again.",
     "rating_failed": "The rating stopped before it finished. Try uploading the contract again.",
-    "loadSession": "Couldn't load your account."
+    "loadSession": "Couldn't load your account.",
+    "rating_timeout": "The rating took too long and was stopped. Try uploading the contract again.",
+    "document_missing": "The contract file is no longer stored (it may have been deleted after the retention period), so it can't be rated. Upload it again."
   }
 }

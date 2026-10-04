@@ -44,13 +44,7 @@ export function ReportView({ report, onViewChange }: ReportViewProps) {
 
       <div id={CONTENT_ID} className="space-y-8">
         {report.status === "needs_review" && (
-          <p
-            role="note"
-            className="flex items-start gap-3 rounded-xl border border-warning/50 bg-warning-soft px-4 py-3 text-sm text-warning-ink"
-          >
-            <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-            {t("report.needsReviewBanner")}
-          </p>
+          <NeedsReviewNote reasons={report.reviewReasons} />
         )}
 
         {report.score && <ScoreSummary score={report.score} view={view} />}
@@ -91,6 +85,32 @@ export function ReportView({ report, onViewChange }: ReportViewProps) {
         <GoodBlock findings={report.good} view={view} />
         <RightsBlock findings={report.info} />
         <ReportFooter report={report} />
+      </div>
+    </div>
+  );
+}
+
+/** Why a person should check this rating, in the API's words (unread values, unclear clauses). */
+function NeedsReviewNote({ reasons }: { reasons: string[] }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="note"
+      className="flex items-start gap-3 rounded-xl border border-warning/50 bg-warning-soft px-4 py-3 text-sm text-warning-ink"
+    >
+      <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+      <div className="space-y-2">
+        <p>{t("report.needsReviewBanner")}</p>
+        {reasons.length > 0 && (
+          <ul aria-label={t("report.reviewReasons")} className="list-disc space-y-1 ps-5">
+            {reasons.map((reason, index) => (
+              // The list never reorders, and two reasons may read the same.
+              <li key={index} dir="auto">
+                {reason}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 {
   "id": "10-fixed-term-low-allowances",
-  "description": "One-year fixed-term contract, not auto-renewing, for a non-Saudi employee still on probation. Housing (15%) and transport (5%) are below the market norm. Section 15 pays overtime at a 25% premium, stretches probation to nine months and forbids leave carry-over.",
+  "description": "One-year fixed-term contract, not auto-renewing, for a non-Saudi employee still on probation. Housing (15%) and transport (5%) are below the market norm. Section 15 pays overtime at a 25% premium, stretches probation to nine months and forbids leave carry-over. Score: the rubric gives employee 83 and HR 75; the void overtime and probation clauses cap the overall score at 79, so the employee view expects 74-79 and neither range goes above 79.",
   "today": "2026-10-04",
   "status": "done",
   "fields": {
@@ -107,7 +107,7 @@
     }
   ],
   "score": {
-    "employee": [78, 88],
-    "hr": [70, 80]
+    "employee": [74, 79],
+    "hr": [70, 79]
   }
 }

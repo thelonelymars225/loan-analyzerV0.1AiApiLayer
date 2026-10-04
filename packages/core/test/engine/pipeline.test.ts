@@ -22,6 +22,20 @@ function pages(id: string): PageLayout[] {
   return parseBboxXhtml(readFileSync(`${FIXTURES}${id}.bbox.html`, "utf8"));
 }
 
+/** The fixture with the English column of Section 15 (page 8, below its heading) left blank. */
+function withoutSection15English(layout: PageLayout[]): PageLayout[] {
+  return layout.map((page) =>
+    page.page !== 8
+      ? page
+      : {
+          ...page,
+          words: page.words.filter(
+            (w) => !(w.yMin > 370 && w.yMin < 690 && w.xMax < page.width / 2),
+          ),
+        },
+  );
+}
+
 function input(id: string, overrides: Partial<PipelineInput> = {}): PipelineInput {
   return {
     pages: pages(id),
@@ -111,6 +125,36 @@ describe("runPipeline", () => {
         issue.message.includes("tesseract crashed"),
       ),
     ).toBe(true);
+  });
+
+  it("reads a Section 15 that has Arabic text only through OCR, and asks for review", async () => {
+    const llm = new FakeLlmClient({ clauses: TEST1_REPLIES, cross: TEST1_CROSS });
+    const regionsAsked: unknown[] = [];
+    const ocrArabic = async (regions: unknown[]) => {
+      regionsAsked.push(...regions);
+      return "15.6 تحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي فقط";
+    };
+    const result = await runPipeline({
+      ...input("fixed-term-bad-s15", { llm, ocrArabic }),
+      pages: withoutSection15English(pages("fixed-term-bad-s15")),
+    });
+
+    expect(regionsAsked).toHaveLength(1);
+    expect(llm.clauseRequests.map((r) => r.clause)).toEqual([
+      {
+        number: "15.6",
+        textEn: "",
+        textAr: "تحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي فقط",
+      },
+    ]);
+    expect(result.findings.find((f) => f.ruleId === "EOS-BASE-01")?.clause).toBe("15.6");
+    // Items the OCR found no text for are not kept; every Arabic-only item is an issue.
+    expect(result.extraction?.clauses.map((c) => c.number)).toEqual(["15.6"]);
+    const issues = result.extraction?.issues.filter(
+      (i) => i.field === "section15.textEn",
+    );
+    expect(issues).toHaveLength(7);
+    expect(result.status).toBe("needs_review");
   });
 
   it("needs review when the extraction does", async () => {

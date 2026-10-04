@@ -12,7 +12,6 @@ import {
 import { documents, ratings } from "@rater/db";
 import {
   DATABASE_URL,
-  ORIGIN,
   api,
   createTestContext,
   fixture,
@@ -105,6 +104,7 @@ describe.skipIf(!DATABASE_URL)("company workspaces, invites and roles", () => {
       email: invitee.email,
       role: "member",
       status: "pending",
+      acceptPath: `/invite/${invitation.id}`,
     });
 
     const again = await api(t.app, owner.cookie, "POST", `/orgs/${company.id}/invites`, {
@@ -114,18 +114,15 @@ describe.skipIf(!DATABASE_URL)("company workspaces, invites and roles", () => {
     expect(again.statusCode).toBe(409);
     expect(Problem.parse(again.json()).code).toBe("conflict");
 
-    // The invitee accepts through Better Auth's organization API.
-    const accepted = await t.app.inject({
-      method: "POST",
-      url: "/api/auth/organization/accept-invitation",
-      headers: {
-        origin: ORIGIN,
-        cookie: invitee.cookie,
-        "content-type": "application/json",
-      },
-      payload: { invitationId: invitation.id },
-    });
+    // The invitee opens the shared link and accepts.
+    const accepted = await api(
+      t.app,
+      invitee.cookie,
+      "POST",
+      `/invites/${invitation.id}/accept`,
+    );
     expect(accepted.statusCode).toBe(200);
+    expect(MeResponse.parse(accepted.json()).activeOrgId).toBe(company.id);
     expect((await members()).map((m) => [m.email, m.role])).toEqual([
       [owner.email, "owner"],
       [invitee.email, "member"],

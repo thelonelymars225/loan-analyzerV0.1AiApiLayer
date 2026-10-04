@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins";
+import { DEFAULT_RETENTION_DAYS } from "@rater/contracts";
 import { authTables } from "@rater/db";
 import type { Db } from "@rater/db";
 import { trustedOrigins, type Config } from "./config";
@@ -17,6 +18,10 @@ export const AUTH_BASE_PATH = "/api/auth";
  * - Company workspaces are created by POST /api/v1/orgs (which sets kind "company"), not by
  *   Better Auth's own create endpoint, and org deletion is off: `kind` and `retentionDays`
  *   are ours to set, so they are not accepted as input on Better Auth's endpoints either.
+ * - Over HTTP only sign-up, sign-in, sign-out and the session are reachable (see the
+ *   allow-list in plugins/auth-routes.ts). Every workspace operation (switching, invites,
+ *   members) goes through /api/v1, which applies our role rules; the organization plugin is
+ *   only called from the server.
  */
 export function createAuth(options: { config: Config; db: Db }) {
   const { config, db } = options;
@@ -45,7 +50,7 @@ export function createAuth(options: { config: Config; db: Db }) {
               retentionDays: {
                 type: "number",
                 required: false,
-                defaultValue: 30,
+                defaultValue: DEFAULT_RETENTION_DAYS,
                 input: false,
               },
             },

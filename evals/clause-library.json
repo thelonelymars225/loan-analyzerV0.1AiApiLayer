@@ -36,6 +36,78 @@
         {
           "en": "The end-of-service gratuity will be based on the employee's last total wage, including all allowances, as provided in the Labor Law.",
           "ar": "تُحتسب مكافأة نهاية الخدمة على أساس آخر أجر إجمالي يتقاضاه الموظف شاملًا جميع البدلات، وفقًا لما نص عليه نظام العمل."
+        },
+        {
+          "en": "The end-of-service award shall not be calculated on the basic salary alone but on the full wage.",
+          "ar": "تُحسب مكافأة نهاية الخدمة على أساس الأجر الكامل، لا على أساس الأجر الأساسي وحده."
+        }
+      ]
+    },
+    {
+      "key": "eos_actual_not_basic",
+      "en": "The end-of-service award shall be calculated on the last actual wage and not on the basic salary.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس آخر أجر فعلي وليس على أساس الأجر الأساسي.",
+      "expected": {
+        "ruleId": "EOS-BASE-01",
+        "verdict": "compliant",
+        "severity": "none",
+        "impactParams": { "eosBase": "actual" }
+      },
+      "paraphrases": [
+        {
+          "en": "The end-of-service award shall be calculated on the total salary, including the basic salary, housing and transport allowances.",
+          "ar": "تُحسب مكافأة نهاية الخدمة على أساس الراتب الإجمالي الذي يشمل الراتب الأساسي وبدلي السكن والنقل."
+        }
+      ]
+    },
+    {
+      "key": "eos_basic_housing_transport",
+      "en": "The end-of-service award shall be calculated on the basic salary plus housing and transportation allowances.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي وبدل السكن وبدل النقل.",
+      "expected": {
+        "ruleId": "EOS-BASE-01",
+        "verdict": "compliant",
+        "severity": "none",
+        "impactParams": { "eosBase": "actual" }
+      },
+      "paraphrases": [
+        {
+          "en": "End-of-service benefits are based on the basic wage, housing allowance and transport allowance.",
+          "ar": "تُبنى مستحقات نهاية الخدمة على الأجر الأساسي وبدل السكن وبدل النقل."
+        }
+      ]
+    },
+    {
+      "key": "eos_basic_not_total",
+      "en": "The end-of-service award shall be calculated on the basic salary and not on the total salary.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي وليس على أساس الأجر الإجمالي.",
+      "expected": {
+        "ruleId": "EOS-BASE-01",
+        "verdict": "likely_void",
+        "severity": "high",
+        "impactParams": { "eosBase": "basic" }
+      },
+      "paraphrases": [
+        {
+          "en": "The end-of-service award shall be calculated on the basic salary only, not on the full wage.",
+          "ar": "تُحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي فقط، لا على أساس الأجر الكامل."
+        }
+      ]
+    },
+    {
+      "key": "eos_basic_housing",
+      "en": "The end-of-service award is calculated on the basic salary and housing allowance.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي وبدل السكن.",
+      "expected": {
+        "ruleId": "EOS-BASE-01",
+        "verdict": "likely_void",
+        "severity": "high",
+        "impactParams": { "eosBase": "other" }
+      },
+      "paraphrases": [
+        {
+          "en": "End-of-service gratuity shall be computed on the basic salary plus the housing allowance only.",
+          "ar": "تُحتسب مكافأة نهاية الخدمة على الراتب الأساسي وبدل السكن فقط."
         }
       ]
     },
@@ -234,6 +306,52 @@
       ]
     },
     {
+      "key": "project_end_with_allowance",
+      "en": "This contract shall remain in force until the completion of the project, and the employee shall receive a project allowance of SAR 500.",
+      "ar": "يظل هذا العقد ساريًا حتى إنجاز المشروع، ويستحق الموظف بدل مشروع قدره 500 ريال.",
+      "expected": { "ruleId": "TYPE-ART57-01", "verdict": "unclear", "severity": "high" },
+      "crossCheck": {
+        "contractType": "fixed_term",
+        "ruleId": "TYPE-CONFLICT-01",
+        "verdict": "conflict",
+        "severity": "high"
+      },
+      "paraphrases": [
+        {
+          "en": "The employee's services shall end upon completion of the project.",
+          "ar": "تنتهي خدمات الموظف عند إنجاز المشروع."
+        }
+      ]
+    },
+    {
+      "key": "allowance_for_project",
+      "en": "Site allowance of SAR 500 applies for the duration of the project.",
+      "ar": "يُصرف بدل موقع قدره 500 ريال طوال مدة المشروع.",
+      "expected": null,
+      "paraphrases": [
+        {
+          "en": "The housing allowance shall continue until the end of the employee's assignment.",
+          "ar": "يستمر صرف بدل السكن حتى انتهاء مهمة الموظف."
+        },
+        {
+          "en": "The housing allowance continues until the end of the project.",
+          "ar": "يستمر بدل السكن حتى انتهاء المشروع."
+        }
+      ]
+    },
+    {
+      "key": "project_tasks",
+      "en": "The employee may be assigned to project-based tasks.",
+      "ar": "يجوز تكليف الموظف بمهام قائمة على المشاريع.",
+      "expected": null,
+      "paraphrases": [
+        {
+          "en": "The employee shall perform the tasks of the specific project assigned to him.",
+          "ar": "يؤدي الموظف مهام المشروع المحدد الذي يُكلف به."
+        }
+      ]
+    },
+    {
       "key": "probation_270",
       "en": "The probationary period is 270 days.",
       "ar": "مدة فترة التجربة 270 يومًا.",
@@ -246,6 +364,58 @@
         {
           "en": "The employee's probation period shall be nine months.",
           "ar": "تكون فترة التجربة للموظف تسعة أشهر."
+        },
+        {
+          "en": "The probation period may be extended to a total of 270 days.",
+          "ar": "يجوز تمديد فترة التجربة إلى ما مجموعه 270 يومًا."
+        }
+      ]
+    },
+    {
+      "key": "probation_added_120",
+      "en": "In addition to the probation in clause 6.1, the employee shall serve a further probation of 120 days.",
+      "ar": "بالإضافة إلى فترة التجربة الواردة في البند 6.1، يخضع الموظف لفترة تجربة إضافية مدتها 120 يومًا.",
+      "expected": {
+        "ruleId": "PROB-MAX-01",
+        "verdict": "likely_void",
+        "severity": "high"
+      },
+      "paraphrases": [
+        {
+          "en": "The probation period may be renewed for 120 days.",
+          "ar": "يجوز تجديد فترة التجربة لمدة 120 يومًا."
+        },
+        {
+          "en": "The employer may extend the probation period for a period not exceeding 120 days.",
+          "ar": "يجوز لصاحب العمل تمديد فترة التجربة لمدة لا تزيد على 120 يومًا."
+        }
+      ]
+    },
+    {
+      "key": "probation_twice_90",
+      "en": "The probationary period of 90 days may be repeated once.",
+      "ar": "يجوز تكرار فترة التجربة البالغة 90 يومًا مرة واحدة.",
+      "expected": { "ruleId": "PROB-MAX-01", "verdict": "compliant", "severity": "none" },
+      "paraphrases": [
+        {
+          "en": "Probation is 90 days, extendable to 180 days.",
+          "ar": "فترة التجربة 90 يومًا قابلة للتمديد إلى 180 يومًا."
+        },
+        {
+          "en": "The probation period may be extended by a further 90 days, provided the total does not exceed 180 days.",
+          "ar": "يجوز تمديد فترة التجربة 90 يومًا إضافية، على ألا يتجاوز مجموعها 180 يومًا."
+        }
+      ]
+    },
+    {
+      "key": "probation_notice",
+      "en": "During the probationary period, either party may terminate the contract with 15 days notice.",
+      "ar": "يجوز لأي من الطرفين خلال فترة التجربة إنهاء العقد بإشعار مدته 15 يومًا.",
+      "expected": null,
+      "paraphrases": [
+        {
+          "en": "Either party may end the contract during probation by giving 15 days' written notice.",
+          "ar": "يجوز لأي من الطرفين إنهاء العقد أثناء فترة التجربة بإشعار كتابي مدته 15 يومًا."
         }
       ]
     },

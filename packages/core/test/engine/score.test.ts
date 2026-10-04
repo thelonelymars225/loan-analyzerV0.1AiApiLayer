@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { Finding } from "@rater/contracts";
-import { bandFor, overallFor, scoreFindings, subScores } from "../../src/score";
+import {
+  bandFor,
+  overallCap,
+  overallFor,
+  scoreFindings,
+  subScores,
+} from "../../src/score";
 
 function finding(overrides: Partial<Finding>): Finding {
   return {
@@ -104,6 +110,56 @@ describe("bandFor", () => {
     [0, "Poor"],
   ] as const)("puts %i in %s", (overall, band) => {
     expect(bandFor(overall)).toBe(band);
+  });
+});
+
+describe("overall caps", () => {
+  const voidHigh = finding({ verdict: "likely_void", severity: "high" });
+  const conflictHigh = finding({
+    verdict: "conflict",
+    severity: "high",
+    categories: ["market"],
+  });
+  const better = finding({
+    verdict: "better_than_law",
+    severity: "none",
+    categories: ["legal"],
+  });
+
+  it("caps at 79 (Fair) with one or two high void or conflict findings, in both views", () => {
+    // Uncapped: legal 80 + 2 = 82 → employee 93, HR 89.
+    for (const view of ["employee", "hr"] as const) {
+      expect(scoreFindings([voidHigh, better], view)).toMatchObject({
+        overall: 79,
+        band: "Fair",
+        legal: 82,
+      });
+    }
+    expect(overallCap([voidHigh, conflictHigh])).toBe(79);
+  });
+
+  it("caps at 59 (Weak) with three or more", () => {
+    const three = [voidHigh, conflictHigh, finding({ categories: ["clarity"] })];
+    expect(overallCap(three)).toBe(59);
+    expect(scoreFindings(three, "employee")).toMatchObject({ overall: 59, band: "Weak" });
+  });
+
+  it("does not count lower severities, other verdicts or info findings", () => {
+    expect(
+      overallCap([
+        finding({ severity: "medium" }),
+        finding({ verdict: "unclear", severity: "high" }),
+        finding({ verdict: "worse_than_default", severity: "high" }),
+        finding({ source: "info" }),
+      ]),
+    ).toBe(100);
+  });
+
+  it("never raises a score that is already lower", () => {
+    const many = Array.from({ length: 4 }, () => voidHigh);
+    expect(scoreFindings(many, "hr").overall).toBe(
+      overallFor(subScores(many), "hr").overall,
+    );
   });
 });
 

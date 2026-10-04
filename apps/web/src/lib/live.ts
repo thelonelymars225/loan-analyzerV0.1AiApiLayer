@@ -5,44 +5,42 @@ import { queryKeys } from "./queries";
 import { isTerminal } from "./ratings";
 
 /**
- * Listens to GET /ratings/{id}/events for each rating still running and refetches rating
- * queries whenever a status changes. Returns `live: false` when server-sent events are not
- * available or a stream failed; callers then poll more often (see pollInterval).
+ * Listens to GET /ratings/{id}/events while one rating runs (the report page) and refetches
+ * rating queries whenever its status changes. Returns `live: false` when server-sent events
+ * are not available or the stream failed; the caller then polls more often (see pollInterval).
+ *
+ * One rating at a time on purpose: each stream holds an HTTP/1.1 connection open for minutes,
+ * and browsers allow only six per host across all tabs. The ratings list polls instead.
  */
-export function useRatingEvents(ratingIds: readonly string[]): { live: boolean } {
+export function useRatingEvents(ratingId: string | null): { live: boolean } {
   const queryClient = useQueryClient();
   const supported = typeof EventSource !== "undefined";
-  const idsKey = ratingIds.join(",");
-  const [failedIdsKey, setFailedIdsKey] = useState<string | null>(null);
+  const [failedId, setFailedId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!supported || idsKey === "") return;
+    if (!supported || !ratingId) return;
 
-    const sources = idsKey.split(",").map((id) => {
-      const source = new EventSource(
-        `${API_BASE}/ratings/${encodeURIComponent(id)}/events`,
-      );
-      const onStatus = (event: MessageEvent<string>) => {
-        const parsed = parseRatingEvent(event.data);
-        if (!parsed) return;
-        void queryClient.invalidateQueries({ queryKey: queryKeys.ratings });
-        if (isTerminal(parsed.status)) source.close();
-      };
-      // Accept both unnamed events and `event: status`, whichever the API sends.
-      source.addEventListener("message", onStatus);
-      source.addEventListener("status", onStatus);
-      source.onerror = () => {
-        // EventSource would retry forever; fall back to polling instead.
-        source.close();
-        setFailedIdsKey(idsKey);
-      };
-      return source;
-    });
+    const source = new EventSource(
+      `${API_BASE}/ratings/${encodeURIComponent(ratingId)}/events`,
+    );
+    const onStatus = (event: MessageEvent<string>) => {
+      const parsed = parseRatingEvent(event.data);
+      if (!parsed) return;
+      void queryClient.invalidateQueries({ queryKey: queryKeys.ratings });
+      if (isTerminal(parsed.status)) source.close();
+    };
+    // Accept both unnamed events and `event: status`, whichever the API sends.
+    source.addEventListener("message", onStatus);
+    source.addEventListener("status", onStatus);
+    source.onerror = () => {
+      // EventSource would retry forever; fall back to polling instead.
+      source.close();
+      setFailedId(ratingId);
+    };
+    return () => source.close();
+  }, [ratingId, supported, queryClient]);
 
-    return () => sources.forEach((source) => source.close());
-  }, [idsKey, supported, queryClient]);
-
-  return { live: supported && idsKey !== "" && failedIdsKey !== idsKey };
+  return { live: supported && ratingId !== null && failedId !== ratingId };
 }
 
 /** Calls `refetch` every `intervalMs` while it is a number; `false` stops polling. */

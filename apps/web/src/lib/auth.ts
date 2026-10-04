@@ -1,14 +1,16 @@
-import { organizationClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 /**
  * Better Auth lives at /api/auth on the API. In development Vite proxies /api to the API,
  * so the client always talks to the page's own origin and the session cookie is first-party.
+ *
+ * Only sign-up, sign-in and sign-out go through Better Auth. Its organization endpoints are
+ * closed on the API (they apply Better Auth's role rules, not ours); workspaces are switched
+ * and joined through /api/v1 (see api.ts).
  */
 export const authClient = createAuthClient({
   baseURL: typeof window === "undefined" ? undefined : window.location.origin,
   basePath: "/api/auth",
-  plugins: [organizationClient()],
 });
 
 export interface AuthResult {
@@ -40,10 +42,4 @@ export async function signUp(
 
 export async function signOut(): Promise<void> {
   await authClient.signOut();
-}
-
-/** Makes an org the session's active org. The API reads the org from the session. */
-export async function setActiveOrg(organizationId: string): Promise<void> {
-  const reply = await authClient.organization.setActive({ organizationId });
-  if (reply.error) throw new Error(reply.error.message ?? "Could not switch workspace");
 }

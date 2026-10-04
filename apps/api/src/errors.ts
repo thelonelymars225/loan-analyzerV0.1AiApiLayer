@@ -48,3 +48,16 @@ export const rateLimited = (limit: number, retryAfterSeconds: number) =>
     `You can rate ${limit} contracts per day. Try again later.`,
     { "retry-after": String(retryAfterSeconds) },
   );
+
+/** Too many open event streams for this user or this server; the client polls instead. */
+export const tooManyStreams = () =>
+  new ApiError(429, "rate_limited", "Too many open live updates. Try again later.", {
+    "retry-after": "30",
+  });
+
+/** The browser tab acts on a different workspace than the session's active one. */
+export const workspaceChanged = () =>
+  conflict(
+    "Your active workspace was changed, probably in another tab. Reload to see it before " +
+      "making changes.",
+  );

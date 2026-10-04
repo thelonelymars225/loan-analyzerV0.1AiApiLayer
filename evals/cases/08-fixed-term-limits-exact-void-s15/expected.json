@@ -1,6 +1,6 @@
 {
   "id": "08-fixed-term-limits-exact-void-s15",
-  "description": "Two-year fixed-term contract, newly started, with every field exactly at the legal limit (180 days' probation, 21 days' leave, 48-hour week, 50% overtime) and allowances at the edge of the market norm (housing 20%, transport 7%, plus an other allowance). Section 15 bases end-of-service on basic wage, adds a three-year non-compete and fixes Art. 77 compensation at two months' basic.",
+  "description": "Two-year fixed-term contract, newly started, with every field exactly at the legal limit (180 days' probation, 21 days' leave, 48-hour week, 50% overtime) and allowances at the edge of the market norm (housing 20%, transport 7%, plus an other allowance). Section 15 bases end-of-service on basic wage, adds a three-year non-compete and fixes Art. 77 compensation at two months' basic. Score: the rubric gives employee 77 and HR 74; the void end-of-service and non-compete clauses cap the overall score at 79, so neither range goes above 79.",
   "today": "2026-10-04",
   "status": "done",
   "fields": {
@@ -120,7 +120,7 @@
     }
   ],
   "score": {
-    "employee": [72, 82],
+    "employee": [72, 79],
     "hr": [69, 79]
   }
 }

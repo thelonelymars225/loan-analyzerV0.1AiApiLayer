@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { ClauseAnalysis } from "@rater/contracts";
 import type {
   Clause,
@@ -6,6 +7,8 @@ import type {
   CrossConflict,
   LawArticle,
   Rule,
+  Severity,
+  Verdict,
 } from "@rater/contracts";
 import type { ArticleText, CandidateRule, LlmClient, LlmUsage } from "@rater/llm";
 import {
@@ -50,12 +53,23 @@ const SEARCH_BACKSTOP_K = 3;
 /** Clauses analysed at the same time. */
 const CLAUSE_CONCURRENCY = 4;
 
-/** Cache key: same clause text under the same law, ruleset, prompt and model gives the same answer. */
+/**
+ * Cache key: the same request under the same law, ruleset, prompt and model gives the same
+ * answer. The first part hashes everything in the request that can change the answer: the
+ * redacted English (textHash), the Arabic (it prevails when the two differ) and the field
+ * summary (a probation extension is judged against the probation in clause 6.1). So one
+ * contract's cached verdict, or an explanation quoting its figures, never reaches another.
+ * Five "|"-separated parts, the format the worker's Postgres cache parses.
+ */
 export function clauseCacheKey(
   clause: Clause,
+  fieldSummary: string,
   v: { law: string; ruleset: string; prompt: string; model: string },
 ): string {
-  return [clause.textHash, v.law, v.ruleset, v.prompt, v.model].join("|");
+  const inputHash = createHash("sha256")
+    .update(JSON.stringify([clause.textHash, clause.textAr, fieldSummary]))
+    .digest("hex");
+  return [inputHash, v.law, v.ruleset, v.prompt, v.model].join("|");
 }
 
 /** In-memory ClauseCache for tests, evals and the offline pipeline. */
@@ -86,7 +100,7 @@ export function clauseCandidates(rules: Rule[]): Rule[] {
 /** Step 4b: one analyser call per clause (cache first). */
 export async function analyseSection15(input: Section15Input): Promise<Section15Output> {
   const candidates = clauseCandidates(input.rules);
-  const clauses = input.clauses.filter(hasText);
+  const clauses = input.clauses.filter(clauseHasText);
   if (candidates.length === 0 || clauses.length === 0) {
     return { findings: [], usage: ZERO_USAGE };
   }
@@ -122,7 +136,7 @@ async function analyseClause(
   context: ClauseContext,
 ): Promise<Section15Output> {
   const { llm, cache, articles, versions } = context.input;
-  const key = clauseCacheKey(clause, {
+  const key = clauseCacheKey(clause, context.fieldSummary, {
     ...versions,
     prompt: llm.promptVersion,
     model: llm.model,
@@ -206,8 +220,7 @@ function matchFinding(
     ruleId: rule.id,
     clause: clauseNumber,
     verdict: match.verdict,
-    // A clause that passes carries no severity, whatever the analyser said.
-    severity: isProblemVerdict(match.verdict) ? match.severity : "none",
+    severity: severityFor(match.verdict, match.severity, rule),
     confidence: match.confidence,
     categories: rule.categories,
     articles: citedOrRuleArticles(match.articles, rule),
@@ -226,7 +239,7 @@ export async function crossCheckSection15(
   input: Section15Input,
 ): Promise<Section15Output> {
   const candidates = input.rules.filter((rule) => rule.kind === "cross");
-  const clauses = input.clauses.filter(hasText);
+  const clauses = input.clauses.filter(clauseHasText);
   if (candidates.length === 0 || clauses.length === 0) {
     return { findings: [], usage: ZERO_USAGE };
   }
@@ -282,7 +295,7 @@ function conflictFinding(conflict: CrossConflict, rule: Rule): AnalysedFinding {
     ruleId: rule.id,
     clause: conflict.clause,
     verdict: "conflict",
-    severity: conflict.severity,
+    severity: severityFor("conflict", conflict.severity, rule),
     confidence: conflict.confidence,
     categories: rule.categories,
     articles: citedOrRuleArticles(conflict.articles, rule),
@@ -299,7 +312,18 @@ function conflictFinding(conflict: CrossConflict, rule: Rule): AnalysedFinding {
 // Helpers
 // ---------------------------------------------------------------------------------------------
 
-function hasText(clause: Clause): boolean {
+/**
+ * A passing verdict carries no severity, whatever the analyser said. A problem always costs
+ * points: when the analyser gave it severity "none", the rule's own severity applies. This is
+ * checked where findings are built, so answers already in the cache are covered too.
+ */
+function severityFor(verdict: Verdict, stated: Severity, rule: Rule): Severity {
+  if (!isProblemVerdict(verdict)) return "none";
+  return stated === "none" ? rule.severityIfFail : stated;
+}
+
+/** A clause with English or Arabic text to analyse (an Arabic-only item may still lack OCR). */
+export function clauseHasText(clause: Clause): boolean {
   return clause.textEn.trim() !== "" || (clause.textAr?.trim() ?? "") !== "";
 }
 

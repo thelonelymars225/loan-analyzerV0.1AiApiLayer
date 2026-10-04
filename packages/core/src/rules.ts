@@ -14,6 +14,7 @@ import {
   formatNumber,
   type PlaceholderValues,
 } from "./engine/placeholders";
+import { termMonthsOf } from "./engine/term";
 import { isProblemVerdict } from "./engine/verdicts";
 
 /*
@@ -252,9 +253,15 @@ function checkWorkingHours(fields: ContractFields): FieldCheckOutcome | null {
     daily !== null ? `${formatNumber(daily)} a day` : null,
     weekly !== null ? `${formatNumber(weekly)} a week` : null,
   ].filter((part) => part !== null);
+  // Art. 98 has two criteria. A contract that states only the week uses the weekly one, and
+  // extraction never makes up a daily figure from it, so only the 48-hour cap applies then.
+  const cap =
+    daily === null
+      ? `${WEEKLY_HOURS_MAX} a week under the weekly criterion`
+      : `${DAILY_HOURS_MAX} a day and ${WEEKLY_HOURS_MAX} a week`;
   return {
     verdict,
-    explanation: `Normal hours are ${stated.join(" and ")}; the legal cap is ${DAILY_HOURS_MAX} a day and ${WEEKLY_HOURS_MAX} a week.`,
+    explanation: `Normal hours are ${stated.join(" and ")}; the legal cap is ${cap}.`,
     values:
       weekly !== null
         ? { value: formatNumber(weekly), limit: String(WEEKLY_HOURS_MAX) }
@@ -331,23 +338,27 @@ const MAX_TERMS_TO_ROLL = 100;
 /**
  * Non-renewal notice is due renewalNoticeDays before the end date. When that date has passed
  * on an auto-renewing contract, the contract has already renewed, so the next deadline is
- * one or more terms later. A contract that does not auto-renew has no deadline to meet.
+ * one or more terms later. A contract that does not auto-renew has no deadline to meet, and
+ * neither does one whose date has passed when renewal or the term is unknown.
  */
 function renewalNoticeDeadline(
   rule: Rule,
   fields: ContractFields,
   today: string,
 ): Deadline | null {
-  const { endDate, renewalNoticeDays, autoRenew, termMonths } = fields;
+  const { endDate, renewalNoticeDays, autoRenew } = fields;
   if (endDate === null || renewalNoticeDays === null || autoRenew === false) return null;
 
   let date = addDays(endDate, -renewalNoticeDays);
+  const termMonths = termMonthsOf(fields);
   if (autoRenew && termMonths) {
     // Count terms from the original end date so month-end dates don't drift.
     for (let terms = 1; date < today && terms <= MAX_TERMS_TO_ROLL; terms++) {
       date = addDays(addMonths(endDate, terms * termMonths), -renewalNoticeDays);
     }
   }
+  // A date already passed is nothing the reader can act on, so it is not shown.
+  if (date < today) return null;
   return {
     ruleId: rule.id,
     date,
@@ -363,7 +374,10 @@ const PROBATION_END_MSG = {
   hr: "Probation ends on {deadline} at the earliest (excluded days push it later). Until then either party may end the contract without compensation (Art. 54).",
 };
 
-/** Last day of probation: commencement + probationDays − 1. Only shown while it is still ahead. */
+/**
+ * Last day of probation: commencement + probationDays − 1, never past the 180-day legal cap
+ * (Art. 53 makes the extra days void, and PROB-MAX-01 says so). Only shown while it is ahead.
+ */
 function probationEndDeadline(
   rule: Rule,
   fields: ContractFields,
@@ -371,7 +385,8 @@ function probationEndDeadline(
 ): Deadline | null {
   const { commencementDate, probationDays } = fields;
   if (commencementDate === null || !probationDays) return null;
-  const date = addDays(commencementDate, probationDays - 1);
+  const lawfulDays = Math.min(probationDays, PROBATION_MAX_DAYS);
+  const date = addDays(commencementDate, lawfulDays - 1);
   if (date < today) return null;
   return {
     ruleId: rule.id,

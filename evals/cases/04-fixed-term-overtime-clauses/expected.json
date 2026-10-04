@@ -1,6 +1,6 @@
 {
   "id": "04-fixed-term-overtime-clauses",
-  "description": "Fixed-term contract for a non-Saudi employee with generous sections 1-14 (25 days' leave, 40-hour week, housing above the norm) but a Section 15 that cuts overtime to a 25% premium, replaces it with time off at the employer's discretion, demands extra hours on request, and forfeits untaken leave. The 60-day non-renewal notice date has passed this year, so the deadline rolls to next year.",
+  "description": "Fixed-term contract for a non-Saudi employee with generous sections 1-14 (25 days' leave, 40-hour week, housing above the norm) but a Section 15 that cuts overtime to a 25% premium, replaces it with time off at the employer's discretion, demands extra hours on request, and forfeits untaken leave. The 60-day non-renewal notice date has passed this year, so the deadline rolls to next year. Score: the rubric gives employee 80 and HR 70; the two high-severity void overtime clauses cap the overall score at 79, so the employee view expects 74-79.",
   "today": "2026-10-04",
   "status": "done",
   "fields": {
@@ -114,7 +114,7 @@
     }
   ],
   "score": {
-    "employee": [75, 85],
+    "employee": [74, 79],
     "hr": [65, 75]
   }
 }

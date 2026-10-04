@@ -1,6 +1,6 @@
 {
   "id": "05-indefinite-eos-basic-transfer",
-  "description": "Indefinite contract for a Saudi employee, past probation: end-of-service on basic wage only (likely void, with SAR impact), relocation to any city, and a lawful one-year non-compete limited to Jeddah sales roles with client access. 30 days' leave.",
+  "description": "Indefinite contract for a Saudi employee, past probation: end-of-service on basic wage only (likely void, with SAR impact), relocation to any city, and a lawful one-year non-compete limited to Jeddah sales roles with client access. 30 days' leave. Score: the rubric gives employee 90 and HR 88, but the high-severity void end-of-service clause caps the overall score at 79, so both views expect 74-79.",
   "today": "2026-10-04",
   "status": "done",
   "fields": {
@@ -105,7 +105,7 @@
   ],
   "deadlines": [],
   "score": {
-    "employee": [85, 95],
-    "hr": [83, 93]
+    "employee": [74, 79],
+    "hr": [74, 79]
   }
 }

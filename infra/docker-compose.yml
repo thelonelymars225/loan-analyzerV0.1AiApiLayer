@@ -125,7 +125,7 @@ services:
       WEB_ORIGIN: http://localhost:${WEB_PORT:-8080}
       RATE_LIMIT_PER_DAY: ${RATE_LIMIT_PER_DAY:-20}
       # The migrate job above already did this.
-      MIGRATE_ON_START: "false"
+      DB_MIGRATE_ON_START: "false"
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
     depends_on:

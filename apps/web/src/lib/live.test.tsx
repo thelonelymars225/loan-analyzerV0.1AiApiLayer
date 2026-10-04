@@ -28,7 +28,7 @@ class FakeEventSource {
   }
 }
 
-function setup(ids: string[]) {
+function setup(id: string | null) {
   FakeEventSource.instances = [];
   vi.stubGlobal("EventSource", FakeEventSource);
   const queryClient = new QueryClient();
@@ -36,17 +36,16 @@ function setup(ids: string[]) {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  const hook = renderHook(() => useRatingEvents(ids), { wrapper });
+  const hook = renderHook(() => useRatingEvents(id), { wrapper });
   return { hook, invalidate };
 }
 
 describe("useRatingEvents", () => {
-  it("opens one stream per running rating and refetches on each status", () => {
-    const { hook, invalidate } = setup(["rt_1", "rt_2"]);
+  it("opens one stream for the running rating and refetches on each status", () => {
+    const { hook, invalidate } = setup("rt_1");
     expect(hook.result.current.live).toBe(true);
     expect(FakeEventSource.instances.map((source) => source.url)).toEqual([
       "/api/v1/ratings/rt_1/events",
-      "/api/v1/ratings/rt_2/events",
     ]);
 
     const [first] = FakeEventSource.instances;
@@ -59,18 +58,18 @@ describe("useRatingEvents", () => {
   });
 
   it("falls back to polling when a stream fails", () => {
-    const { hook } = setup(["rt_1"]);
+    const { hook } = setup("rt_1");
     act(() => FakeEventSource.instances[0]!.onerror?.());
     expect(hook.result.current.live).toBe(false);
     expect(FakeEventSource.instances[0]!.closed).toBe(true);
   });
 
-  it("closes streams on unmount and opens none without running ratings", () => {
-    const { hook } = setup(["rt_1"]);
+  it("closes the stream on unmount and opens none without a running rating", () => {
+    const { hook } = setup("rt_1");
     hook.unmount();
     expect(FakeEventSource.instances[0]!.closed).toBe(true);
 
-    const idle = setup([]);
+    const idle = setup(null);
     expect(FakeEventSource.instances).toHaveLength(0);
     expect(idle.hook.result.current.live).toBe(false);
   });

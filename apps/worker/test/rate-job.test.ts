@@ -2,7 +2,7 @@ import { asc, count, eq } from "drizzle-orm";
 import { pino } from "pino";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { ContractFields } from "@rater/contracts";
-import { extractContract, parseBboxXhtml } from "@rater/core";
+import { extractContract, MemoryClauseCache, parseBboxXhtml } from "@rater/core";
 import type { ArticleLookup } from "@rater/core";
 import { clauseCache, clauses, contractFields, findings, ratings } from "@rater/db";
 import type { Db } from "@rater/db";
@@ -20,6 +20,7 @@ import {
   UNREADABLE_PDF_MESSAGE,
 } from "../src/rate-job";
 import type { RateJobDeps } from "../src/rate-job";
+import { UNANALYSED_CLAUSE_REASON } from "../src/rating-store";
 import {
   createTempStorage,
   readFixturePdf,
@@ -124,9 +125,10 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
       lawVersion: "2025-11",
       rulesetVersion: "0.1.0",
       promptVersion: "s15-v1",
-      model: "heuristic-v1",
+      model: "heuristic-v2",
       // Employee view (the default): same numbers as the core calibration test.
       scoreOverall: 64,
+      reviewReasons: [],
       usage: { inputTokens: 0, outputTokens: 0 },
     });
     expect(rating.scoreLegal).toBeLessThan(100);
@@ -209,13 +211,46 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
     expect(await rowCounts(ratingId)).toMatchObject({ clauses: 3 });
   });
 
-  it("marks a contract whose wage parts don't add up as needs_review", async () => {
+  it("marks a contract whose wage parts don't add up as needs_review, and says why", async () => {
     const { ratingId, outcome } = await rate("wage-mismatch");
     expect(outcome).toBe("needs_review");
-    expect(await ratingRow(ratingId)).toMatchObject({
-      status: "needs_review",
-      lastStep: "save",
+    const rating = await ratingRow(ratingId);
+    expect(rating).toMatchObject({ status: "needs_review", lastStep: "save" });
+    expect(rating.reviewReasons).toContainEqual(
+      expect.stringMatching(
+        /^Wage parts add up to [\d.]+ but the total wage is [\d.]+\.$/,
+      ),
+    );
+    expect(rating.reviewReasons).not.toContain(UNANALYSED_CLAUSE_REASON);
+  });
+
+  it("asks for a manual check when the analyser fails on a clause twice", async () => {
+    const llm = new HeuristicLlmClient();
+    vi.spyOn(llm, "analyzeClause").mockResolvedValue({
+      json: { not: "a clause analysis" },
+      usage: { inputTokens: 0, outputTokens: 0 },
     });
+    // A fresh cache, so no clause is answered from an earlier test's analysis.
+    const { ratingId, outcome } = await rate("indefinite-clean", {
+      llm,
+      cache: new MemoryClauseCache(),
+    });
+    expect(outcome).toBe("needs_review");
+    expect((await ratingRow(ratingId)).reviewReasons).toEqual([UNANALYSED_CLAUSE_REASON]);
+  });
+
+  it("clears the reasons an earlier attempt stored when the rating ends done", async () => {
+    const { ratingId } = await seedRating(db, storage, {
+      ...org,
+      pdf: await readFixturePdf("indefinite-clean"),
+    });
+    await db
+      .update(ratings)
+      .set({ status: "needs_review", reviewReasons: ["Left by an earlier attempt."] })
+      .where(eq(ratings.id, ratingId));
+
+    expect(await processRating(ratingId, deps())).toBe("done");
+    expect((await ratingRow(ratingId)).reviewReasons).toEqual([]);
   });
 
   it("stores only redacted text, in English and in the Arabic OCR", async () => {

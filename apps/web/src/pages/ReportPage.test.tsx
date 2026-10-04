@@ -59,14 +59,21 @@ describe("ReportPage", () => {
           id: "rt_fail",
           status: "failed",
           score: null,
-          error: { code: "unsupported_document", message: "Not a Qiwa contract" },
+          error: {
+            code: "unsupported_document",
+            message:
+              "The PDF could not be read. It may be damaged or password-protected.",
+          },
         }),
     });
     renderWithProviders(<ReportPage />, { route: "/ratings/rt_fail", path: PATH });
 
     expect(await screen.findByText("We couldn't rate this contract")).toBeInTheDocument();
+    // A damaged Qiwa PDF is not called "not a Qiwa contract": the stored reason is shown.
     expect(
-      screen.getByText(/doesn't look like a Qiwa Unified Employment Contract/),
+      screen.getByText(
+        "The PDF could not be read. It may be damaged or password-protected.",
+      ),
     ).toBeInTheDocument();
   });
 

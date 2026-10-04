@@ -10,6 +10,7 @@ import {
   parseQiwaDate,
   parseTermMonths,
 } from "../../src/extract";
+import type { BboxWord } from "../../src/types";
 import {
   cell,
   cellRight,
@@ -308,6 +309,110 @@ describe("extractContract on hand-built layouts", () => {
     expect(result.clauses).toEqual([]);
     expect(result.section15ArabicRegions).toEqual([]);
     expect(result.issues.map((i) => i.field)).toEqual(["section15"]);
+  });
+
+  it("asks for review when the Section 15 heading is missing between sections that were found", () => {
+    const result = extractContract([
+      minimalContract(
+        heading("14. General Provisions", 620),
+        para("15.1 The employee shall comply with the dress code.", 662),
+        heading("16. Appendix", 720),
+      ),
+    ]);
+    expect(result.issues.map((i) => i.field)).toEqual(["section15.missing"]);
+    expect(result.needsReview).toBe(true);
+  });
+
+  it("does not make up a daily figure for a contract on the weekly criterion", () => {
+    const weekly = page(
+      1,
+      heading("7. Work Hours & Weekly Rest", 280),
+      para("Normal working days shall be 5 days per week and working", 302),
+      para("hours shall be weekly 45. In addition, the Second Party", 316),
+      para("shall be entitled to 2 rest days per week.", 330),
+    );
+    const { fields, issues } = extractContract([weekly]);
+    expect(fields).toMatchObject({
+      workDaysPerWeek: 5,
+      dailyHours: null,
+      weeklyHours: 45,
+    });
+    expect(issues.map((i) => i.field)).not.toContain("weeklyHours");
+  });
+
+  describe("Section 15 items with Arabic text only", () => {
+    /** The minimal contract plus a Section 15 with these rows (Arabic cells end in "15.N"). */
+    function withSection15(...rows: BboxWord[][]) {
+      return [
+        minimalContract(
+          heading("15. Additional Terms", 640),
+          ...rows,
+          heading("16. Appendix", 740),
+        ),
+      ];
+    }
+
+    it("keeps a numbered Arabic row that has no English as a clause for OCR, and asks for review", () => {
+      const result = extractContract(
+        withSection15(
+          para("15.1 The employee shall comply with the dress code.", 662),
+          cellRight("يلتزم الموظف بقواعد اللباس 15.1", 550.8, 662),
+          cellRight("تحسب المكافأة على الأجر الأساسي 15.2", 550.8, 692),
+        ),
+      );
+      expect(result.clauses.map((c) => [c.number, c.textEn])).toEqual([
+        ["15.1", "The employee shall comply with the dress code."],
+        ["15.2", ""],
+      ]);
+      expect(result.issues).toEqual([
+        {
+          field: "section15.textEn",
+          message:
+            "Clause 15.2 has Arabic text but no English text; only the Arabic OCR can read it.",
+        },
+      ]);
+      expect(result.needsReview).toBe(true);
+    });
+
+    it("joins an item's Arabic row to its English row when the Arabic sits slightly higher", () => {
+      const result = extractContract(
+        withSection15(
+          cellRight("يلتزم الموظف بقواعد اللباس 15.1", 550.8, 656),
+          para("15.1 The employee shall comply with the dress code.", 662),
+        ),
+      );
+      expect(result.clauses.map((c) => [c.number, c.textEn])).toEqual([
+        ["15.1", "The employee shall comply with the dress code."],
+      ]);
+      expect(result.issues).toEqual([]);
+      expect(result.needsReview).toBe(false);
+    });
+
+    it("keeps a numbered English row whose text is missing", () => {
+      const result = extractContract(
+        withSection15(para("15.1", 662), cellRight("تحسب المكافأة 15.1", 550.8, 662)),
+      );
+      expect(result.clauses.map((c) => [c.number, c.textEn])).toEqual([["15.1", ""]]);
+      expect(result.needsReview).toBe(true);
+    });
+
+    it("gives an unnumbered Arabic-only Section 15 one clause for OCR to fill", () => {
+      const result = extractContract(
+        withSection15(cellRight("تحسب المكافأة على الأجر الأساسي", 550.8, 662)),
+      );
+      expect(result.clauses.map((c) => [c.number, c.textEn])).toEqual([["15.1", ""]]);
+      expect(result.section15ArabicRegions).toHaveLength(1);
+      expect(result.needsReview).toBe(true);
+    });
+
+    it("does not ask for review when the English says there are no terms", () => {
+      const result = extractContract(
+        withSection15(para("None.", 662), cellRight("لا يوجد", 550.8, 662)),
+      );
+      expect(result.clauses).toEqual([]);
+      expect(result.issues).toEqual([]);
+      expect(result.needsReview).toBe(false);
+    });
   });
 });
 

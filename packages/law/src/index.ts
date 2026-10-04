@@ -1,6 +1,5 @@
 export { RULESET_VERSION, LAW_VERSION } from "./versions";
 export { loadRules, loadCorpus, CorpusEntry } from "./load";
-export { formatCitation } from "./citation";
 export { normaliseText, tokenize } from "./text";
 export { HashEmbedder, cosineSimilarity, l2Normalise, type Embedder } from "./embedder";
 export { MemoryArticleLookup, matchesRef, embedArticle } from "./lookup";

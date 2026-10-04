@@ -1,14 +1,16 @@
 import { createHash } from "node:crypto";
-import { and, asc, count, desc, eq, gt, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import type { OrgKind, RatingStatus, RatingSummary, View } from "@rater/contracts";
 import { bandFor } from "@rater/core";
-import { documents, newId, orgs, ratings } from "@rater/db";
+import { auditEvents, documents, memberships, newId, orgs, ratings } from "@rater/db";
 import type { Db, DbTransaction } from "@rater/db";
 import { ObjectNotFoundError } from "@rater/storage";
 import type { ObjectStorage } from "@rater/storage";
 import { recordAudit } from "../audit";
 import { notFound, rateLimited } from "../errors";
+import { LOCKS, lockUser } from "../locks";
+import { parseRole } from "../orgs";
 import { seesAllRatings } from "../plugins/access";
 import type { RequestContext } from "../plugins/session";
 import type { RatingQueue } from "../queue";
@@ -19,27 +21,33 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export const PAGE_SIZE = 20;
 
 /**
- * Daily limit per user (across all their workspaces): ratings created in the last 24 hours.
+ * Daily limit per user (across all their workspaces): uploads accepted in the last 24 hours,
+ * counted from the "upload" audit events. Deleting a rating keeps its audit event, so it
+ * gives no quota back; an upload that failed has its event removed (undoUpload).
  * Over the limit → 429 with Retry-After = seconds until the oldest of them is 24 hours old.
  */
 export async function checkDailyLimit(
-  db: Db,
+  db: Db | DbTransaction,
   userId: string,
   limit: number,
   now: Date,
 ): Promise<void> {
   const since = new Date(now.getTime() - DAY_MS);
-  const recent = and(eq(ratings.createdBy, userId), gt(ratings.createdAt, since));
-  const [counted] = await db.select({ total: count() }).from(ratings).where(recent);
+  const recent = and(
+    eq(auditEvents.userId, userId),
+    eq(auditEvents.action, "upload"),
+    gt(auditEvents.at, since),
+  );
+  const [counted] = await db.select({ total: count() }).from(auditEvents).where(recent);
   if ((counted?.total ?? 0) < limit) return;
 
   const [oldest] = await db
-    .select({ createdAt: ratings.createdAt })
-    .from(ratings)
+    .select({ at: auditEvents.at })
+    .from(auditEvents)
     .where(recent)
-    .orderBy(asc(ratings.createdAt))
+    .orderBy(asc(auditEvents.at))
     .limit(1);
-  const freesAt = (oldest?.createdAt.getTime() ?? now.getTime()) + DAY_MS;
+  const freesAt = (oldest?.at.getTime() ?? now.getTime()) + DAY_MS;
   const retryAfterSeconds = Math.max(1, Math.ceil((freesAt - now.getTime()) / 1000));
   throw rateLimited(limit, retryAfterSeconds);
 }
@@ -50,12 +58,18 @@ export interface NewRating {
   pages: number;
   /** The view asked for at upload; otherwise it follows the workspace kind. */
   view: View | null;
+  /** The user's daily upload limit (RATE_LIMIT_PER_DAY). */
+  dailyLimit: number;
 }
 
 /**
  * Stores the PDF, writes the document and rating rows (status "queued") and enqueues the job.
  * If anything fails, what was already written is removed again, so a failed upload leaves
  * nothing behind and does not count towards the daily limit.
+ *
+ * The daily limit is checked again inside the transaction that records the upload, under a
+ * per-user lock: concurrent uploads from one user take turns, and each one counts the
+ * uploads committed before it, so no more than the limit can get through together.
  */
 export async function createRating(
   deps: { db: Db; storage: ObjectStorage; queue: RatingQueue; now: () => Date },
@@ -73,6 +87,8 @@ export async function createRating(
 
   try {
     await db.transaction(async (tx) => {
+      await lockUser(tx, LOCKS.dailyLimit, ctx.user.id);
+      await checkDailyLimit(tx, ctx.user.id, input.dailyLimit, now);
       await tx.insert(documents).values({
         id: documentId,
         orgId: ctx.orgId,
@@ -102,6 +118,7 @@ export async function createRating(
         action: "upload",
         targetId: ratingId,
         meta: { documentId, sizeBytes: pdf.length, pages: input.pages },
+        at: now, // the daily limit counts with the same clock
       });
     });
     await queue.send(ratingId);
@@ -120,6 +137,12 @@ async function undoUpload(
 ): Promise<void> {
   await deps.storage.delete(upload.storageKey);
   await removeRatingRows(deps.db, upload.ratingId, upload.documentId);
+  // The upload never happened as far as the daily limit is concerned.
+  await deps.db
+    .delete(auditEvents)
+    .where(
+      and(eq(auditEvents.action, "upload"), eq(auditEvents.targetId, upload.ratingId)),
+    );
 }
 
 /** Personal workspaces rate from the employee's side, company workspaces from HR's. */
@@ -156,16 +179,34 @@ export async function findVisibleRating(
   return rating;
 }
 
-/** The rating's current status, or null once it has been deleted. */
-export async function readRatingStatus(
+/**
+ * The rating's current status, or null once it is deleted or the caller may no longer see
+ * it (removed from the workspace, or now a member who did not upload it). The event stream
+ * reads this on every poll, so access is checked again while it runs.
+ */
+export async function readVisibleStatus(
   db: Db,
+  ctx: RequestContext,
   ratingId: string,
 ): Promise<RatingStatus | null> {
   const [row] = await db
-    .select({ status: ratings.status })
+    .select({
+      status: ratings.status,
+      createdBy: ratings.createdBy,
+      role: memberships.role,
+    })
     .from(ratings)
+    .innerJoin(
+      memberships,
+      and(
+        eq(memberships.organizationId, ratings.orgId),
+        eq(memberships.userId, ctx.user.id),
+      ),
+    )
     .where(eq(ratings.id, ratingId));
-  return row?.status ?? null;
+  if (!row) return null;
+  const roleNow = { ...ctx, role: parseRole(row.role) };
+  return seesAllRatings(roleNow) || row.createdBy === ctx.user.id ? row.status : null;
 }
 
 /** One page of the caller's ratings, newest first. */
@@ -229,6 +270,52 @@ export async function deleteRating(
       meta: { documentId: rating.documentId },
     });
   });
+}
+
+/**
+ * Deletes every rating (with its findings, fields and clauses), document row and stored PDF
+ * in one workspace, and audits each deleted rating. Same order as deleteRating: files first,
+ * then rows. Only the documents listed at the start lose their files and rows, so an upload
+ * finishing meanwhile never ends up as a file without a row. Returns the ratings deleted.
+ */
+export async function deleteWorkspaceData(
+  deps: { db: Db; storage: ObjectStorage },
+  ctx: RequestContext,
+  orgId: string,
+): Promise<number> {
+  const { db, storage } = deps;
+  const [ratingRows, documentRows] = await Promise.all([
+    db
+      .select({ id: ratings.id, documentId: ratings.documentId })
+      .from(ratings)
+      .where(eq(ratings.orgId, orgId)),
+    db
+      .select({ id: documents.id, storageKey: documents.storageKey })
+      .from(documents)
+      .where(eq(documents.orgId, orgId)),
+  ]);
+  for (const document of documentRows) await storage.delete(document.storageKey);
+
+  await db.transaction(async (tx) => {
+    if (ratingRows.length > 0) {
+      const ids = ratingRows.map((rating) => rating.id);
+      await tx.delete(ratings).where(inArray(ratings.id, ids));
+    }
+    if (documentRows.length > 0) {
+      const ids = documentRows.map((document) => document.id);
+      await tx.delete(documents).where(inArray(documents.id, ids));
+    }
+    for (const rating of ratingRows) {
+      await recordAudit(tx, {
+        orgId,
+        userId: ctx.user.id,
+        action: "delete",
+        targetId: rating.id,
+        meta: { documentId: rating.documentId, allData: true },
+      });
+    }
+  });
+  return ratingRows.length;
 }
 
 /** The uploaded PDF, or 404 once retention (or anything else) has removed it. */

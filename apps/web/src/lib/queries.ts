@@ -12,4 +12,6 @@ export const queryKeys = {
   ratingView: (id: string, view: View | undefined, language: string) =>
     ["ratings", "detail", id, view ?? "default", language] as const,
   members: (orgId: string) => ["orgs", orgId, "members"] as const,
+  invites: (orgId: string) => ["orgs", orgId, "invites"] as const,
+  invite: (inviteId: string) => ["invites", inviteId] as const,
 };

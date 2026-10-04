@@ -45,11 +45,26 @@ export async function askWithRetry<T>(
       if (result.ok) return { ok: true, value: result.value, usage };
       previousError = result.error;
     } catch (error) {
+      // A refused or cut-off reply was still paid for, so its tokens count too.
+      const failedUsage = usageOf(error);
+      if (failedUsage) usage = addUsage(usage, failedUsage);
       const message = error instanceof Error ? error.message : String(error);
       previousError = shorten(`The analyser call failed: ${message}`);
     }
   }
   return { ok: false, error: previousError ?? "No valid reply.", usage };
+}
+
+/**
+ * The tokens a failed call used, when the error carries them (the Claude client's
+ * ClaudeReplyError does). Read by shape, so core needs no Claude-specific class.
+ */
+function usageOf(error: unknown): LlmUsage | undefined {
+  const usage = (error as { usage?: Partial<LlmUsage> | null } | null | undefined)?.usage;
+  if (typeof usage?.inputTokens !== "number" || typeof usage.outputTokens !== "number") {
+    return undefined;
+  }
+  return { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens };
 }
 
 export function checkClauseAnalysis(

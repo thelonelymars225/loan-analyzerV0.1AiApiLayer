@@ -12,6 +12,11 @@ export interface AuditEvent {
   targetId: string;
   /** Small, non-personal facts only (ids, sizes). Never file names or contract contents. */
   meta?: Record<string, string | number | boolean | null>;
+  /**
+   * When it happened; defaults to the database clock. Uploads pass the app's clock, which
+   * the daily limit also counts with.
+   */
+  at?: Date;
 }
 
 export async function recordAudit(
@@ -25,5 +30,6 @@ export async function recordAudit(
     action: event.action,
     targetId: event.targetId,
     meta: event.meta ?? null,
+    at: event.at,
   });
 }

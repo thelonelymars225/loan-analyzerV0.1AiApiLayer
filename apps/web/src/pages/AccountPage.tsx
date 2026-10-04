@@ -90,7 +90,7 @@ function LanguageCard() {
 
 function DeleteMyDataCard() {
   const { t } = useTranslation();
-  const { me, personalOrg } = useSession();
+  const { personalOrg } = useSession();
   const toast = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -99,10 +99,8 @@ function DeleteMyDataCard() {
   const [understood, setUnderstood] = useState(false);
 
   const deletion = useMutation({
-    mutationFn: () => {
-      if (!personalOrg) throw new Error("No personal workspace");
-      return deleteMyData(personalOrg, me.activeOrgId);
-    },
+    // The API finds the personal workspace itself, whichever workspace this tab shows.
+    mutationFn: () => deleteMyData(),
     onSuccess: () => {
       queryClient.clear();
       toast({ kind: "success", message: t("account.deleted") });

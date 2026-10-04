@@ -5,14 +5,17 @@ import { describe, expect, it, vi } from "vitest";
 import { fakeFile, jsonResponse, renderWithProviders } from "../../test/render";
 import { UploadCard } from "./UploadCard";
 
-function setup() {
+function setup(retentionDays = 30) {
   const fetchMock = vi.fn<typeof fetch>();
   vi.stubGlobal("fetch", fetchMock);
   // applyAccept off: the client-side check must hold even if the picker's filter is bypassed.
   const user = userEvent.setup({ applyAccept: false });
-  renderWithProviders(<UploadCard defaultView="employee" retentionDays={30} />, {
-    path: "/",
-  });
+  renderWithProviders(
+    <UploadCard defaultView="employee" retentionDays={retentionDays} />,
+    {
+      path: "/",
+    },
+  );
   const input = screen.getByLabelText("Choose a file");
   const submit = screen.getByRole("button", { name: "Rate contract" });
   return { user, input, submit, fetchMock };
@@ -90,7 +93,39 @@ describe("UploadCard", () => {
     await user.click(submit);
 
     expect(
-      await screen.findByText(/doesn't look like a Qiwa Unified Employment Contract/),
+      await screen.findByText(/couldn't read this as a Qiwa Unified Employment Contract/),
     ).toBeInTheDocument();
+  });
+
+  it("shows the API's own reason, such as its real size limit", async () => {
+    const { user, input, submit, fetchMock } = setup();
+    fetchMock.mockResolvedValue(
+      jsonResponse(
+        {
+          type: "about:blank",
+          title: "File too large",
+          status: 413,
+          code: "file_too_large",
+          detail: "The file is larger than 5 MB.",
+        },
+        413,
+        "application/problem+json",
+      ),
+    );
+
+    await user.upload(
+      input,
+      fakeFile("contract.pdf", "application/pdf", 7 * 1024 * 1024),
+    );
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(submit);
+
+    expect(await screen.findByText("The file is larger than 5 MB.")).toBeInTheDocument();
+    expect(screen.queryByText(/larger than 10 MB/)).not.toBeInTheDocument();
+  });
+
+  it("says '1 day', not '1 days', for the shortest retention", () => {
+    setup(1);
+    expect(screen.getByText(/deleted automatically after 1 day\./)).toBeInTheDocument();
   });
 });

@@ -1,10 +1,12 @@
 import type { ContractFields, Finding, Impact, Severity } from "@rater/contracts";
+import { termMonthsOf } from "./engine/term";
 import { isProblemVerdict } from "./engine/verdicts";
 import type { AnalysedFinding } from "./types";
 
 /*
  * Step 5: SAR impact with plain formulas. Only problem findings get an impact, and only when
- * the contract states the numbers the formula needs.
+ * the contract states the numbers the formula needs. An Art. 77 clause that pays at least the
+ * legal default stops being a problem here (it keeps the comparison).
  */
 
 /** Statutory minimum annual leave (Art. 109) that leave_value counts the shortfall against. */
@@ -19,6 +21,8 @@ const ART77_FLOOR_MONTHS = 2;
  * though the clause is lawful. Test #1: two months' basic against a 12-month term.
  */
 const ART77_ESCALATION_MONTHS = 6;
+const ART77_AT_LEAST_DEFAULT_MSG =
+  "The fixed compensation for ending the contract without a valid reason is at least what Art. 77 would pay by default.";
 
 /** Adds the SAR impact to each finding and returns plain Finding objects. */
 export function applyImpact(
@@ -34,7 +38,11 @@ export function applyImpact(
       case "art77_gap":
         return withArt77Gap(finding, analysed, fields);
       case "leave_value":
-        return { ...finding, impact: leaveValue(fields) ?? finding.impact };
+        return {
+          ...finding,
+          impact:
+            leaveValue(leaveDaysOf(analysed, fields), fields.wage) ?? finding.impact,
+        };
       default:
         return finding;
     }
@@ -66,7 +74,8 @@ function eosGap(finding: AnalysedFinding, fields: ContractFields): Impact | null
 /**
  * Fixed compensation for ending the contract without a valid reason (Art. 77) against the
  * legal default. For a fixed-term contract the default is the wages for the rest of the term;
- * the worst case is an ending right after a renewal, which is a whole term. Without a known
+ * the worst case is an ending right after a renewal, which is a whole term. The term comes from
+ * clause 5.1, or from the start and end dates when 5.1 could not be read. Without a known
  * fixed term the default is shown at the statutory floor of two months' wage.
  */
 function withArt77Gap(
@@ -82,8 +91,8 @@ function withArt77Gap(
   const contractBase =
     analysed.impactParams?.compensationBase === "basic" ? wage.basic : wage.total;
   const contract = months * contractBase;
-  const fixedTerm = fields.contractType === "fixed_term" && fields.termMonths !== null;
-  const defaultMonths = fixedTerm ? (fields.termMonths ?? 0) : ART77_FLOOR_MONTHS;
+  const termMonths = fields.contractType === "fixed_term" ? termMonthsOf(fields) : null;
+  const defaultMonths = termMonths ?? ART77_FLOOR_MONTHS;
   const legalDefault = wage.total * defaultMonths;
   const gap = legalDefault - contract;
 
@@ -94,10 +103,12 @@ function withArt77Gap(
       default: roundSar(legalDefault),
       gap: roundSar(gap),
     },
-    note: fixedTerm
-      ? `Legal default: wages for the rest of the term, up to ${defaultMonths} months if the contract is ended right after a renewal.`
-      : "Legal default shown at the Art. 77 floor of two months' wage.",
+    note:
+      termMonths !== null
+        ? `Legal default: wages for the rest of the term, up to ${defaultMonths} months if the contract is ended right after a renewal.`
+        : "Legal default shown at the Art. 77 floor of two months' wage.",
   };
+  if (gap <= 0) return paysAtLeastTheDefault(finding, impact);
   const escalate =
     finding.verdict === "worse_than_default" &&
     gap >= ART77_ESCALATION_MONTHS * wage.total;
@@ -105,10 +116,35 @@ function withArt77Gap(
   return { ...finding, impact, severity };
 }
 
+/**
+ * A fixed amount that is at least the legal default costs the worker nothing, so the finding
+ * is not a problem: compliant, no severity, nothing to ask for. The comparison stays attached.
+ */
+function paysAtLeastTheDefault(finding: Finding, impact: Impact): Finding {
+  const { askFor: _askFor, suggestedWording: _wording, ...rest } = finding;
+  return {
+    ...rest,
+    verdict: "compliant",
+    severity: "none",
+    impact,
+    explanation: `${finding.explanation} The fixed amount is at least the legal default, so it costs the worker nothing.`,
+    employeeMsg: ART77_AT_LEAST_DEFAULT_MSG,
+    hrMsg: ART77_AT_LEAST_DEFAULT_MSG,
+  };
+}
+
+/**
+ * The annual leave days a finding is about. A field finding is about clause 8.1. A Section 15
+ * finding is about its own clause, whose day count the analyser does not report (ImpactParams
+ * has no leave days yet), so it gets no figure rather than 8.1's shortfall, which the field
+ * finding already shows.
+ */
+function leaveDaysOf(analysed: AnalysedFinding, fields: ContractFields): number | null {
+  return analysed.source === "clause" ? null : fields.annualLeaveDays;
+}
+
 /** Value of the leave days below the legal minimum, per year, at the daily wage (total / 30). */
-function leaveValue(fields: ContractFields): Impact | null {
-  const days = fields.annualLeaveDays;
-  const wage = fields.wage;
+function leaveValue(days: number | null, wage: ContractFields["wage"]): Impact | null {
   if (days === null || wage === null || days >= ANNUAL_LEAVE_MIN_DAYS) return null;
   const missingDays = ANNUAL_LEAVE_MIN_DAYS - days;
   return {

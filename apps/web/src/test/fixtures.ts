@@ -1,4 +1,11 @@
-import type { RatingReport, View, ViewDeadline, ViewFinding } from "@rater/contracts";
+import type {
+  MeResponse,
+  OrgRole,
+  RatingReport,
+  View,
+  ViewDeadline,
+  ViewFinding,
+} from "@rater/contracts";
 
 /**
  * One synthetic rating rendered in both views, the way the API does it: same findings, the
@@ -184,5 +191,32 @@ export function syntheticReport(view: View): RatingReport {
       model: "heuristic-v1",
     },
     disclaimer: "Rating aid, not legal advice.",
+  };
+}
+
+/** A signed-in user with a personal workspace and one company workspace. */
+export function syntheticMe(
+  activeOrgId: string,
+  companyRole: OrgRole = "admin",
+): MeResponse {
+  return {
+    user: { id: "u_1", email: "nour@example.com", name: "Nour Al-Harbi" },
+    activeOrgId,
+    orgs: [
+      {
+        id: "org_personal",
+        name: "Nour Al-Harbi",
+        kind: "personal",
+        role: "owner",
+        retentionDays: 30,
+      },
+      {
+        id: "org_co",
+        name: "Example Trading Co.",
+        kind: "company",
+        role: companyRole,
+        retentionDays: 60,
+      },
+    ],
   };
 }

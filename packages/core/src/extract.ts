@@ -445,8 +445,17 @@ const REQUIRED_FIELDS: ContractFieldName[] = [
   "wage",
 ];
 
-/** Issues on these fields mean the numbers can't be trusted and a human should look. */
-const BLOCKING_FIELDS = new Set<string>([...REQUIRED_FIELDS, "weeklyHours"]);
+/**
+ * Issues on these fields mean the numbers can't be trusted and a human should look. The
+ * Section 15 ones mean binding terms may not have been analysed: the heading was not found
+ * though the sections around it were, or an item has Arabic text but no English.
+ */
+const BLOCKING_FIELDS = new Set<string>([
+  ...REQUIRED_FIELDS,
+  "weeklyHours",
+  "section15.missing",
+  "section15.textEn",
+]);
 
 /** Wage parts must add up to the total within this many SAR. */
 const WAGE_TOLERANCE_SAR = 1;
@@ -615,7 +624,7 @@ function readWorkingTime(reader: FieldReader) {
     "workDaysPerWeek",
     /working days shall be\s*\(?\s*(\d+(?:\.\d+)?)\s*\)?\s*days/i,
   );
-  let dailyHours = reader.numberIn(
+  const dailyHours = reader.numberIn(
     "hours",
     "dailyHours",
     /working hours shall be daily\s*\(?\s*(\d+(?:\.\d+)?)/i,
@@ -631,13 +640,13 @@ function readWorkingTime(reader: FieldReader) {
     /(\d+(?:\.\d+)?)\s*\)?\s*rest days?/i,
   );
 
-  // The template prints one of the two; derive the other so rules can use either.
+  // The template prints the daily or the weekly criterion (Art. 98 caps 8 a day OR 48 a week).
+  // A week follows from a day: 8 a day over at most 6 days stays within 48. A day is never
+  // derived from a week: 45 a week over 5 days is lawful under the weekly criterion, though
+  // its average of 9 a day would break the daily cap.
   if (weeklyHours === null && dailyHours !== null && workDaysPerWeek !== null) {
     weeklyHours = dailyHours * workDaysPerWeek;
     reader.note("weeklyHours", reader.pageOf("hours"), "medium");
-  } else if (dailyHours === null && weeklyHours !== null && workDaysPerWeek) {
-    dailyHours = weeklyHours / workDaysPerWeek;
-    reader.note("dailyHours", reader.pageOf("hours"), "medium");
   }
   return { workDaysPerWeek, dailyHours, weeklyHours, restDaysPerWeek };
 }
@@ -694,9 +703,6 @@ function checkRequiredFields(fields: ContractFields, reader: FieldReader): void 
   if (fields.dailyHours === null && fields.weeklyHours === null) {
     reader.issue("weeklyHours", "Neither daily nor weekly working hours were found.");
   }
-  if (!reader.doc.section("additional")) {
-    reader.issue("section15", 'Section "15. Additional Terms" was not found.');
-  }
 }
 
 /** Section 9.1.1: basic, housing, transport, other allowances and the printed total. */
@@ -737,16 +743,26 @@ function readWage(reader: FieldReader): Wage | null {
 
 /** "15.3 The employer ..." at the start of an English line. The space after the number is required. */
 const CLAUSE_MARKER = /^15\s*\.\s*(\d{1,2}(?:\.\d{1,2})*)\.?(?:\s+(.*))?$/;
+/**
+ * "15.3" (or a mirrored "3.15") at the right edge of an Arabic row, where pdftotext puts the
+ * item number of the Arabic column.
+ */
+const ARABIC_CLAUSE_MARKER = /(?:^|\s)(?:15\s*\.\s*(\d{1,2})|(\d{1,2})\s*\.\s*15)$/;
 /** Space kept between the OCR region and the headings above and below it. */
 const REGION_PAD_PT = 2;
 
+/**
+ * Section 15, one clause per numbered item. The Arabic text prevails, so an item with Arabic
+ * text but no English is kept with empty English: Arabic OCR fills it in later, and a blocking
+ * issue sends the rating to review rather than letting it end "done" without those terms.
+ */
 function readSection15(doc: ContractDocument): {
   clauses: Clause[];
   regions: PageRegion[];
   issues: ExtractionIssue[];
 } {
   const section = doc.section("additional");
-  if (!section) return { clauses: [], regions: [], issues: [] };
+  if (!section) return { clauses: [], regions: [], issues: [missingSection15Issue(doc)] };
   const issues: ExtractionIssue[] = [];
   if (!doc.section("appendix")) {
     issues.push({
@@ -760,11 +776,29 @@ function readSection15(doc: ContractDocument): {
   const preamble: string[] = [];
   for (const line of body) {
     const text = cleanEnglish(englishLineText(line));
-    if (!text) continue;
     const marker = CLAUSE_MARKER.exec(text);
-    if (marker?.[1]) drafts.push({ number: `15.${marker[1]}`, parts: [marker[2] ?? ""] });
-    else if (drafts.length > 0) drafts[drafts.length - 1]?.parts.push(text);
-    else preamble.push(text);
+    const last = drafts[drafts.length - 1];
+    if (marker?.[1]) {
+      const number = `15.${marker[1]}`;
+      const firstPart = marker[2] ?? "";
+      // The Arabic side of this item may sit on its own row just above the English one.
+      const arabicRowAbove = last?.number === number && last.parts.length === 0;
+      if (arabicRowAbove) {
+        last.parts.push(firstPart);
+      } else {
+        drafts.push({ number, parts: [firstPart] });
+      }
+    } else if (text && last) {
+      last.parts.push(text);
+    } else if (text) {
+      preamble.push(text);
+    } else {
+      // A numbered row with Arabic text only: an item the English column leaves out.
+      const number = arabicClauseNumber(line);
+      if (number && !drafts.some((draft) => draft.number === number)) {
+        drafts.push({ number, parts: [] });
+      }
+    }
   }
   if (drafts.length === 0 && preamble.join(" ").split(" ").length >= 4) {
     issues.push({
@@ -773,21 +807,52 @@ function readSection15(doc: ContractDocument): {
     });
     drafts.push({ number: "15.1", parts: preamble });
   }
+  // Arabic terms and no English at all: one clause for the OCR to fill.
+  if (drafts.length === 0 && preamble.length === 0 && body.some(hasArabicCell)) {
+    drafts.push({ number: "15.1", parts: [] });
+  }
 
-  const clauses: Clause[] = [];
-  for (const draft of drafts) {
+  const clauses: Clause[] = drafts.map((draft) => {
     const textEn = draft.parts.join(" ").replace(/\s+/g, " ").trim();
-    if (!textEn) continue;
-    clauses.push({
+    return {
       section: 15,
       number: draft.number,
       textEn,
       textAr: null,
       textHash: hashClauseText(textEn),
+    };
+  });
+  for (const clause of clauses.filter((c) => !c.textEn)) {
+    issues.push({
+      field: "section15.textEn",
+      message: `Clause ${clause.number} has Arabic text but no English text; only the Arabic OCR can read it.`,
     });
   }
 
   return { clauses, regions: section15Regions(doc, section), issues };
+}
+
+/**
+ * Without the "15. Additional Terms" heading, Section 15 is not read at all. When the sections
+ * around it were found, the heading was missed and binding terms may be lost, so that blocks.
+ */
+function missingSection15Issue(doc: ContractDocument): ExtractionIssue {
+  const message = 'Section "15. Additional Terms" was not found.';
+  const surroundingSectionsFound = doc.section("general") || doc.section("appendix");
+  return surroundingSectionsFound
+    ? { field: "section15.missing", message: `${message} Its terms were not analysed.` }
+    : { field: "section15", message };
+}
+
+function arabicClauseNumber(line: Line): string | null {
+  const text = normaliseOcrDigits(line.ar.map((s) => s.text).join(" ")).trim();
+  const marker = ARABIC_CLAUSE_MARKER.exec(text);
+  const sub = marker?.[1] ?? marker?.[2];
+  return sub ? `15.${Number(sub)}` : null;
+}
+
+function hasArabicCell(line: Line): boolean {
+  return line.ar.some((segment) => segment.text.trim() !== "");
 }
 
 function englishLineText(line: Line): string {

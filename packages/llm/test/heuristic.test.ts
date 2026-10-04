@@ -34,6 +34,10 @@ const CLAUSE_LIBRARY: LibraryRow[] = [
       "The employee's gratuity at the end of service will be based solely on base salary, excluding housing and transportation allowances.",
       "Upon termination, the end-of-service reward is calculated using the basic monthly salary.",
       "EOS award: basic pay only.",
+      // Another wage named only to rule it out.
+      "The end-of-service award shall be calculated on the basic salary and not on the total salary.",
+      "The end-of-service award shall be calculated on the basic salary only, not on the full wage.",
+      "The end-of-service award shall be calculated on the basic salary, not including allowances.",
     ],
     expected: {
       ruleId: "EOS-BASE-01",
@@ -49,6 +53,10 @@ const CLAUSE_LIBRARY: LibraryRow[] = [
       "The end of service award will be calculated on the employee's last actual salary, including all allowances, as per the Labor Law.",
       "End-of-service gratuity shall be based on the basic salary plus allowances.",
       "The employee's end of service benefit is computed on the full wage.",
+      // The basic salary named only to rule it out, or as a part of the full wage.
+      "The end-of-service award shall be calculated on the last actual wage and not on the basic salary.",
+      "The end-of-service award shall be calculated on the total salary, including the basic salary, housing and transport allowances.",
+      "The end-of-service award shall not be calculated on the basic salary alone but on the full wage.",
     ],
     expected: {
       ruleId: "EOS-BASE-01",
@@ -195,6 +203,9 @@ const CLAUSE_LIBRARY: LibraryRow[] = [
       "The term of this agreement is open-ended and it will end once the client project is completed (Article 57 of the Labor Law).",
       "Employment under this contract continues until the end of the project for which the employee was hired.",
       "This is a project-based contract that ends when the project is finished.",
+      "The employee's services shall end upon completion of the project.",
+      // Pay named after the contract does not hide the project end.
+      "This contract shall remain in force until the completion of the project, and the employee shall receive a project allowance of SAR 500.",
     ],
     expected: { ruleId: "TYPE-ART57-01", verdict: "unclear", severity: "high" },
   },
@@ -353,6 +364,59 @@ describe("offline analyser: other outcomes", () => {
     expect(analyse(extension)[0]).toMatchObject({ verdict: "likely_void" });
   });
 
+  describe("probation in total, with 90 days in clause 6.1", () => {
+    const ninetyDays = "Contract type: fixed-term. Probation: 90 days.";
+
+    it.each([
+      // Days added to clause 6.1, however the clause words it.
+      [
+        "In addition to the probation in clause 6.1, the employee shall serve a further probation of 120 days.",
+        210,
+      ],
+      ["The probation period may be renewed for 120 days.", 210],
+      [
+        "The employer may extend the probation period for a period not exceeding 120 days.",
+        210,
+      ],
+      ["The probation period may be extended by up to 120 days.", 210],
+      ["The employee shall be subject to a second probation period of 90 days.", 180],
+      // Served twice.
+      ["The probationary period of 90 days may be repeated once.", 180],
+      ["The probation period may be renewed once.", 180],
+      // A stated total wins over the days added.
+      ["Probation is 90 days, extendable to 180 days.", 180],
+      ["Probation is 90 days, extendable to 270 days.", 270],
+      [
+        "The probation period may be extended by a further 90 days, provided the total does not exceed 180 days.",
+        180,
+      ],
+      ["The probation, including any extension, shall not exceed 180 days.", 180],
+      ["The probation period may not be extended beyond 180 days.", 180],
+      ["Probation is 60 days. It may be extended by 60 days.", 120],
+    ])("%s → %i days", (text, total) => {
+      const [match] = analyse(text, ninetyDays);
+      expect(match?.ruleId).toBe("PROB-MAX-01");
+      expect(match?.verdict).toBe(probationVerdict(total));
+      expect(match?.explanation).toContain(`${total} days`);
+    });
+
+    /** The legal maximum is 180 days in total. */
+    function probationVerdict(total: number): Verdict {
+      if (total > 180) return "likely_void";
+      if (total === 180) return "compliant";
+      return "better_than_law";
+    }
+
+    it.each([
+      "During the probationary period, either party may terminate the contract with 15 days notice.",
+      "Either party may end the contract during probation by giving 15 days' written notice.",
+      "During probation, either party may terminate the contract by giving a notice of 15 days.",
+      "The probation period may be extended.",
+    ])("states no probation length: %s", (text) => {
+      expect(analyse(text, ninetyDays)).toEqual([]);
+    });
+  });
+
   it("reads 'one hundred and eighty (180) days' as the legal maximum", () => {
     expect(
       verdictOf(
@@ -360,6 +424,21 @@ describe("offline analyser: other outcomes", () => {
         "PROB-MAX-01",
       ),
     ).toEqual(["compliant", "none"]);
+  });
+
+  it.each([
+    "The end-of-service award shall be calculated on the basic salary plus housing and transportation allowances.",
+    "End-of-service benefits are based on the basic wage, housing allowance and transport allowance.",
+  ])("reads basic salary + housing + transport as the whole Qiwa wage: %s", (text) => {
+    const [match] = analyse(text);
+    expect(match).toMatchObject({
+      ruleId: "EOS-BASE-01",
+      verdict: "compliant",
+      severity: "none",
+      // The contract could also pay other fixed allowances, which the clause leaves out.
+      confidence: "medium",
+      impactParams: { eosBase: "actual" },
+    });
   });
 
   it("treats basic salary plus housing only as a reduced end-of-service base", () => {
@@ -423,6 +502,18 @@ describe("offline analyser: other outcomes", () => {
     expect(verdictOf(text, "CONFIDENTIAL-01")).toBeNull();
   });
 
+  it.each([
+    "Site allowance of SAR 500 applies for the duration of the project.",
+    "The housing allowance shall continue until the end of the employee's assignment.",
+    "The employee may be assigned to project-based tasks.",
+    "The employee shall perform the tasks of the specific project assigned to him.",
+  ])(
+    "does not read an allowance or a task tied to a project as the contract's end: %s",
+    (text) => {
+      expect(verdictOf(text, "TYPE-ART57-01")).toBeNull();
+    },
+  );
+
   it("accepts a project end when the work is defined", () => {
     const text =
       "This contract ends upon completion of the project; the scope and deliverables are set out in Appendix A and completion shall be confirmed by an acceptance certificate.";
@@ -462,6 +553,17 @@ describe("offline analyser: Arabic text when the English is missing", () => {
     ["يعوض العمل الإضافي بإجازة بدل حسب تقدير صاحب العمل.", "OT-RATE-01", "likely_void"],
     ["هذا العقد لمدة غير محددة وينتهي بانتهاء المشروع.", "TYPE-ART57-01", "unclear"],
     ["مدة فترة التجربة ٢٧٠ يوماً.", "PROB-MAX-01", "likely_void"],
+    ["يجوز تجديد فترة التجربة لمدة 120 يومًا.", "PROB-MAX-01", "likely_void"],
+    [
+      "تُحسب مكافأة نهاية الخدمة على أساس آخر أجر فعلي وليس على أساس الأجر الأساسي.",
+      "EOS-BASE-01",
+      "compliant",
+    ],
+    [
+      "تُحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي وبدل السكن وبدل النقل.",
+      "EOS-BASE-01",
+      "compliant",
+    ],
     // Paraphrases from evals/clause-library.json.
     [
       "لا يحق للموظف مشاركة معلومات الشركة أو مستنداتها مع الغير.",
@@ -519,6 +621,10 @@ describe("offline analyser: Arabic text when the English is missing", () => {
     });
   });
 
+  it("does not read an allowance that lasts until the project ends as the contract's end", () => {
+    expect(analyseArabic("يستمر بدل السكن حتى انتهاء المشروع.")).toEqual([]);
+  });
+
   it("prefers the English text when both are present", () => {
     const reply = analyseClauseOffline(
       clauseRequest({
@@ -535,7 +641,7 @@ describe("HeuristicLlmClient", () => {
 
   it("names itself and uses the current prompt version", () => {
     expect(client.model).toBe(HEURISTIC_MODEL);
-    expect(client.model).toBe("heuristic-v1");
+    expect(client.model).toBe("heuristic-v2");
     expect(client.promptVersion).toBe(PROMPT_VERSION);
   });
 

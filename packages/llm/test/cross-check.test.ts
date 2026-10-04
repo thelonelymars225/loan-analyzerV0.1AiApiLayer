@@ -100,6 +100,29 @@ describe("offline cross-check (TYPE-CONFLICT-01)", () => {
     expect(conflicts([{ number: "15.1", en: text }], summary)).toEqual([]);
   });
 
+  it.each([
+    "Site allowance of SAR 500 applies for the duration of the project.",
+    "The housing allowance shall continue until the end of the employee's assignment.",
+    "The employee may be assigned to project-based tasks.",
+  ])("ignores an allowance or a task tied to a project: %s", (text) => {
+    for (const summary of [FIXED_TERM_SUMMARY, INDEFINITE_SUMMARY]) {
+      expect(conflicts([{ number: "15.1", en: text }], summary)).toEqual([]);
+    }
+  });
+
+  it("ignores an Arabic allowance that lasts until the project ends", () => {
+    const allowance = { number: "15.1", ar: "يستمر بدل السكن حتى انتهاء المشروع." };
+    expect(conflicts([allowance], FIXED_TERM_SUMMARY)).toEqual([]);
+  });
+
+  it("still flags a project end when the sentence names pay after the contract", () => {
+    const text =
+      "This contract shall remain in force until the completion of the project, and the employee shall receive a project allowance of SAR 500.";
+    expect(conflicts([{ number: "15.1", en: text }], FIXED_TERM_SUMMARY)).toEqual([
+      expect.objectContaining({ ruleId: "TYPE-CONFLICT-01", templateClause: "5.1" }),
+    ]);
+  });
+
   it("reports nothing when the contract type is unknown", () => {
     const summary = "Contract type: not found. Probation: 90 days.";
     expect(conflicts([{ number: "15.1", en: UNLIMITED_PROJECT }], summary)).toEqual([]);

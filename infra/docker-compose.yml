@@ -1,0 +1,190 @@
+# The whole product on one machine: Postgres + pgvector, MinIO (an S3 stand-in), the API,
+# the worker and the web app.
+#
+#   docker compose -f infra/docker-compose.yml up --build     (or: pnpm docker:up)
+#
+# Then open http://localhost:8080. Also published on localhost only:
+#   API health   http://localhost:3000/api/v1/healthz
+#   MinIO        http://localhost:9001 (console)
+#   Postgres     localhost:5432 (postgres / postgres, database "rater")
+#
+# Settings come from your shell or from infra/.env (Compose reads the .env file that sits next
+# to this file). Every setting has a default, so no .env is needed to start. The default
+# passwords and keys are for this local stack only: set your own before you upload a real
+# contract. Set ANTHROPIC_API_KEY to rate with Claude; without it the offline heuristic
+# analyser runs.
+
+name: contract-rater
+
+# Settings shared by the API, the worker and the one-shot migrate job.
+x-app-env: &app-env
+  DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/rater
+  STORAGE_DRIVER: s3
+  S3_ENDPOINT: http://minio:9000
+  S3_REGION: us-east-1
+  S3_BUCKET: ${S3_BUCKET:-contracts}
+  S3_FORCE_PATH_STYLE: "true"
+  S3_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-rater}
+  S3_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-local-only-password}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+
+# MinIO's community edition is no longer published on Docker Hub as minio/minio. pgsty/minio
+# is a community build of the same server with the mc client inside. Any MinIO image works:
+# set MINIO_IMAGE to use another one.
+x-minio-image: &minio-image ${MINIO_IMAGE:-pgsty/minio:RELEASE.2026-08-04T00-00-00Z}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: rater
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rater"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  minio:
+    image: *minio-image
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-rater}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-local-only-password}
+      # A KMS key lets MinIO encrypt objects at rest (SSE-S3). The storage driver asks for
+      # SSE on every upload, and MinIO refuses that without a key. Format: <name>:<base64 of
+      # 32 bytes>. Make your own with: echo "rater-key:$(openssl rand -base64 32)"
+      MINIO_KMS_SECRET_KEY: ${MINIO_KMS_SECRET_KEY:-rater-key:bG9jYWwtY29tcG9zZS1vbmx5LWNoYW5nZS1tZS1rZXk=}
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # One-shot: creates the private bucket and turns on default encryption, then exits.
+  minio-setup:
+    image: *minio-image
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-rater}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-local-only-password}
+      S3_BUCKET: ${S3_BUCKET:-contracts}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        mc alias set rater http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD"
+        mc mb --ignore-existing "rater/$$S3_BUCKET"
+        mc anonymous set none "rater/$$S3_BUCKET"
+        mc encrypt set sse-s3 "rater/$$S3_BUCKET"
+    restart: "no"
+
+  # One-shot: applies the database migrations and loads the law corpus, then exits.
+  migrate:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: worker
+    working_dir: /app
+    command: ["sh", "-c", "pnpm db:migrate && pnpm law:ingest"]
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/rater
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: api
+    init: true
+    environment:
+      <<: *app-env
+      PORT: "3000"
+      # Better Auth signs session cookies with this. At least 32 characters.
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-local-compose-only-secret-change-me}
+      # The browser reaches the API through nginx, so both are the web app's address.
+      BETTER_AUTH_URL: http://localhost:${WEB_PORT:-8080}
+      WEB_ORIGIN: http://localhost:${WEB_PORT:-8080}
+      RATE_LIMIT_PER_DAY: ${RATE_LIMIT_PER_DAY:-20}
+      # The migrate job above already did this.
+      DB_MIGRATE_ON_START: "false"
+    ports:
+      - "127.0.0.1:${API_PORT:-3000}:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      minio-setup:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/api/v1/healthz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+      target: worker
+    init: true
+    environment:
+      <<: *app-env
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      OCR_ENABLED: ${OCR_ENABLED:-true}
+      # Empty ANTHROPIC_API_KEY: the offline heuristic analyser. See .env.example for the rest.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_STRUCTURED_OUTPUT: ${LLM_STRUCTURED_OUTPUT:-}
+      # The migrate job above already did this.
+      DB_MIGRATE_ON_START: "false"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      minio-setup:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.web
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  minio-data:

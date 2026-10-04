@@ -1,0 +1,475 @@
+{
+  "$comment": "Synthetic Section 15 clauses with the verdict the analyser should give each one (BUILD_SPEC 'Section 15 clause library'). 'expected' is the clause step's answer (step 4b) before impact: COMP-ART77-01 can still be escalated to high by the impact step. Never put real contract wording here.",
+  "clauses": [
+    {
+      "key": "eos_basic",
+      "en": "The end-of-service award shall be calculated on the basis of the basic salary only.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس الراتب الأساسي فقط.",
+      "expected": {
+        "ruleId": "EOS-BASE-01",
+        "verdict": "likely_void",
+        "severity": "high",
+        "impactParams": { "eosBase": "basic" }
+      },
+      "paraphrases": [
+        {
+          "en": "End-of-service benefits will be paid on the employee's basic wage, excluding all allowances.",
+          "ar": "تُصرف مستحقات نهاية الخدمة على أساس الأجر الأساسي للموظف دون احتساب أي بدلات."
+        },
+        {
+          "en": "Only the basic monthly salary shall be taken into account when calculating the end-of-service gratuity.",
+          "ar": "لا يُؤخذ في الاعتبار عند احتساب مكافأة نهاية الخدمة إلا الراتب الأساسي الشهري."
+        }
+      ]
+    },
+    {
+      "key": "eos_actual",
+      "en": "The end-of-service award shall be calculated on the last actual wage in accordance with the Labor Law.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس آخر أجر فعلي وفقًا لنظام العمل.",
+      "expected": {
+        "ruleId": "EOS-BASE-01",
+        "verdict": "compliant",
+        "severity": "none",
+        "impactParams": { "eosBase": "actual" }
+      },
+      "paraphrases": [
+        {
+          "en": "The end-of-service gratuity will be based on the employee's last total wage, including all allowances, as provided in the Labor Law.",
+          "ar": "تُحتسب مكافأة نهاية الخدمة على أساس آخر أجر إجمالي يتقاضاه الموظف شاملًا جميع البدلات، وفقًا لما نص عليه نظام العمل."
+        },
+        {
+          "en": "The end-of-service award shall not be calculated on the basic salary alone but on the full wage.",
+          "ar": "تُحسب مكافأة نهاية الخدمة على أساس الأجر الكامل، لا على أساس الأجر الأساسي وحده."
+        }
+      ]
+    },
+    {
+      "key": "eos_actual_not_basic",
+      "en": "The end-of-service award shall be calculated on the last actual wage and not on the basic salary.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس آخر أجر فعلي وليس على أساس الأجر الأساسي.",
+      "expected": {
+        "ruleId": "EOS-BASE-01",
+        "verdict": "compliant",
+        "severity": "none",
+        "impactParams": { "eosBase": "actual" }
+      },
+      "paraphrases": [
+        {
+          "en": "The end-of-service award shall be calculated on the total salary, including the basic salary, housing and transport allowances.",
+          "ar": "تُحسب مكافأة نهاية الخدمة على أساس الراتب الإجمالي الذي يشمل الراتب الأساسي وبدلي السكن والنقل."
+        }
+      ]
+    },
+    {
+      "key": "eos_basic_housing_transport",
+      "en": "The end-of-service award shall be calculated on the basic salary plus housing and transportation allowances.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي وبدل السكن وبدل النقل.",
+      "expected": {
+        "ruleId": "EOS-BASE-01",
+        "verdict": "compliant",
+        "severity": "none",
+        "impactParams": { "eosBase": "actual" }
+      },
+      "paraphrases": [
+        {
+          "en": "End-of-service benefits are based on the basic wage, housing allowance and transport allowance.",
+          "ar": "تُبنى مستحقات نهاية الخدمة على الأجر الأساسي وبدل السكن وبدل النقل."
+        }
+      ]
+    },
+    {
+      "key": "eos_basic_not_total",
+      "en": "The end-of-service award shall be calculated on the basic salary and not on the total salary.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي وليس على أساس الأجر الإجمالي.",
+      "expected": {
+        "ruleId": "EOS-BASE-01",
+        "verdict": "likely_void",
+        "severity": "high",
+        "impactParams": { "eosBase": "basic" }
+      },
+      "paraphrases": [
+        {
+          "en": "The end-of-service award shall be calculated on the basic salary only, not on the full wage.",
+          "ar": "تُحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي فقط، لا على أساس الأجر الكامل."
+        }
+      ]
+    },
+    {
+      "key": "eos_basic_housing",
+      "en": "The end-of-service award is calculated on the basic salary and housing allowance.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس الأجر الأساسي وبدل السكن.",
+      "expected": {
+        "ruleId": "EOS-BASE-01",
+        "verdict": "likely_void",
+        "severity": "high",
+        "impactParams": { "eosBase": "other" }
+      },
+      "paraphrases": [
+        {
+          "en": "End-of-service gratuity shall be computed on the basic salary plus the housing allowance only.",
+          "ar": "تُحتسب مكافأة نهاية الخدمة على الراتب الأساسي وبدل السكن فقط."
+        }
+      ]
+    },
+    {
+      "key": "comp_two_months_basic",
+      "en": "If either party terminates this contract before its expiry without a valid reason, it shall pay the other party compensation equal to two months of basic wage.",
+      "ar": "إذا أنهى أحد الطرفين هذا العقد قبل انتهاء مدته دون سبب مشروع، التزم بأن يدفع للطرف الآخر تعويضًا يعادل أجر شهرين من الأجر الأساسي.",
+      "expected": {
+        "ruleId": "COMP-ART77-01",
+        "verdict": "worse_than_default",
+        "severity": "medium",
+        "impactParams": { "compensationMonths": 2, "compensationBase": "basic" }
+      },
+      "paraphrases": [
+        {
+          "en": "A party that ends this contract early without a legitimate reason shall pay the other party two (2) months' basic salary as compensation.",
+          "ar": "يلتزم الطرف الذي ينهي هذا العقد قبل موعده دون سبب مشروع بأن يدفع للطرف الآخر تعويضًا قدره الراتب الأساسي لمدة شهرين."
+        },
+        {
+          "en": "Compensation for terminating this contract without a valid reason is fixed at two months of the basic wage, payable by the party that terminates it.",
+          "ar": "يُحدَّد التعويض عن إنهاء هذا العقد دون سبب مشروع بما يعادل الأجر الأساسي لشهرين، ويدفعه الطرف الذي أنهى العقد."
+        }
+      ]
+    },
+    {
+      "key": "comp_three_months_actual",
+      "en": "If either party terminates this contract before its expiry without a valid reason, it shall pay the other party compensation equal to three months of the total wage.",
+      "ar": "إذا أنهى أحد الطرفين هذا العقد قبل انتهاء مدته دون سبب مشروع، التزم بأن يدفع للطرف الآخر تعويضًا يعادل ثلاثة أشهر من الأجر الإجمالي.",
+      "expected": {
+        "ruleId": "COMP-ART77-01",
+        "verdict": "worse_than_default",
+        "severity": "medium",
+        "impactParams": { "compensationMonths": 3, "compensationBase": "actual" }
+      },
+      "paraphrases": [
+        {
+          "en": "Should either party end the contract without a valid reason before it expires, it must compensate the other party with three (3) months of the full wage.",
+          "ar": "إذا أنهى أي من الطرفين العقد دون سبب مشروع قبل انتهاء مدته، وجب عليه تعويض الطرف الآخر بما يعادل الأجر الإجمالي لثلاثة أشهر."
+        }
+      ]
+    },
+    {
+      "key": "transfer_anywhere",
+      "en": "The employer may transfer the employee to any of its branches or projects anywhere in the Kingdom.",
+      "ar": "يجوز لصاحب العمل نقل الموظف إلى أي من فروعه أو مشاريعه في أي مكان داخل المملكة.",
+      "expected": {
+        "ruleId": "TRANSFER-KSA-01",
+        "verdict": "worse_than_default",
+        "severity": "medium"
+      },
+      "paraphrases": [
+        {
+          "en": "The company may relocate the employee to any city in Saudi Arabia according to work needs.",
+          "ar": "يحق للشركة نقل الموظف إلى أي مدينة في المملكة العربية السعودية بحسب احتياجات العمل."
+        },
+        {
+          "en": "The employee agrees to work at any of the employer's sites or projects throughout the Kingdom as assigned.",
+          "ar": "يوافق الموظف على العمل في أي من مواقع صاحب العمل أو مشاريعه في جميع أنحاء المملكة حسب التكليف."
+        }
+      ]
+    },
+    {
+      "key": "leave_no_carry",
+      "en": "Annual leave must be taken within the same calendar year and may not be carried forward.",
+      "ar": "يجب استنفاد الإجازة السنوية خلال السنة الميلادية نفسها، ولا يجوز ترحيلها.",
+      "expected": {
+        "ruleId": "LEAVE-FORFEIT-01",
+        "verdict": "unclear",
+        "severity": "low"
+      },
+      "paraphrases": [
+        {
+          "en": "Unused annual leave cannot be carried over to the following year; it must be used within the same year.",
+          "ar": "لا يجوز ترحيل رصيد الإجازة السنوية غير المستخدم إلى السنة التالية، ويجب استخدامه خلال السنة نفسها."
+        }
+      ]
+    },
+    {
+      "key": "leave_forfeit",
+      "en": "Any annual leave not taken by the end of the year is forfeited without compensation.",
+      "ar": "يسقط حق الموظف في أي إجازة سنوية لم يتمتع بها حتى نهاية السنة دون تعويض.",
+      "expected": {
+        "ruleId": "LEAVE-FORFEIT-01",
+        "verdict": "likely_void",
+        "severity": "medium"
+      },
+      "paraphrases": [
+        {
+          "en": "Annual leave days that are not used by 31 December shall lapse and will not be paid.",
+          "ar": "تسقط أيام الإجازة السنوية التي لا تُستخدم حتى 31 ديسمبر ولا يُصرف عنها أي مقابل."
+        }
+      ]
+    },
+    {
+      "key": "ot_25",
+      "en": "Overtime shall be compensated at 25% of the basic hourly wage.",
+      "ar": "يُعوَّض العمل الإضافي بنسبة 25% من أجر الساعة الأساسي.",
+      "expected": {
+        "ruleId": "OT-RATE-01",
+        "verdict": "likely_void",
+        "severity": "high"
+      },
+      "paraphrases": [
+        {
+          "en": "Each overtime hour is paid at the hourly rate plus 25 percent of the basic hourly wage.",
+          "ar": "تُدفع كل ساعة عمل إضافية بأجر الساعة مضافًا إليه 25% من أجر الساعة الأساسي."
+        }
+      ]
+    },
+    {
+      "key": "ot_lieu",
+      "en": "Overtime hours will be compensated with time off in lieu at the employer's discretion.",
+      "ar": "تُعوَّض ساعات العمل الإضافية بإجازة بدل وفق تقدير صاحب العمل.",
+      "expected": {
+        "ruleId": "OT-RATE-01",
+        "verdict": "likely_void",
+        "severity": "high"
+      },
+      "paraphrases": [
+        {
+          "en": "Instead of overtime pay, the employer may grant the employee compensatory days off as it sees fit.",
+          "ar": "يجوز لصاحب العمل أن يمنح الموظف إجازة تعويضية بدلًا من أجر العمل الإضافي حسبما يراه مناسبًا."
+        }
+      ]
+    },
+    {
+      "key": "noncompete_3y",
+      "en": "After the contract ends, the employee shall not work for any competitor for three years.",
+      "ar": "لا يجوز للموظف بعد انتهاء العقد العمل لدى أي منافس لمدة ثلاث سنوات.",
+      "expected": {
+        "ruleId": "NONCOMPETE-01",
+        "verdict": "likely_void",
+        "severity": "high",
+        "impactParams": { "nonCompeteMonths": 36 }
+      },
+      "paraphrases": [
+        {
+          "en": "For three (3) years following the termination of employment, the employee shall not join any competitor anywhere.",
+          "ar": "لا يجوز للموظف الالتحاق بأي منافس في أي مكان لمدة ثلاث سنوات بعد انتهاء علاقة العمل."
+        }
+      ]
+    },
+    {
+      "key": "noncompete_ok",
+      "en": "For 12 months after the contract ends, the employee shall not work for a direct competitor in Riyadh in a software sales role with access to the employer's clients.",
+      "ar": "لا يجوز للموظف خلال 12 شهرًا من انتهاء العقد العمل لدى منافس مباشر في الرياض في وظيفة مبيعات برمجيات يطلع فيها على عملاء صاحب العمل.",
+      "expected": {
+        "ruleId": "NONCOMPETE-01",
+        "verdict": "compliant",
+        "severity": "none",
+        "impactParams": { "nonCompeteMonths": 12 }
+      },
+      "paraphrases": [
+        {
+          "en": "For one year after the contract ends, the employee shall not work in a sales role for a direct competitor in Jeddah, as the job gives access to the employer's clients.",
+          "ar": "لا يجوز للموظف لمدة سنة واحدة بعد انتهاء العقد العمل في وظيفة مبيعات لدى منافس مباشر في جدة، لأن عمله يتيح له الاطلاع على عملاء صاحب العمل."
+        }
+      ]
+    },
+    {
+      "key": "confidential_unlimited",
+      "en": "The employee shall not disclose any information about the employer's business at any time, during or after employment.",
+      "ar": "لا يجوز للموظف الإفصاح عن أي معلومات تخص أعمال صاحب العمل في أي وقت، سواء أثناء العمل أو بعد انتهائه.",
+      "expected": {
+        "ruleId": "CONFIDENTIAL-01",
+        "verdict": "unclear",
+        "severity": "low"
+      },
+      "paraphrases": [
+        {
+          "en": "The employee is not allowed to share the company's information or documents with others.",
+          "ar": "لا يحق للموظف مشاركة معلومات الشركة أو مستنداتها مع الغير."
+        },
+        {
+          "en": "All information about the company must be kept confidential by the employee indefinitely, even after the contract ends.",
+          "ar": "يلتزم الموظف بالحفاظ على سرية جميع المعلومات المتعلقة بالشركة دون تحديد مدة، حتى بعد انتهاء العقد."
+        }
+      ]
+    },
+    {
+      "key": "unlimited_project",
+      "en": "This contract is for an unlimited period and ends upon completion of the project in accordance with Article 57 of the Labor Law.",
+      "ar": "هذا العقد لمدة غير محددة، وينتهي عند إنجاز المشروع وفقًا للمادة (57) من نظام العمل.",
+      "expected": { "ruleId": "TYPE-ART57-01", "verdict": "unclear", "severity": "high" },
+      "crossCheck": {
+        "contractType": "fixed_term",
+        "ruleId": "TYPE-CONFLICT-01",
+        "verdict": "conflict",
+        "severity": "high"
+      },
+      "paraphrases": [
+        {
+          "en": "Employment under this contract continues until the end of the project for which the employee was hired.",
+          "ar": "يستمر العمل بموجب هذا العقد حتى انتهاء المشروع الذي تم التعاقد مع الموظف من أجله."
+        }
+      ]
+    },
+    {
+      "key": "project_end_with_allowance",
+      "en": "This contract shall remain in force until the completion of the project, and the employee shall receive a project allowance of SAR 500.",
+      "ar": "يظل هذا العقد ساريًا حتى إنجاز المشروع، ويستحق الموظف بدل مشروع قدره 500 ريال.",
+      "expected": { "ruleId": "TYPE-ART57-01", "verdict": "unclear", "severity": "high" },
+      "crossCheck": {
+        "contractType": "fixed_term",
+        "ruleId": "TYPE-CONFLICT-01",
+        "verdict": "conflict",
+        "severity": "high"
+      },
+      "paraphrases": [
+        {
+          "en": "The employee's services shall end upon completion of the project.",
+          "ar": "تنتهي خدمات الموظف عند إنجاز المشروع."
+        }
+      ]
+    },
+    {
+      "key": "allowance_for_project",
+      "en": "Site allowance of SAR 500 applies for the duration of the project.",
+      "ar": "يُصرف بدل موقع قدره 500 ريال طوال مدة المشروع.",
+      "expected": null,
+      "paraphrases": [
+        {
+          "en": "The housing allowance shall continue until the end of the employee's assignment.",
+          "ar": "يستمر صرف بدل السكن حتى انتهاء مهمة الموظف."
+        },
+        {
+          "en": "The housing allowance continues until the end of the project.",
+          "ar": "يستمر بدل السكن حتى انتهاء المشروع."
+        }
+      ]
+    },
+    {
+      "key": "project_tasks",
+      "en": "The employee may be assigned to project-based tasks.",
+      "ar": "يجوز تكليف الموظف بمهام قائمة على المشاريع.",
+      "expected": null,
+      "paraphrases": [
+        {
+          "en": "The employee shall perform the tasks of the specific project assigned to him.",
+          "ar": "يؤدي الموظف مهام المشروع المحدد الذي يُكلف به."
+        }
+      ]
+    },
+    {
+      "key": "probation_270",
+      "en": "The probationary period is 270 days.",
+      "ar": "مدة فترة التجربة 270 يومًا.",
+      "expected": {
+        "ruleId": "PROB-MAX-01",
+        "verdict": "likely_void",
+        "severity": "high"
+      },
+      "paraphrases": [
+        {
+          "en": "The employee's probation period shall be nine months.",
+          "ar": "تكون فترة التجربة للموظف تسعة أشهر."
+        },
+        {
+          "en": "The probation period may be extended to a total of 270 days.",
+          "ar": "يجوز تمديد فترة التجربة إلى ما مجموعه 270 يومًا."
+        }
+      ]
+    },
+    {
+      "key": "probation_added_120",
+      "en": "In addition to the probation in clause 6.1, the employee shall serve a further probation of 120 days.",
+      "ar": "بالإضافة إلى فترة التجربة الواردة في البند 6.1، يخضع الموظف لفترة تجربة إضافية مدتها 120 يومًا.",
+      "expected": {
+        "ruleId": "PROB-MAX-01",
+        "verdict": "likely_void",
+        "severity": "high"
+      },
+      "paraphrases": [
+        {
+          "en": "The probation period may be renewed for 120 days.",
+          "ar": "يجوز تجديد فترة التجربة لمدة 120 يومًا."
+        },
+        {
+          "en": "The employer may extend the probation period for a period not exceeding 120 days.",
+          "ar": "يجوز لصاحب العمل تمديد فترة التجربة لمدة لا تزيد على 120 يومًا."
+        }
+      ]
+    },
+    {
+      "key": "probation_twice_90",
+      "en": "The probationary period of 90 days may be repeated once.",
+      "ar": "يجوز تكرار فترة التجربة البالغة 90 يومًا مرة واحدة.",
+      "expected": { "ruleId": "PROB-MAX-01", "verdict": "compliant", "severity": "none" },
+      "paraphrases": [
+        {
+          "en": "Probation is 90 days, extendable to 180 days.",
+          "ar": "فترة التجربة 90 يومًا قابلة للتمديد إلى 180 يومًا."
+        },
+        {
+          "en": "The probation period may be extended by a further 90 days, provided the total does not exceed 180 days.",
+          "ar": "يجوز تمديد فترة التجربة 90 يومًا إضافية، على ألا يتجاوز مجموعها 180 يومًا."
+        }
+      ]
+    },
+    {
+      "key": "probation_notice",
+      "en": "During the probationary period, either party may terminate the contract with 15 days notice.",
+      "ar": "يجوز لأي من الطرفين خلال فترة التجربة إنهاء العقد بإشعار مدته 15 يومًا.",
+      "expected": null,
+      "paraphrases": [
+        {
+          "en": "Either party may end the contract during probation by giving 15 days' written notice.",
+          "ar": "يجوز لأي من الطرفين إنهاء العقد أثناء فترة التجربة بإشعار كتابي مدته 15 يومًا."
+        }
+      ]
+    },
+    {
+      "key": "leave_15",
+      "en": "The employee is entitled to 15 days of annual leave.",
+      "ar": "يستحق الموظف إجازة سنوية مدتها 15 يومًا.",
+      "expected": {
+        "ruleId": "LEAVE-MIN-01",
+        "verdict": "likely_void",
+        "severity": "high"
+      },
+      "paraphrases": [
+        {
+          "en": "Annual vacation shall be fifteen (15) days per year.",
+          "ar": "تكون الإجازة السنوية خمسة عشر (15) يومًا في السنة."
+        }
+      ]
+    },
+    {
+      "key": "supersedes",
+      "en": "This contract supersedes all prior agreements between the parties.",
+      "ar": "يحل هذا العقد محل جميع الاتفاقيات السابقة بين الطرفين.",
+      "expected": null,
+      "paraphrases": [
+        {
+          "en": "This agreement replaces any previous understanding between the employer and the employee.",
+          "ar": "تحل هذه الاتفاقية محل أي تفاهم سابق بين صاحب العمل والموظف."
+        }
+      ]
+    },
+    {
+      "key": "dress_code",
+      "en": "The employee shall comply with the company dress code and internal policies.",
+      "ar": "يلتزم الموظف بقواعد اللباس والسياسات الداخلية للشركة.",
+      "expected": null,
+      "paraphrases": [
+        {
+          "en": "The employee must follow the employer's code of conduct and wear the company uniform.",
+          "ar": "يجب على الموظف الالتزام بمدونة سلوك صاحب العمل وارتداء الزي الرسمي للشركة."
+        }
+      ]
+    },
+    {
+      "key": "ambiguous_extra_hours",
+      "en": "The employee shall work additional hours whenever business needs require.",
+      "ar": "يلتزم الموظف بالعمل ساعات إضافية كلما اقتضت حاجة العمل ذلك.",
+      "expected": { "ruleId": "OT-RATE-01", "verdict": "unclear", "severity": "medium" },
+      "paraphrases": [
+        {
+          "en": "When the business requires, the employee shall stay beyond normal working hours.",
+          "ar": "يلتزم الموظف بالبقاء بعد انتهاء ساعات العمل الرسمية متى ما تطلب العمل ذلك."
+        }
+      ]
+    }
+  ]
+}

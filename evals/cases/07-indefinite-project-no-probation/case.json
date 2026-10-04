@@ -1,0 +1,107 @@
+{
+  "id": "07-indefinite-project-no-probation",
+  "contract": {
+    "number": "10000701",
+    "type": "indefinite",
+    "executionDate": "2025-05-20",
+    "commencementDate": "2025-06-01",
+    "location": {
+      "en": "Jeddah",
+      "ar": "جدة"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Sample Building Contracting Co.",
+      "ar": "شركة العينة للمقاولات العامة"
+    },
+    "unifiedNo": "7000000701",
+    "email": "hr@building.example.com",
+    "signatory": {
+      "name": {
+        "en": "Hamad Al-Namuthaji",
+        "ar": "حمد النموذجي"
+      },
+      "idNo": "1000000702"
+    }
+  },
+  "employee": {
+    "name": "Bilal Ahmed",
+    "nationality": {
+      "en": "Pakistani",
+      "ar": "باكستاني"
+    },
+    "idNo": "2000000701",
+    "gender": {
+      "en": "Male",
+      "ar": "ذكر"
+    },
+    "maritalStatus": {
+      "en": "Married",
+      "ar": "متزوج"
+    },
+    "birthDate": "1988-11-02",
+    "education": {
+      "en": "Diploma",
+      "ar": "دبلوم"
+    },
+    "speciality": {
+      "en": "Construction Management",
+      "ar": "إدارة الإنشاءات"
+    },
+    "email": "bilal.a@example.com",
+    "mobile": "+966 57 000 0701"
+  },
+  "job": {
+    "occupation": {
+      "en": "Site Supervisor",
+      "ar": "مشرف موقع"
+    },
+    "jobTitle": {
+      "en": "Site Supervisor",
+      "ar": "مشرف موقع"
+    },
+    "workLocation": {
+      "en": "Jeddah",
+      "ar": "جدة"
+    }
+  },
+  "probationDays": 0,
+  "hours": {
+    "workDaysPerWeek": 6,
+    "dailyHours": 8,
+    "restDaysPerWeek": 1
+  },
+  "annualLeaveDays": 21,
+  "wage": {
+    "basic": 5000,
+    "housing": 1250,
+    "transport": 250
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "Employment under this contract continues until the end of the project for which the employee was hired.",
+      "ar": "يستمر العمل بموجب هذا العقد حتى انتهاء المشروع الذي تم التعاقد مع الموظف من أجله."
+    },
+    {
+      "en": "Instead of overtime pay, the employer may grant the employee compensatory days off as it sees fit.",
+      "ar": "يجوز لصاحب العمل أن يمنح الموظف إجازة تعويضية بدلًا من أجر العمل الإضافي حسبما يراه مناسبًا."
+    },
+    {
+      "en": "Unused annual leave cannot be carried over to the following year; it must be used within the same year.",
+      "ar": "لا يجوز ترحيل رصيد الإجازة السنوية غير المستخدم إلى السنة التالية، ويجب استخدامه خلال السنة نفسها."
+    },
+    {
+      "en": "The employee shall comply with the company dress code and internal policies.",
+      "ar": "يلتزم الموظف بقواعد اللباس والسياسات الداخلية للشركة."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-09-02 17:25",
+    "downloadedByName": "Bilal Ahmed",
+    "downloadedById": "2000000701",
+    "createdAt": "2025-05-20 08:20",
+    "activeAt": "2025-05-21 10:00"
+  }
+}

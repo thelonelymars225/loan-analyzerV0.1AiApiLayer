@@ -1,0 +1,109 @@
+{
+  "id": "10-fixed-term-low-allowances",
+  "contract": {
+    "number": "10001001",
+    "type": "fixed_term",
+    "executionDate": "2026-07-01",
+    "commencementDate": "2026-07-15",
+    "termMonths": 12,
+    "autoRenew": false,
+    "location": {
+      "en": "Dammam",
+      "ar": "الدمام"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Sample Facilities Management Co.",
+      "ar": "شركة العينة لإدارة المرافق"
+    },
+    "unifiedNo": "7000001001",
+    "email": "hr@facilities.example.com",
+    "signatory": {
+      "name": {
+        "en": "Omar Al-Namuthaji",
+        "ar": "عمر النموذجي"
+      },
+      "idNo": "1000001002"
+    }
+  },
+  "employee": {
+    "name": "Jose Santos",
+    "nationality": {
+      "en": "Filipino",
+      "ar": "فلبيني"
+    },
+    "idNo": "2000001001",
+    "gender": {
+      "en": "Male",
+      "ar": "ذكر"
+    },
+    "maritalStatus": {
+      "en": "Married",
+      "ar": "متزوج"
+    },
+    "birthDate": "1992-06-09",
+    "education": {
+      "en": "Diploma",
+      "ar": "دبلوم"
+    },
+    "speciality": {
+      "en": "Electrical Works",
+      "ar": "الأعمال الكهربائية"
+    },
+    "email": "jose.s@example.com",
+    "mobile": "+966 51 000 1001"
+  },
+  "job": {
+    "occupation": {
+      "en": "Electrician",
+      "ar": "كهربائي"
+    },
+    "jobTitle": {
+      "en": "Maintenance Electrician",
+      "ar": "كهربائي صيانة"
+    },
+    "workLocation": {
+      "en": "Dammam",
+      "ar": "الدمام"
+    }
+  },
+  "probationDays": 90,
+  "hours": {
+    "workDaysPerWeek": 6,
+    "dailyHours": 8,
+    "restDaysPerWeek": 1
+  },
+  "annualLeaveDays": 21,
+  "wage": {
+    "basic": 4000,
+    "housing": 600,
+    "transport": 200
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "Overtime shall be compensated at 25% of the basic hourly wage.",
+      "ar": "يُعوَّض العمل الإضافي بنسبة 25% من أجر الساعة الأساسي."
+    },
+    {
+      "en": "The employee's probation period shall be nine months.",
+      "ar": "تكون فترة التجربة للموظف تسعة أشهر."
+    },
+    {
+      "en": "Annual leave must be taken within the same calendar year and may not be carried forward.",
+      "ar": "يجب استنفاد الإجازة السنوية خلال السنة الميلادية نفسها، ولا يجوز ترحيلها."
+    },
+    {
+      "en": "The employee shall comply with the company dress code and internal policies.",
+      "ar": "يلتزم الموظف بقواعد اللباس والسياسات الداخلية للشركة."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-09-10 19:00",
+    "downloadedByName": "Jose Santos",
+    "downloadedById": "2000001001",
+    "createdAt": "2026-07-01 10:20",
+    "activeAt": "2026-07-02 11:00"
+  }
+}

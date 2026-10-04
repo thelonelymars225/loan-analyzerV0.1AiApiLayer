@@ -1,0 +1,91 @@
+{
+  "id": "05-indefinite-eos-basic-transfer",
+  "contract": {
+    "number": "10000501",
+    "type": "indefinite",
+    "executionDate": "2024-01-28",
+    "commencementDate": "2024-02-11",
+    "location": {
+      "en": "Khobar",
+      "ar": "الخبر"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Example Medical Supplies Co.",
+      "ar": "شركة المثال للمستلزمات الطبية"
+    },
+    "unifiedNo": "7000000501",
+    "email": "hr@medical.example.com",
+    "signatory": {
+      "name": {
+        "en": "Waleed Al-Mithali",
+        "ar": "وليد المثالي"
+      },
+      "idNo": "1000000502"
+    }
+  },
+  "employee": {
+    "name": "لمى الدوسري",
+    "idNo": "1000000501",
+    "birthDate": "1996-07-30",
+    "speciality": {
+      "en": "Business Administration",
+      "ar": "إدارة الأعمال"
+    },
+    "email": "lama.d@example.com",
+    "mobile": "+966 53 000 0501"
+  },
+  "job": {
+    "occupation": {
+      "en": "Sales Manager",
+      "ar": "مدير مبيعات"
+    },
+    "jobTitle": {
+      "en": "Key Account Manager",
+      "ar": "مديرة حسابات رئيسية"
+    },
+    "workLocation": {
+      "en": "Khobar",
+      "ar": "الخبر"
+    }
+  },
+  "probationDays": 180,
+  "hours": {
+    "workDaysPerWeek": 6,
+    "dailyHours": 8,
+    "restDaysPerWeek": 1
+  },
+  "annualLeaveDays": 30,
+  "wage": {
+    "basic": 10000,
+    "housing": 2500,
+    "transport": 1000
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "End-of-service benefits will be paid on the employee's basic wage, excluding all allowances.",
+      "ar": "تُصرف مستحقات نهاية الخدمة على أساس الأجر الأساسي للموظف دون احتساب أي بدلات."
+    },
+    {
+      "en": "The company may relocate the employee to any city in Saudi Arabia according to work needs.",
+      "ar": "يحق للشركة نقل الموظف إلى أي مدينة في المملكة العربية السعودية بحسب احتياجات العمل."
+    },
+    {
+      "en": "For one year after the contract ends, the employee shall not work in a sales role for a direct competitor in Jeddah, as the job gives access to the employer's clients.",
+      "ar": "لا يجوز للموظف لمدة سنة واحدة بعد انتهاء العقد العمل في وظيفة مبيعات لدى منافس مباشر في جدة، لأن عمله يتيح له الاطلاع على عملاء صاحب العمل."
+    },
+    {
+      "en": "This contract supersedes all prior agreements between the parties.",
+      "ar": "يحل هذا العقد محل جميع الاتفاقيات السابقة بين الطرفين."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-09-15 14:30",
+    "downloadedByName": "لمى الدوسري",
+    "downloadedById": "1000000501",
+    "createdAt": "2024-01-28 11:00",
+    "activeAt": "2024-01-30 09:45"
+  }
+}

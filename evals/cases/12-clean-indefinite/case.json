@@ -1,0 +1,95 @@
+{
+  "id": "12-clean-indefinite",
+  "contract": {
+    "number": "10001201",
+    "type": "indefinite",
+    "executionDate": "2023-08-27",
+    "commencementDate": "2023-09-10",
+    "location": {
+      "en": "Jeddah",
+      "ar": "جدة"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Sample Trading Co.",
+      "ar": "شركة العينة التجارية"
+    },
+    "unifiedNo": "7000001201",
+    "email": "people@trading.example.com",
+    "signatory": {
+      "name": {
+        "en": "Yousef Al-Namuthaji",
+        "ar": "يوسف النموذجي"
+      },
+      "idNo": "1000001202"
+    }
+  },
+  "employee": {
+    "name": "Lina Haddad",
+    "nationality": {
+      "en": "Jordanian",
+      "ar": "أردنية"
+    },
+    "idNo": "2000001201",
+    "maritalStatus": {
+      "en": "Married",
+      "ar": "متزوجة"
+    },
+    "birthDate": "1989-08-21",
+    "speciality": {
+      "en": "Accounting",
+      "ar": "المحاسبة"
+    },
+    "email": "lina.h@example.com",
+    "mobile": "+966 56 000 1201"
+  },
+  "job": {
+    "occupation": {
+      "en": "Accountant",
+      "ar": "محاسب"
+    },
+    "jobTitle": {
+      "en": "Accountant",
+      "ar": "محاسبة"
+    },
+    "workLocation": {
+      "en": "Jeddah",
+      "ar": "جدة"
+    }
+  },
+  "probationDays": 60,
+  "hours": {
+    "workDaysPerWeek": 6,
+    "dailyHours": 7,
+    "restDaysPerWeek": 1
+  },
+  "annualLeaveDays": 21,
+  "wage": {
+    "basic": 9000,
+    "housing": 1500,
+    "transport": 900
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "The end-of-service gratuity will be based on the employee's last total wage, including all allowances, as provided in the Labor Law.",
+      "ar": "تُحتسب مكافأة نهاية الخدمة على أساس آخر أجر إجمالي يتقاضاه الموظف شاملًا جميع البدلات، وفقًا لما نص عليه نظام العمل."
+    },
+    {
+      "en": "This contract supersedes all prior agreements between the parties.",
+      "ar": "يحل هذا العقد محل جميع الاتفاقيات السابقة بين الطرفين."
+    },
+    {
+      "en": "The employee must follow the employer's code of conduct and wear the company uniform.",
+      "ar": "يجب على الموظف الالتزام بمدونة سلوك صاحب العمل وارتداء الزي الرسمي للشركة."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-09-18 13:15",
+    "downloadedByName": "Lina Haddad",
+    "downloadedById": "2000001201",
+    "createdAt": "2023-08-27 10:00",
+    "activeAt": "2023-08-28 09:00"
+  }
+}

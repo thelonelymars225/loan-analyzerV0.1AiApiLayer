@@ -1,0 +1,90 @@
+{
+  "id": "11-clean-fixed-term",
+  "contract": {
+    "number": "10001101",
+    "type": "fixed_term",
+    "executionDate": "2025-10-05",
+    "commencementDate": "2025-10-19",
+    "termMonths": 12,
+    "autoRenew": true,
+    "renewalNoticeDays": 30,
+    "location": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Example Software Co.",
+      "ar": "شركة المثال للبرمجيات"
+    },
+    "unifiedNo": "7000000101",
+    "email": "hr@software.example.com",
+    "signatory": {
+      "name": {
+        "en": "Fahad Al-Mithali",
+        "ar": "فهد المثالي"
+      },
+      "idNo": "1000000102"
+    }
+  },
+  "employee": {
+    "name": "سارة الحربي",
+    "idNo": "1000001101",
+    "birthDate": "1993-10-01",
+    "speciality": {
+      "en": "Marketing",
+      "ar": "التسويق"
+    },
+    "email": "sara.h@example.com",
+    "mobile": "+966 55 000 1101"
+  },
+  "job": {
+    "occupation": {
+      "en": "Sales Manager",
+      "ar": "مدير مبيعات"
+    },
+    "jobTitle": {
+      "en": "Software Sales Manager",
+      "ar": "مديرة مبيعات برمجيات"
+    },
+    "workLocation": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "probationDays": 90,
+  "hours": {
+    "workDaysPerWeek": 5,
+    "dailyHours": 8,
+    "restDaysPerWeek": 2
+  },
+  "annualLeaveDays": 30,
+  "wage": {
+    "basic": 14000,
+    "housing": 3500,
+    "transport": 1400
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "The end-of-service award shall be calculated on the last actual wage in accordance with the Labor Law.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس آخر أجر فعلي وفقًا لنظام العمل."
+    },
+    {
+      "en": "For 12 months after the contract ends, the employee shall not work for a direct competitor in Riyadh in a software sales role with access to the employer's clients.",
+      "ar": "لا يجوز للموظف خلال 12 شهرًا من انتهاء العقد العمل لدى منافس مباشر في الرياض في وظيفة مبيعات برمجيات يطلع فيها على عملاء صاحب العمل."
+    },
+    {
+      "en": "The employee shall comply with the company dress code and internal policies.",
+      "ar": "يلتزم الموظف بقواعد اللباس والسياسات الداخلية للشركة."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-09-29 16:50",
+    "downloadedByName": "سارة الحربي",
+    "downloadedById": "1000001101",
+    "createdAt": "2025-10-05 09:30",
+    "activeAt": "2025-10-06 10:00"
+  }
+}

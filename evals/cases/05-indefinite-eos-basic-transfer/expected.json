@@ -1,0 +1,111 @@
+{
+  "id": "05-indefinite-eos-basic-transfer",
+  "description": "Indefinite contract for a Saudi employee, past probation: end-of-service on basic wage only (likely void, with SAR impact), relocation to any city, and a lawful one-year non-compete limited to Jeddah sales roles with client access. 30 days' leave. Score: the rubric gives employee 90 and HR 88, but the high-severity void end-of-service clause caps the overall score at 79, so both views expect 74-79.",
+  "today": "2026-10-04",
+  "status": "done",
+  "fields": {
+    "contractType": "indefinite",
+    "commencementDate": "2024-02-11",
+    "endDate": null,
+    "probationDays": 180,
+    "workDaysPerWeek": 6,
+    "dailyHours": 8,
+    "weeklyHours": 48,
+    "annualLeaveDays": 30,
+    "wage": {
+      "basic": 10000,
+      "housing": 2500,
+      "transport": 1000,
+      "other": 0,
+      "total": 13500
+    },
+    "overtimePremiumPct": 50,
+    "nationality": "saudi"
+  },
+  "findings": [
+    {
+      "ruleId": "EOS-BASE-01",
+      "clause": "15.1",
+      "verdict": "likely_void",
+      "severity": "high"
+    },
+    {
+      "ruleId": "TRANSFER-KSA-01",
+      "clause": "15.2",
+      "verdict": "worse_than_default",
+      "severity": "medium"
+    },
+    {
+      "ruleId": "NONCOMPETE-01",
+      "clause": "15.3",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-MAX-01",
+      "clause": "6.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-EXCL-01",
+      "clause": "6.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "LEAVE-MIN-01",
+      "clause": "8.1",
+      "verdict": "better_than_law",
+      "severity": "none"
+    },
+    {
+      "ruleId": "HOURS-MAX-01",
+      "clause": "7",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "OT-RATE-01",
+      "clause": "11.2",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "MARKET-ALLOW-01",
+      "clause": "9.1.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "NOTICE-INDEF-01",
+      "clause": null,
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-NOCOMP-01",
+      "clause": "6.2",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "SETTLE-TIME-01",
+      "clause": null,
+      "verdict": "compliant",
+      "severity": "none"
+    }
+  ],
+  "mustNot": [
+    "NONCOMPETE-01",
+    "COMP-ART77-01",
+    "TYPE-CONFLICT-01",
+    "CONFIDENTIAL-01",
+    "PROB-MAX-01"
+  ],
+  "deadlines": [],
+  "score": {
+    "employee": [74, 79],
+    "hr": [74, 79]
+  }
+}

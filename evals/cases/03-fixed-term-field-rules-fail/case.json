@@ -1,0 +1,103 @@
+{
+  "id": "03-fixed-term-field-rules-fail",
+  "contract": {
+    "number": "10000301",
+    "type": "fixed_term",
+    "executionDate": "2026-02-15",
+    "commencementDate": "2026-03-01",
+    "termMonths": 24,
+    "autoRenew": false,
+    "location": {
+      "en": "Jeddah",
+      "ar": "جدة"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Example Logistics Co.",
+      "ar": "شركة المثال للخدمات اللوجستية"
+    },
+    "unifiedNo": "7000000301",
+    "email": "people@logistics.example.com",
+    "signatory": {
+      "name": {
+        "en": "Turki Al-Mithali",
+        "ar": "تركي المثالي"
+      },
+      "idNo": "1000000302"
+    }
+  },
+  "employee": {
+    "name": "ماجد العتيبي",
+    "idNo": "1000000301",
+    "gender": {
+      "en": "Male",
+      "ar": "ذكر"
+    },
+    "maritalStatus": {
+      "en": "Married",
+      "ar": "متزوج"
+    },
+    "birthDate": "1991-12-20",
+    "education": {
+      "en": "Secondary school",
+      "ar": "ثانوي"
+    },
+    "speciality": {
+      "en": "General",
+      "ar": "عام"
+    },
+    "email": "majed.s@example.com",
+    "mobile": "+966 50 000 0301"
+  },
+  "job": {
+    "occupation": {
+      "en": "Warehouse Supervisor",
+      "ar": "مشرف مستودع"
+    },
+    "jobTitle": {
+      "en": "Warehouse Shift Supervisor",
+      "ar": "مشرف وردية مستودع"
+    },
+    "workLocation": {
+      "en": "Jeddah",
+      "ar": "جدة"
+    }
+  },
+  "probationDays": 270,
+  "probationExtraExclusions": [
+    {
+      "en": "unpaid leave",
+      "ar": "الإجازة غير المدفوعة"
+    }
+  ],
+  "hours": {
+    "workDaysPerWeek": 6,
+    "dailyHours": 9,
+    "restDaysPerWeek": 1
+  },
+  "annualLeaveDays": 15,
+  "wage": {
+    "basic": 6000,
+    "housing": 1500,
+    "transport": 600
+  },
+  "overtimePremiumPct": 25,
+  "section15": [
+    {
+      "en": "The employee shall comply with the company dress code and internal policies.",
+      "ar": "يلتزم الموظف بقواعد اللباس والسياسات الداخلية للشركة."
+    },
+    {
+      "en": "This agreement replaces any previous understanding between the employer and the employee.",
+      "ar": "تحل هذه الاتفاقية محل أي تفاهم سابق بين صاحب العمل والموظف."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-09-30 21:05",
+    "downloadedByName": "ماجد العتيبي",
+    "downloadedById": "1000000301",
+    "createdAt": "2026-02-15 10:00",
+    "activeAt": "2026-02-16 12:40"
+  }
+}

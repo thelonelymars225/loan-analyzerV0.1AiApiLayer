@@ -1,0 +1,102 @@
+{
+  "id": "01-fixed-term-project-conflict",
+  "contract": {
+    "number": "10000101",
+    "type": "fixed_term",
+    "executionDate": "2025-11-10",
+    "commencementDate": "2025-11-16",
+    "termMonths": 12,
+    "autoRenew": true,
+    "renewalNoticeDays": 30,
+    "location": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Example Software Co.",
+      "ar": "شركة المثال للبرمجيات"
+    },
+    "unifiedNo": "7000000101",
+    "email": "hr@software.example.com",
+    "signatory": {
+      "name": {
+        "en": "Fahad Al-Mithali",
+        "ar": "فهد المثالي"
+      },
+      "idNo": "1000000102"
+    }
+  },
+  "employee": {
+    "name": "ريم العتيبي",
+    "idNo": "1000000101",
+    "birthDate": "1999-04-12",
+    "email": "reem.o@example.com",
+    "mobile": "+966 55 000 0101"
+  },
+  "job": {
+    "occupation": {
+      "en": "Software Developer",
+      "ar": "مطور برمجيات"
+    },
+    "jobTitle": {
+      "en": "Backend Engineer",
+      "ar": "مهندس برمجيات خلفية"
+    },
+    "workLocation": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "probationDays": 180,
+  "hours": {
+    "workDaysPerWeek": 5,
+    "dailyHours": 8,
+    "restDaysPerWeek": 2
+  },
+  "annualLeaveDays": 22,
+  "wage": {
+    "basic": 12000,
+    "housing": 3000,
+    "transport": 1200
+  },
+  "overtimePremiumPct": 50,
+  "section15": [
+    {
+      "en": "This contract is for an unlimited period and ends upon completion of the project in accordance with Article 57 of the Labor Law.",
+      "ar": "هذا العقد لمدة غير محددة، وينتهي عند إنجاز المشروع وفقًا للمادة (57) من نظام العمل."
+    },
+    {
+      "en": "The employee is not allowed to share the company's information or documents with others.",
+      "ar": "لا يحق للموظف مشاركة معلومات الشركة أو مستنداتها مع الغير."
+    },
+    {
+      "en": "The employer may transfer the employee to any of its branches or projects anywhere in the Kingdom.",
+      "ar": "يجوز لصاحب العمل نقل الموظف إلى أي من فروعه أو مشاريعه في أي مكان داخل المملكة."
+    },
+    {
+      "en": "A party that ends this contract early without a legitimate reason shall pay the other party two (2) months' basic salary as compensation.",
+      "ar": "يلتزم الطرف الذي ينهي هذا العقد قبل موعده دون سبب مشروع بأن يدفع للطرف الآخر تعويضًا قدره الراتب الأساسي لمدة شهرين."
+    },
+    {
+      "en": "Annual leave must be taken within the same calendar year and may not be carried forward.",
+      "ar": "يجب استنفاد الإجازة السنوية خلال السنة الميلادية نفسها، ولا يجوز ترحيلها."
+    },
+    {
+      "en": "The end-of-service award shall be calculated on the basis of the basic salary only.",
+      "ar": "تُحسب مكافأة نهاية الخدمة على أساس الراتب الأساسي فقط."
+    },
+    {
+      "en": "This contract supersedes all prior agreements between the parties.",
+      "ar": "يحل هذا العقد محل جميع الاتفاقيات السابقة بين الطرفين."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-09-20 18:45",
+    "downloadedByName": "ريم العتيبي",
+    "downloadedById": "1000000101",
+    "createdAt": "2025-11-10 09:00",
+    "activeAt": "2025-11-12 10:15"
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "id": "08-fixed-term-limits-exact-void-s15",
+  "description": "Two-year fixed-term contract, newly started, with every field exactly at the legal limit (180 days' probation, 21 days' leave, 48-hour week, 50% overtime) and allowances at the edge of the market norm (housing 20%, transport 7%, plus an other allowance). Section 15 bases end-of-service on basic wage, adds a three-year non-compete and fixes Art. 77 compensation at two months' basic. Score: the rubric gives employee 77 and HR 74; the void end-of-service and non-compete clauses cap the overall score at 79, so neither range goes above 79.",
+  "today": "2026-10-04",
+  "status": "done",
+  "fields": {
+    "contractType": "fixed_term",
+    "commencementDate": "2026-09-01",
+    "endDate": "2028-08-31",
+    "termMonths": 24,
+    "autoRenew": true,
+    "renewalNoticeDays": 45,
+    "probationDays": 180,
+    "workDaysPerWeek": 6,
+    "dailyHours": 8,
+    "weeklyHours": 48,
+    "annualLeaveDays": 21,
+    "wage": {
+      "basic": 8000,
+      "housing": 1600,
+      "transport": 560,
+      "other": 400,
+      "total": 10560
+    },
+    "overtimePremiumPct": 50,
+    "nationality": "saudi"
+  },
+  "findings": [
+    {
+      "ruleId": "EOS-BASE-01",
+      "clause": "15.1",
+      "verdict": "likely_void",
+      "severity": "high"
+    },
+    {
+      "ruleId": "NONCOMPETE-01",
+      "clause": "15.2",
+      "verdict": "likely_void",
+      "severity": "high"
+    },
+    {
+      "ruleId": "COMP-ART77-01",
+      "clause": "15.3",
+      "verdict": "worse_than_default",
+      "severity": "high"
+    },
+    {
+      "ruleId": "PROB-MAX-01",
+      "clause": "6.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-EXCL-01",
+      "clause": "6.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "LEAVE-MIN-01",
+      "clause": "8.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "HOURS-MAX-01",
+      "clause": "7",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "OT-RATE-01",
+      "clause": "11.2",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "MARKET-ALLOW-01",
+      "clause": "9.1.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "RENEW-CONVERT-01",
+      "clause": "5.1",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "PROB-NOCOMP-01",
+      "clause": "6.2",
+      "verdict": "compliant",
+      "severity": "none"
+    },
+    {
+      "ruleId": "SETTLE-TIME-01",
+      "clause": null,
+      "verdict": "compliant",
+      "severity": "none"
+    }
+  ],
+  "mustNot": [
+    "TYPE-CONFLICT-01",
+    "TRANSFER-KSA-01",
+    "CONFIDENTIAL-01",
+    "PROB-MAX-01",
+    "LEAVE-MIN-01",
+    "HOURS-MAX-01",
+    "OT-RATE-01",
+    "MARKET-ALLOW-01"
+  ],
+  "deadlines": [
+    {
+      "ruleId": "PROB-NOCOMP-01",
+      "date": "2027-02-27"
+    },
+    {
+      "ruleId": "RENEW-DEADLINE-01",
+      "date": "2028-07-17"
+    }
+  ],
+  "score": {
+    "employee": [72, 79],
+    "hr": [69, 79]
+  }
+}

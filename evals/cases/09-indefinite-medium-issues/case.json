@@ -1,0 +1,103 @@
+{
+  "id": "09-indefinite-medium-issues",
+  "contract": {
+    "number": "10000901",
+    "type": "indefinite",
+    "executionDate": "2026-03-15",
+    "commencementDate": "2026-04-01",
+    "location": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "employer": {
+    "name": {
+      "en": "Example Data Co.",
+      "ar": "شركة المثال للبيانات"
+    },
+    "unifiedNo": "7000000901",
+    "email": "hr@data.example.com",
+    "signatory": {
+      "name": {
+        "en": "Fahad Al-Mithali",
+        "ar": "فهد المثالي"
+      },
+      "idNo": "1000000902"
+    }
+  },
+  "employee": {
+    "name": "فيصل الغامدي",
+    "idNo": "1000000901",
+    "gender": {
+      "en": "Male",
+      "ar": "ذكر"
+    },
+    "maritalStatus": {
+      "en": "Single",
+      "ar": "أعزب"
+    },
+    "birthDate": "2000-01-17",
+    "speciality": {
+      "en": "Statistics",
+      "ar": "الإحصاء"
+    },
+    "email": "faisal.g@example.com",
+    "mobile": "+966 58 000 0901"
+  },
+  "job": {
+    "occupation": {
+      "en": "Data Analyst",
+      "ar": "محلل بيانات"
+    },
+    "jobTitle": {
+      "en": "Data Analyst",
+      "ar": "محلل بيانات"
+    },
+    "workLocation": {
+      "en": "Riyadh",
+      "ar": "الرياض"
+    }
+  },
+  "probationDays": 120,
+  "hours": {
+    "workDaysPerWeek": 5,
+    "dailyHours": 7,
+    "restDaysPerWeek": 2
+  },
+  "annualLeaveDays": 23,
+  "wage": {
+    "basic": 12000,
+    "housing": 3000,
+    "transport": 1200
+  },
+  "overtimePremiumPct": 60,
+  "section15": [
+    {
+      "en": "All information about the company must be kept confidential by the employee indefinitely, even after the contract ends.",
+      "ar": "يلتزم الموظف بالحفاظ على سرية جميع المعلومات المتعلقة بالشركة دون تحديد مدة، حتى بعد انتهاء العقد."
+    },
+    {
+      "en": "Annual leave days that are not used by 31 December shall lapse and will not be paid.",
+      "ar": "تسقط أيام الإجازة السنوية التي لا تُستخدم حتى 31 ديسمبر ولا يُصرف عنها أي مقابل."
+    },
+    {
+      "en": "When the business requires, the employee shall stay beyond normal working hours.",
+      "ar": "يلتزم الموظف بالبقاء بعد انتهاء ساعات العمل الرسمية متى ما تطلب العمل ذلك."
+    },
+    {
+      "en": "The employer may transfer the employee to any of its branches or projects anywhere in the Kingdom.",
+      "ar": "يجوز لصاحب العمل نقل الموظف إلى أي من فروعه أو مشاريعه في أي مكان داخل المملكة."
+    },
+    {
+      "en": "This agreement replaces any previous understanding between the employer and the employee.",
+      "ar": "تحل هذه الاتفاقية محل أي تفاهم سابق بين صاحب العمل والموظف."
+    }
+  ],
+  "footer": {
+    "downloadedAt": "2026-10-01 09:40",
+    "downloadedByName": "فيصل الغامدي",
+    "downloadedById": "1000000901",
+    "createdAt": "2026-03-15 12:00",
+    "activeAt": "2026-03-16 08:05"
+  }
+}

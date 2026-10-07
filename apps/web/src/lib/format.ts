@@ -19,10 +19,6 @@ export function formatSar(amount: number, language: string): string {
   }).format(amount);
 }
 
-export function formatNumber(value: number, language: string): string {
-  return new Intl.NumberFormat(localeFor(language)).format(value);
-}
-
 /** File size in megabytes with one decimal, e.g. "2.4". */
 export function formatMegabytes(bytes: number, language: string): string {
   return new Intl.NumberFormat(localeFor(language), {

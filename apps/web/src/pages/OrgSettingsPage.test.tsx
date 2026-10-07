@@ -43,23 +43,22 @@ function setup(pending: InviteResponse[]) {
 }
 
 describe("Invitations in workspace settings", () => {
-  it("creates an invite, then shows the full link to share and copies it", async () => {
+  it("creates an invite, then lists it with the full link to share and copies it", async () => {
     const { fetchMock, user } = setup([]);
 
     expect(await screen.findByText(/No email is sent/)).toBeInTheDocument();
     await user.type(screen.getByLabelText("Email"), "sara@example.com");
     await user.click(screen.getByRole("button", { name: "Create invite" }));
 
-    const link = `${window.location.origin}/invite/inv_new`;
-    const hint = await screen.findByText(/Send this link to sara@example.com/);
-    const created = hint.closest<HTMLElement>('[role="status"]')!;
-    expect(within(created).getByText(link)).toBeInTheDocument();
     expect(
-      screen.getByText("Invitation created for sara@example.com."),
+      await screen.findByText("Invitation created for sara@example.com."),
     ).toBeInTheDocument();
+    const link = `${window.location.origin}/invite/inv_new`;
+    const list = await screen.findByRole("region", { name: "Pending invitations" });
+    expect(await within(list).findByText(link)).toBeInTheDocument();
 
     await user.click(
-      within(created).getByRole("button", {
+      within(list).getByRole("button", {
         name: "Copy the invite link for sara@example.com",
       }),
     );
@@ -69,9 +68,6 @@ describe("Invitations in workspace settings", () => {
     // The change names the workspace the page shows.
     const post = fetchMock.mock.calls.find(([, init]) => init?.method === "POST")!;
     expect(new Headers(post[1]?.headers).get("x-org-id")).toBe("org_co");
-    // The new invite is also listed as pending.
-    const list = await screen.findByRole("region", { name: "Pending invitations" });
-    expect(await within(list).findByText("sara@example.com")).toBeInTheDocument();
   });
 
   it("lists pending invites with their links and cancels one", async () => {

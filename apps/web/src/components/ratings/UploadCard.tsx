@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { api } from "../../lib/api";
 import { cn } from "../../lib/cn";
-import { errorMessage, uploadProblemMessage } from "../../lib/errors";
+import { errorMessage } from "../../lib/errors";
 import { formatMegabytes } from "../../lib/format";
 import { queryKeys } from "../../lib/queries";
 import { MAX_UPLOAD_MB, validateUpload, type UploadProblem } from "../../lib/upload";
@@ -166,7 +166,7 @@ export function UploadCard({ defaultView, retentionDays }: UploadCardProps) {
               role="alert"
               className="text-sm font-medium text-critical-ink"
             >
-              {uploadProblemMessage(t, problem)}
+              {t(`upload.errors.${problem}`, { max: MAX_UPLOAD_MB })}
             </p>
           )}
 

@@ -1,6 +1,5 @@
 import i18n, { type TFunction } from "i18next";
 import { ApiError, type ApiErrorCode } from "./api";
-import { MAX_UPLOAD_MB, type UploadProblem } from "./upload";
 
 const API_ERROR_KEYS: Record<ApiErrorCode, string> = {
   unauthorized: "errors.unauthorized",
@@ -47,16 +46,6 @@ export function ratingErrorMessage(
   if (canShowServerText(error.message)) return error.message;
   const key = RATING_ERROR_KEYS[error.code] ?? API_ERROR_KEYS[error.code as ApiErrorCode];
   return key ? t(key) : t("errors.rating_failed");
-}
-
-const UPLOAD_PROBLEM_KEYS: Record<UploadProblem, string> = {
-  not_pdf: "upload.errors.not_pdf",
-  too_large: "upload.errors.too_large",
-  empty: "upload.errors.empty",
-};
-
-export function uploadProblemMessage(t: TFunction, problem: UploadProblem): string {
-  return t(UPLOAD_PROBLEM_KEYS[problem], { max: MAX_UPLOAD_MB });
 }
 
 const AUTH_ERROR_KEYS: Record<string, string> = {

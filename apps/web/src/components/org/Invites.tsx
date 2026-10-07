@@ -4,7 +4,6 @@ import { Copy, X } from "lucide-react";
 import { useId, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../lib/api";
-import { copyText } from "../../lib/clipboard";
 import { errorMessage } from "../../lib/errors";
 import { formatDate } from "../../lib/format";
 import { queryKeys } from "../../lib/queries";
@@ -108,24 +107,7 @@ function InviteForm({ orgId }: { orgId: string }) {
           {errorMessage(t, invite.error)}
         </p>
       )}
-      {invite.isSuccess && <CreatedInvite invite={invite.data} />}
     </form>
-  );
-}
-
-/** Shown right after creating an invitation: the link to send, ready to copy. */
-function CreatedInvite({ invite }: { invite: InviteResponse }) {
-  const { t, i18n } = useTranslation();
-  return (
-    <div role="status" className="space-y-2 rounded-lg bg-info-soft/60 p-3 text-sm">
-      <p>
-        {t("org.inviteCreatedHint", {
-          email: invite.email,
-          date: formatDate(invite.expiresAt, i18n.language),
-        })}
-      </p>
-      <InviteLink invite={invite} />
-    </div>
   );
 }
 
@@ -136,12 +118,13 @@ function InviteLink({ invite }: { invite: InviteResponse }) {
   const link = inviteLink(invite.acceptPath);
 
   async function copy() {
-    const copied = await copyText(link);
-    toast(
-      copied
-        ? { kind: "success", message: t("org.linkCopied") }
-        : { kind: "error", message: t("org.copyFailed") },
-    );
+    // The Clipboard API is missing on plain HTTP from another machine, so this can fail.
+    try {
+      await navigator.clipboard.writeText(link);
+      toast({ kind: "success", message: t("org.linkCopied") });
+    } catch {
+      toast({ kind: "error", message: t("org.copyFailed") });
+    }
   }
 
   return (

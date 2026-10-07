@@ -297,17 +297,8 @@
     "admin": "Admin",
     "member": "Member"
   },
-  "orgKind": {
-    "personal": "Personal",
-    "company": "Company"
-  },
   "org": {
     "title": "Workspace settings",
-    "details": "Details",
-    "personalNote": "This is your personal workspace. Only you can see its ratings.",
-    "name": "Name",
-    "kind": "Type",
-    "yourRole": "Your role",
     "retention": "File retention",
     "retentionIntro": "Uploaded PDFs are deleted automatically after this many days. Ratings and findings stay.",
     "retentionLabel": "Delete PDFs after (days)",
@@ -333,7 +324,6 @@
     "inviteSubmit": "Create invite",
     "inviteInvalidEmail": "Enter a valid email address.",
     "invited": "Invitation created for {{email}}.",
-    "inviteCreatedHint": "Send this link to {{email}}. It works once they sign in or sign up with that address, until {{date}}.",
     "copyLink": "Copy link",
     "copyLinkFor": "Copy the invite link for {{email}}",
     "linkCopied": "Link copied.",

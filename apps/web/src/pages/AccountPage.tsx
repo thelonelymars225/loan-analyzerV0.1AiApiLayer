@@ -15,7 +15,8 @@ import { Dialog } from "../components/ui/dialog";
 import { Checkbox, Label } from "../components/ui/input";
 import { useToast } from "../components/ui/toast-context";
 import { LANGUAGE_NAMES, LANGUAGES } from "../i18n";
-import { deleteMyData } from "../lib/account";
+import { api } from "../lib/api";
+import { signOut } from "../lib/auth";
 import { cn } from "../lib/cn";
 import { errorMessage } from "../lib/errors";
 import { useSession } from "../lib/session";
@@ -99,8 +100,12 @@ function DeleteMyDataCard() {
   const [understood, setUnderstood] = useState(false);
 
   const deletion = useMutation({
-    // The API finds the personal workspace itself, whichever workspace this tab shows.
-    mutationFn: () => deleteMyData(),
+    // The API finds the personal workspace itself, whichever workspace this tab shows, so a
+    // company workspace is never touched. If the delete fails the user stays signed in.
+    mutationFn: async () => {
+      await api.deleteMyData();
+      await signOut();
+    },
     onSuccess: () => {
       queryClient.clear();
       toast({ kind: "success", message: t("account.deleted") });

@@ -11,16 +11,14 @@ import {
   OrgSummary,
   Problem,
   RatingReport,
-} from "@rater/contracts";
-import type {
-  CreateOrgBody,
-  ErrorCode,
-  InviteBody,
-  OrgRole,
-  SetActiveOrgBody,
-  UpdateMemberBody,
-  UpdateOrgBody,
-  View,
+  type CreateOrgBody,
+  type ErrorCode,
+  type InviteBody,
+  type OrgRole,
+  type SetActiveOrgBody,
+  type UpdateMemberBody,
+  type UpdateOrgBody,
+  type View,
 } from "@rater/contracts";
 
 /** Error codes the UI knows how to explain: the API's own codes plus client-side failures. */
@@ -148,7 +146,7 @@ function checkContract<T>(schema: Schema<T>, data: unknown, path: string): T {
 }
 
 /** Reads an application/problem+json body; falls back to a code derived from the status. */
-export async function toApiError(response: Response): Promise<ApiError> {
+async function toApiError(response: Response): Promise<ApiError> {
   let body: unknown = null;
   try {
     body = await response.json();
@@ -166,30 +164,15 @@ export async function toApiError(response: Response): Promise<ApiError> {
   }
   return new ApiError({
     status: response.status,
-    code: codeForStatus(response.status),
+    // A proxy in front of the API answers an oversized upload without problem+json.
+    code:
+      response.status === 401
+        ? "unauthorized"
+        : response.status === 413
+          ? "file_too_large"
+          : "internal",
     message: response.statusText || `HTTP ${response.status}`,
   });
-}
-
-function codeForStatus(status: number): ErrorCode {
-  switch (status) {
-    case 401:
-      return "unauthorized";
-    case 403:
-      return "forbidden";
-    case 404:
-      return "not_found";
-    case 409:
-      return "conflict";
-    case 413:
-      return "file_too_large";
-    case 422:
-      return "validation_error";
-    case 429:
-      return "rate_limited";
-    default:
-      return "internal";
-  }
 }
 
 const enc = encodeURIComponent;
@@ -278,8 +261,6 @@ export const api = {
   removeMember: (orgId: string, userId: string) =>
     requestEmpty(`/orgs/${enc(orgId)}/members/${enc(userId)}`, { method: "DELETE" }),
 };
-
-export type Api = typeof api;
 
 /**
  * URLs the browser fetches itself (an <img>, the PDF viewer) rather than through `api`. The

@@ -21,12 +21,7 @@ import { useToast } from "../components/ui/toast-context";
 import { api } from "../lib/api";
 import { errorMessage } from "../lib/errors";
 import { queryKeys } from "../lib/queries";
-import {
-  canChangeRetention,
-  canManageMembers,
-  useSession,
-  workspaceName,
-} from "../lib/session";
+import { canChangeRetention, canManageMembers, useSession } from "../lib/session";
 
 const MIN_RETENTION_DAYS = 1;
 const MAX_RETENTION_DAYS = 365;
@@ -49,41 +44,10 @@ export function OrgSettingsPage() {
     <div className="space-y-6">
       <title>{`${t("org.title")} · ${t("app.name")}`}</title>
       <h1 className="text-2xl font-semibold">{t("org.title")}</h1>
-      <DetailsCard org={activeOrg} />
       {/* Keyed by org so the form starts from the new org's value after a switch. */}
       <RetentionCard key={activeOrg.id} org={activeOrg} />
       {activeOrg.kind === "company" && <MembersCard org={activeOrg} />}
     </div>
-  );
-}
-
-function DetailsCard({ org }: { org: OrgSummary }) {
-  const { t } = useTranslation();
-  return (
-    <Card aria-labelledby="org-details-title">
-      <CardHeader>
-        <CardTitle id="org-details-title">{t("org.details")}</CardTitle>
-        {org.kind === "personal" && (
-          <CardDescription>{t("org.personalNote")}</CardDescription>
-        )}
-      </CardHeader>
-      <CardContent>
-        <dl className="grid gap-4 text-sm sm:grid-cols-3">
-          <div>
-            <dt className="text-muted-foreground">{t("org.name")}</dt>
-            <dd className="mt-1 font-medium">{workspaceName(org, t)}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">{t("org.kind")}</dt>
-            <dd className="mt-1 font-medium">{t(`orgKind.${org.kind}`)}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">{t("org.yourRole")}</dt>
-            <dd className="mt-1 font-medium">{t(`roles.${org.role}`)}</dd>
-          </div>
-        </dl>
-      </CardContent>
-    </Card>
   );
 }
 

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Suspense, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { api, ApiError, isUnauthorized, setShownOrg } from "../../lib/api";
@@ -38,10 +38,7 @@ export function RequireAuth() {
   return (
     <SessionContext.Provider value={session}>
       <AppShell>
-        {/* Pages are loaded on demand (see App.tsx); the shell stays while one loads. */}
-        <Suspense fallback={<LoadingState />}>
-          <Outlet />
-        </Suspense>
+        <Outlet />
       </AppShell>
     </SessionContext.Provider>
   );

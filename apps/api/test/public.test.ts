@@ -1,6 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { HealthResponse, Problem, RulesResponse } from "@rater/contracts";
-import { LAW_VERSION, RULESET_VERSION } from "@rater/law";
+import { HealthResponse, Problem } from "@rater/contracts";
 import {
   DATABASE_URL,
   createTestContext,
@@ -34,50 +33,6 @@ describe.skipIf(!DATABASE_URL)("public routes", () => {
     t.queue.isHealthy = true;
     expect(unhealthy.statusCode).toBe(503);
     expect(unhealthy.json()).toEqual({ ok: false, db: true, queue: false });
-  });
-
-  it("serves the rules table with its versions", async () => {
-    const response = await t.app.inject({ method: "GET", url: "/api/v1/rules" });
-    expect(response.statusCode).toBe(200);
-    const rules = RulesResponse.parse(response.json());
-    expect(rules.rulesetVersion).toBe(RULESET_VERSION);
-    expect(rules.lawVersion).toBe(LAW_VERSION);
-    expect(rules.rules.map((rule) => rule.id)).toContain("EOS-BASE-01");
-  });
-
-  it("publishes an OpenAPI document generated from the schemas, and Swagger UI", async () => {
-    const response = await t.app.inject({ method: "GET", url: "/api/v1/openapi.json" });
-    expect(response.statusCode).toBe(200);
-    const spec = response.json<{ openapi: string; paths: Record<string, object> }>();
-    expect(spec.openapi).toBe("3.1.0");
-    expect(Object.keys(spec.paths)).toEqual(
-      expect.arrayContaining([
-        "/api/v1/ratings",
-        "/api/v1/ratings/{id}",
-        "/api/v1/ratings/{id}/events",
-        "/api/v1/ratings/{id}/document",
-        "/api/v1/me",
-        "/api/v1/me/active-org",
-        "/api/v1/me/data",
-        "/api/v1/invites/{id}",
-        "/api/v1/invites/{id}/accept",
-        "/api/v1/orgs",
-        "/api/v1/orgs/{id}",
-        "/api/v1/orgs/{id}/members",
-        "/api/v1/orgs/{id}/invites",
-        "/api/v1/orgs/{id}/invites/{inviteId}",
-        "/api/v1/orgs/{id}/members/{userId}",
-        "/api/v1/rules",
-        "/api/v1/healthz",
-      ]),
-    );
-    expect(Object.keys(spec.paths).some((path) => path.startsWith("/api/auth"))).toBe(
-      false,
-    );
-
-    const ui = await t.app.inject({ method: "GET", url: "/api/docs/" });
-    expect(ui.statusCode).toBe(200);
-    expect(ui.headers["content-type"]).toMatch(/^text\/html/);
   });
 
   it("lets the web app send PUT and x-org-id across origins", async () => {

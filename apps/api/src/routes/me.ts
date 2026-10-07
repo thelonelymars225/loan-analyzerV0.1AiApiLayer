@@ -27,7 +27,6 @@ export const meRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/me",
     {
       schema: {
-        summary: "The signed-in user, their workspaces and roles",
         response: { 200: MeResponse },
       },
     },
@@ -40,9 +39,6 @@ export const meRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
       // Switching is the one change whose x-org-id is expected to differ.
       config: { ignoresOrgHeader: true },
       schema: {
-        summary: "Switch the session's active workspace (404 unless a member)",
-        description:
-          "The active workspace is stored in the session, so it changes in every tab.",
         body: SetActiveOrgBody,
         response: { 200: MeResponse },
       },
@@ -61,13 +57,6 @@ export const meRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     {
       // Always the caller's personal workspace, whichever one the session has active.
       config: { ignoresOrgHeader: true },
-      schema: {
-        summary: "Delete every rating and PDF in your personal workspace",
-        description:
-          "Removes all ratings (with their findings), document rows and stored PDFs of the " +
-          "caller's personal workspace, whatever the active workspace is. Company " +
-          "workspaces are not touched. Each deleted rating is audited.",
-      },
     },
     async (request, reply) => {
       const { ctx } = request;

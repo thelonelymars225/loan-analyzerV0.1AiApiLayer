@@ -35,7 +35,6 @@ export function authRoutes(auth: Auth): FastifyPluginAsync {
     app.route({
       method: ["GET", "POST"],
       url: `${AUTH_BASE_PATH}/*`,
-      schema: { hide: true },
       handler: async (request, reply) => {
         const webRequest = toWebRequest(request);
         if (!isAllowed(webRequest)) {

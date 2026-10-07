@@ -11,7 +11,6 @@ import {
   View,
 } from "./enums";
 import { ContractFields } from "./fields";
-import { Rule } from "./rule";
 
 /** Error body for every 4xx/5xx (application/problem+json). `code` is stable. */
 export const ErrorCode = z.enum([
@@ -276,13 +275,6 @@ export const ListMembersResponse = z.object({
   items: z.array(MemberResponse),
 });
 export type ListMembersResponse = z.infer<typeof ListMembersResponse>;
-
-export const RulesResponse = z.object({
-  rulesetVersion: z.string(),
-  lawVersion: z.string(),
-  rules: z.array(Rule),
-});
-export type RulesResponse = z.infer<typeof RulesResponse>;
 
 export const HealthResponse = z.object({
   ok: z.boolean(),

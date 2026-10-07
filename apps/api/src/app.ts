@@ -12,17 +12,14 @@ import { trustedOrigins, type Config } from "./config";
 import type { AppDeps } from "./deps";
 import { createLogger } from "./logger";
 import { authRoutes } from "./plugins/auth-routes";
-import { registerDocs } from "./plugins/docs";
 import { registerErrorHandling } from "./plugins/errors";
 import { sessionHook, type RequestContext } from "./plugins/session";
 import type { RatingQueue } from "./queue";
-import { docsRoutes } from "./routes/docs";
 import { healthRoutes } from "./routes/health";
 import { inviteRoutes } from "./routes/invites";
 import { meRoutes } from "./routes/me";
 import { orgRoutes } from "./routes/orgs";
 import { ratingRoutes } from "./routes/ratings";
-import { ruleRoutes } from "./routes/rules";
 
 export interface BuildAppOptions {
   config: Config;
@@ -44,7 +41,6 @@ export interface BuildAppOptions {
  *
  *   /api/auth/*   Better Auth: sign-up, sign-in, sign-out, session (nothing else is reachable)
  *   /api/v1/*     the REST API (session cookie; problem+json errors)
- *   /api/docs     Swagger UI; the spec is /api/v1/openapi.json
  */
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
   const { config, db } = options;
@@ -79,15 +75,12 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   });
   await app.register(fastifyMultipart);
-  await registerDocs(app);
   await app.register(authRoutes(deps.auth));
 
   await app.register(
     async (v1) => {
       v1.addHook("onRequest", sessionHook(deps));
       await v1.register(healthRoutes, deps);
-      await v1.register(ruleRoutes);
-      await v1.register(docsRoutes);
       await v1.register(meRoutes, deps);
       await v1.register(ratingRoutes, deps);
       await v1.register(orgRoutes, deps);

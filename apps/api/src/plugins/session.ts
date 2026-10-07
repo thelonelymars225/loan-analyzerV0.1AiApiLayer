@@ -24,7 +24,7 @@ declare module "fastify" {
     ctx: RequestContext;
   }
   interface FastifyContextConfig {
-    /** The route works without a session (health check, rules table, OpenAPI). */
+    /** The route works without a session (the health check). */
     public?: boolean;
     /**
      * The route does not act on the active workspace (switching it, accepting an

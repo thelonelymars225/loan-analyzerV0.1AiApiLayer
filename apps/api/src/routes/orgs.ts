@@ -43,7 +43,6 @@ export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/orgs",
     {
       schema: {
-        summary: "Create a company workspace (the caller becomes its owner)",
         body: CreateOrgBody,
         response: { 201: OrgSummary },
       },
@@ -65,10 +64,6 @@ export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/orgs/:id",
     {
       schema: {
-        summary: "Change workspace settings (owner)",
-        description:
-          "A new retentionDays applies to PDFs uploaded from now on; files already stored " +
-          "keep the deletion date they were given at upload.",
         params: OrgParams,
         body: UpdateOrgBody,
         response: { 200: OrgSummary },
@@ -90,7 +85,6 @@ export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/orgs/:id/members",
     {
       schema: {
-        summary: "List the workspace's members",
         params: OrgParams,
         response: { 200: ListMembersResponse },
       },
@@ -105,7 +99,6 @@ export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/orgs/:id/invites",
     {
       schema: {
-        summary: "List the workspace's pending invitations (owner or admin)",
         params: OrgParams,
         response: { 200: ListInvitesResponse },
       },
@@ -122,11 +115,6 @@ export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/orgs/:id/invites",
     {
       schema: {
-        summary: "Invite someone by email (owner or admin, company workspaces only)",
-        description:
-          "No email is sent in v1: share `acceptPath` (a page of the web app) with the " +
-          "invitee. They sign in or sign up with the invited address and accept there " +
-          "(GET /invites/{id}, POST /invites/{id}/accept).",
         params: OrgParams,
         body: InviteBody,
         response: { 201: InviteResponse },
@@ -166,7 +154,6 @@ export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/orgs/:id/invites/:inviteId",
     {
       schema: {
-        summary: "Cancel a pending invitation (owner or admin)",
         params: InviteParams,
       },
     },
@@ -183,7 +170,6 @@ export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/orgs/:id/members/:userId",
     {
       schema: {
-        summary: "Change a member's role (owner or admin)",
         params: MemberParams,
         body: UpdateMemberBody,
         response: { 200: MemberResponse },
@@ -201,7 +187,6 @@ export const orgRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/orgs/:id/members/:userId",
     {
       schema: {
-        summary: "Remove a member (owner or admin)",
         params: MemberParams,
       },
     },

@@ -164,7 +164,6 @@ Behind a load balancer, set nginx's real-IP settings first (see `infra/nginx.con
 | ---------- | --------------------------------------- |
 | Web app    | http://localhost:8080                   |
 | API health | http://localhost:3000/api/v1/healthz    |
-| API docs   | http://localhost:3000/api/docs          |
 | MinIO      | http://localhost:9001 (console)         |
 | Postgres   | `localhost:5432`, `postgres`/`postgres` |
 

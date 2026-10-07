@@ -18,7 +18,6 @@ export const inviteRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/invites/:id",
     {
       schema: {
-        summary: "An invitation addressed to the signed-in user",
         params: InviteParams,
         response: { 200: InvitePreview },
       },
@@ -32,7 +31,6 @@ export const inviteRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
       // Joining switches the workspace, so the tab's x-org-id is expected to differ.
       config: { ignoresOrgHeader: true },
       schema: {
-        summary: "Accept an invitation: join the workspace and make it the active one",
         params: InviteParams,
         response: { 200: MeResponse },
       },

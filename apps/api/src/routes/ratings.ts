@@ -62,12 +62,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings",
     {
       schema: {
-        summary: "Upload a Qiwa contract PDF to rate",
-        description:
-          'multipart/form-data: optional field "view" (employee | hr) first, then the PDF in ' +
-          `"file" (at most ${config.MAX_UPLOAD_BYTES} bytes). 422 unsupported_document when ` +
-          "it is not a Qiwa Unified Employment Contract; 429 rate_limited over the daily limit.",
-        consumes: ["multipart/form-data"],
         response: { 202: CreateRatingResponse },
       },
     },
@@ -91,7 +85,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings",
     {
       schema: {
-        summary: "List the workspace's ratings, newest first",
         querystring: z.object({ cursor: z.string().max(200).optional() }),
         response: { 200: ListRatingsResponse },
       },
@@ -106,7 +99,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id",
     {
       schema: {
-        summary: "A rating as a report in one view (any status)",
         params: RatingParams,
         querystring: z.object({ view: View.optional() }),
         response: { 200: RatingReport },
@@ -136,11 +128,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id/events",
     {
       schema: {
-        summary: "Server-sent events: the rating's status until it is final",
-        description:
-          'text/event-stream. Each event is `event: status` with data {"id","status"}. ' +
-          `429 rate_limited when the user already has ${MAX_STREAMS_PER_USER} streams open ` +
-          "(or the server is at its limit); poll GET /ratings/{id} instead.",
         params: RatingParams,
       },
     },
@@ -167,10 +154,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id/document",
     {
       schema: {
-        summary: "The uploaded PDF (until the retention period deletes it)",
-        description:
-          "disposition=attachment (default) downloads it; disposition=inline opens it in the " +
-          "contract viewer. Each is audited as its own action. 404 once the PDF is deleted.",
         params: RatingParams,
         querystring: DocumentQuery,
       },
@@ -202,10 +185,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id/passages/:clause/:page",
     {
       schema: {
-        summary: "The passage behind a finding, as a PNG cut from the PDF on request",
-        description:
-          "Renders the `crop` the report gives for that clause and page. Nothing is stored: " +
-          "the image is made from the PDF each time and goes once the PDF is deleted (404).",
         params: PassageParams,
       },
     },
@@ -224,10 +203,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id/pages/:page",
     {
       schema: {
-        summary: "One page of the PDF as a PNG, cut on request for the contract viewer",
-        description:
-          "Rendered from the PDF each time and never stored, like the passage images; " +
-          "404 for a page the contract does not have, or once the PDF is deleted.",
         params: PageParams,
       },
     },
@@ -246,7 +221,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id",
     {
       schema: {
-        summary: "Delete the rating, its findings and the PDF",
         params: RatingParams,
       },
     },

@@ -70,3 +70,23 @@ export function findingAnchor(finding: Pick<ViewFinding, "ruleId" | "clause">): 
   const clause = finding.clause ? `-${finding.clause.replace(/[^A-Za-z0-9]/g, "-")}` : "";
   return `finding-${finding.ruleId}${clause}`;
 }
+
+/** Highlight over a clause on the page: a translucent fill so the words stay readable, and a ring. */
+export const HIGHLIGHT_CLASSES: Record<Tone, string> = {
+  neutral: "bg-primary/15 ring-primary",
+  info: "bg-primary/15 ring-primary",
+  good: "bg-good/15 ring-good",
+  warning: "bg-warning/25 ring-warning",
+  serious: "bg-serious/20 ring-serious",
+  critical: "bg-critical/15 ring-critical",
+};
+
+/** The numbered pin beside a highlight, and the same number in the viewer's list. */
+export const PIN_CLASSES: Record<Tone, string> = {
+  neutral: "bg-primary text-primary-foreground",
+  info: "bg-primary text-primary-foreground",
+  good: "bg-good text-white",
+  warning: "bg-warning text-black",
+  serious: "bg-serious text-white",
+  critical: "bg-critical text-white",
+};

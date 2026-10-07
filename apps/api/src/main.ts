@@ -4,11 +4,9 @@ import { buildApp } from "./app";
 import { loadConfig } from "./config";
 import { createLogger, errorForLog } from "./logger";
 import { PgBossQueue } from "./queue";
-import { startTelemetry } from "./telemetry";
 
 /** Starts the API: migrations, queue, HTTP server; stops cleanly on SIGINT / SIGTERM. */
 async function main(): Promise<void> {
-  const stopTelemetry = startTelemetry();
   const config = loadConfig();
   const logger = createLogger(config.LOG_LEVEL);
 
@@ -30,10 +28,6 @@ async function main(): Promise<void> {
       await app.close(); // stops accepting requests and waits for running ones
       await queue.stop();
       await pool.end();
-      // Losing the last few spans (collector down) is no reason to fail the shutdown.
-      await stopTelemetry().catch((error: unknown) =>
-        logger.warn({ err: errorForLog(error) }, "could not flush traces"),
-      );
       process.exit(0);
     } catch (error) {
       logger.error({ err: errorForLog(error) }, "shutdown failed");

@@ -1,4 +1,3 @@
-import type { Span } from "@opentelemetry/api";
 import type { RulesFile } from "@rater/contracts";
 import { detectQiwa, parseBboxXhtml, runPipeline } from "@rater/core";
 import type { ArticleLookup, ClauseCache, PageLayout, PageRegion } from "@rater/core";
@@ -18,7 +17,6 @@ import {
   saveResult,
 } from "./rating-store";
 import type { RatedResult, RatingRow } from "./rating-store";
-import { withSpan } from "./telemetry";
 
 /*
  * One rating job: read the PDF, run the pipeline (packages/core runPipeline, the same code the
@@ -97,39 +95,35 @@ export async function processRating(
   const logger = deps.logger.child({ ratingId });
   const job = { ...deps, logger };
 
-  return withSpan("rating.process", { "rating.id": ratingId }, async (span) => {
-    const startedAt = performance.now();
-    const elapsed = () => Math.round(performance.now() - startedAt);
+  const startedAt = performance.now();
+  const elapsed = () => Math.round(performance.now() - startedAt);
 
-    const rating = await findRating(deps.db, ratingId);
-    if (!rating) {
-      logger.warn("Rating not found (deleted before the job ran); skipping");
-      return "skipped";
-    }
+  const rating = await findRating(deps.db, ratingId);
+  if (!rating) {
+    logger.warn("Rating not found (deleted before the job ran); skipping");
+    return "skipped";
+  }
 
-    try {
-      const outcome = await rate(rating, job);
-      span.setAttribute("rating.outcome", outcome);
-      logger.info({ outcome, durationMs: elapsed() }, "Rating finished");
-      return outcome;
-    } catch (error) {
-      if (error instanceof RatingFailure) {
-        await markFailed(deps.db, ratingId, error.code, error.message);
-        span.setAttribute("rating.outcome", "failed");
-        logger.info({ errorCode: error.code, durationMs: elapsed() }, "Rating failed");
-        return "failed";
-      }
-      const finalAttempt = options.finalAttempt ?? true;
-      logger.error(
-        { err: errorForLog(error), finalAttempt, durationMs: elapsed() },
-        "Rating job crashed",
-      );
-      if (finalAttempt) {
-        await markFailed(deps.db, ratingId, "internal", INTERNAL_ERROR_MESSAGE);
-      }
-      throw error;
+  try {
+    const outcome = await rate(rating, job);
+    logger.info({ outcome, durationMs: elapsed() }, "Rating finished");
+    return outcome;
+  } catch (error) {
+    if (error instanceof RatingFailure) {
+      await markFailed(deps.db, ratingId, error.code, error.message);
+      logger.info({ errorCode: error.code, durationMs: elapsed() }, "Rating failed");
+      return "failed";
     }
-  });
+    const finalAttempt = options.finalAttempt ?? true;
+    logger.error(
+      { err: errorForLog(error), finalAttempt, durationMs: elapsed() },
+      "Rating job crashed",
+    );
+    if (finalAttempt) {
+      await markFailed(deps.db, ratingId, "internal", INTERNAL_ERROR_MESSAGE);
+    }
+    throw error;
+  }
 }
 
 async function rate(rating: RatingRow, job: RateJobDeps): Promise<RatingOutcome> {
@@ -143,8 +137,8 @@ async function rate(rating: RatingRow, job: RateJobDeps): Promise<RatingOutcome>
 
   await markAnalysing(db, rating.id);
   const ocr = job.ocr;
-  const result = await runStep("analyse", job, async (span) => {
-    const output = await runPipeline({
+  const result = await runStep("analyse", job, () =>
+    runPipeline({
       pages,
       ocrArabic: ocr
         ? (regions) => runStep("ocr", job, () => ocr(pdf, regions, job.logger))
@@ -154,15 +148,8 @@ async function rate(rating: RatingRow, job: RateJobDeps): Promise<RatingOutcome>
       articles: job.articles,
       cache: job.cache,
       today: job.today ?? todayInRiyadh(),
-    });
-    span.setAttributes({
-      "llm.model": output.versions.model,
-      "llm.input_tokens": output.usage.inputTokens,
-      "llm.output_tokens": output.usage.outputTokens,
-      "rating.findings": output.findings.length,
-    });
-    return output;
-  });
+    }),
+  );
   // detectQiwa already passed, so this is only a safety net.
   if (result.status === "rejected" || !result.extraction) {
     throw new RatingFailure(
@@ -192,14 +179,14 @@ async function rate(rating: RatingRow, job: RateJobDeps): Promise<RatingOutcome>
   return saved ? rated.status : "skipped";
 }
 
-/** Runs one step in its own span and logs how long it took. */
+/** Runs one step and logs how long it took. */
 async function runStep<T>(
   step: string,
   job: RateJobDeps,
-  work: (span: Span) => Promise<T>,
+  work: () => Promise<T>,
 ): Promise<T> {
   const startedAt = performance.now();
-  const value = await withSpan(`rating.${step}`, {}, work);
+  const value = await work();
   job.logger.info(
     { step, durationMs: Math.round(performance.now() - startedAt) },
     "Step finished",

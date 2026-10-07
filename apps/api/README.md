@@ -16,19 +16,18 @@ curl localhost:3000/api/v1/healthz
 
 ## Configuration
 
-| Variable                      | Default                 | Notes                                                                                           |
-| ----------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                | required                | Postgres with pgvector; pg-boss uses the same database                                          |
-| `PORT`, `HOST`                | `3000`, `0.0.0.0`       |                                                                                                 |
-| `BETTER_AUTH_SECRET`          | required in production  | 32+ characters (`openssl rand -base64 32`)                                                      |
-| `BETTER_AUTH_URL`             | `http://localhost:3000` | Public URL of the API                                                                           |
-| `WEB_ORIGIN`                  | `http://localhost:5173` | Allowed by CORS and Better Auth; outside production so are Vite dev (:5173) and preview (:4173) |
-| `STORAGE_DRIVER`              | `local`                 | `local` or `s3`; see `@rater/storage` for its other variables                                   |
-| `LOG_LEVEL`                   | `info`                  | pino level                                                                                      |
-| `RATE_LIMIT_PER_DAY`          | `20`                    | Accepted uploads per user per 24 hours; deleting a rating gives none back                       |
-| `MAX_UPLOAD_BYTES`            | `10485760`              | 10 MB                                                                                           |
-| `DB_MIGRATE_ON_START`         | `true`                  | Apply `packages/db/migrations` on start; same name and parser as the worker                     |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | unset                   | Set it to export traces over OTLP/HTTP                                                          |
+| Variable              | Default                 | Notes                                                                                           |
+| --------------------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`        | required                | Postgres with pgvector; pg-boss uses the same database                                          |
+| `PORT`, `HOST`        | `3000`, `0.0.0.0`       |                                                                                                 |
+| `BETTER_AUTH_SECRET`  | required in production  | 32+ characters (`openssl rand -base64 32`)                                                      |
+| `BETTER_AUTH_URL`     | `http://localhost:3000` | Public URL of the API                                                                           |
+| `WEB_ORIGIN`          | `http://localhost:5173` | Allowed by CORS and Better Auth; outside production so are Vite dev (:5173) and preview (:4173) |
+| `STORAGE_DRIVER`      | `local`                 | `local` or `s3`; see `@rater/storage` for its other variables                                   |
+| `LOG_LEVEL`           | `info`                  | pino level                                                                                      |
+| `RATE_LIMIT_PER_DAY`  | `20`                    | Accepted uploads per user per 24 hours; deleting a rating gives none back                       |
+| `MAX_UPLOAD_BYTES`    | `10485760`              | 10 MB                                                                                           |
+| `DB_MIGRATE_ON_START` | `true`                  | Apply `packages/db/migrations` on start; same name and parser as the worker                     |
 
 ## Behaviour worth knowing
 

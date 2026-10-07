@@ -15,7 +15,7 @@ import { loadReport, preferredLocale } from "../report";
 import { decodeCursor } from "../ratings/cursor";
 import { readStoredPdf } from "../ratings/document";
 import { FINAL_STATUSES, streamRatingStatus } from "../ratings/events";
-import { renderDocumentPage, renderPassage } from "../ratings/images";
+import { renderDocumentPage } from "../ratings/images";
 import {
   checkDailyLimit,
   createRating,
@@ -27,11 +27,6 @@ import {
 import { checkQiwaPdf, readUpload } from "../ratings/upload";
 
 const RatingParams = z.object({ id: z.string().min(1).max(64) });
-/** A clause ("15.4", "9.1.1") or section ("7") number, as the report's passages give it. */
-const PassageParams = RatingParams.extend({
-  clause: z.string().regex(/^\d{1,2}(\.\d{1,2}){0,3}$/),
-  page: z.coerce.number().int().positive().max(999),
-});
 const PageParams = RatingParams.extend({
   page: z.coerce.number().int().positive().max(999),
 });
@@ -199,34 +194,12 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
   );
 
   app.get(
-    "/ratings/:id/passages/:clause/:page",
-    {
-      schema: {
-        summary: "The passage behind a finding, as a PNG cut from the PDF on request",
-        description:
-          "Renders the `crop` the report gives for that clause and page. Nothing is stored: " +
-          "the image is made from the PDF each time and goes once the PDF is deleted (404).",
-        params: PassageParams,
-      },
-    },
-    async (request, reply) => {
-      const { id, clause, page } = request.params;
-      const rating = await findVisibleRating(db, request.ctx, id);
-      const png = await renderPassage({ db, storage }, rating, clause, page);
-      return reply
-        .type("image/png")
-        .header("cache-control", "private, no-store")
-        .send(png);
-    },
-  );
-
-  app.get(
     "/ratings/:id/pages/:page",
     {
       schema: {
         summary: "One page of the PDF as a PNG, cut on request for the contract viewer",
         description:
-          "Rendered from the PDF each time and never stored, like the passage images; " +
+          "Rendered from the PDF each time and never stored; " +
           "404 for a page the contract does not have, or once the PDF is deleted.",
         params: PageParams,
       },

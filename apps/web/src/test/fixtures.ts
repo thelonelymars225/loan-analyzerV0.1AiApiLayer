@@ -41,7 +41,7 @@ const base = (
   ...overrides,
 });
 
-/** Where a clause sits on the synthetic contract's A4 pages; the API cuts `crop` as the image. */
+/** Where a clause sits on the synthetic contract's A4 pages. */
 export function syntheticPassage(
   clause: string,
   page: number,
@@ -57,7 +57,6 @@ export function syntheticPassage(
     pageWidth,
     pageHeight,
     box: { xMin: 45.4, yMin, xMax: 574.2, yMax },
-    crop: { xMin: 0, yMin: yMin - 18, xMax: pageWidth, yMax: yMax + 18 },
     textEn: null,
     textAr: null,
     approximate: false,

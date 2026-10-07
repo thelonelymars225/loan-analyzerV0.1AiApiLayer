@@ -1,24 +1,24 @@
-import type { ReportDocument, View, ViewFinding } from "@rater/contracts";
+import type { View, ViewFinding } from "@rater/contracts";
 import { Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { SEVERITY_TONE, VERDICT_TONE, findingAnchor } from "../../lib/report";
 import { Badge, ToneDot } from "../ui/badge";
 import { ImpactTable } from "./ImpactTable";
-import { PassagePreview } from "./PassagePreview";
 
 interface FindingCardProps {
   finding: ViewFinding;
   view: View;
-  /** The rating the finding belongs to and its PDF, for the passage preview. */
+  /** The rating the finding belongs to, for the link into the contract viewer. */
   ratingId: string;
-  document: ReportDocument;
 }
 
 /** One problem finding. The API already picked the view's message and action. */
-export function FindingCard({ finding, view, ratingId, document }: FindingCardProps) {
+export function FindingCard({ finding, view, ratingId }: FindingCardProps) {
   const { t } = useTranslation();
   const anchor = findingAnchor(finding);
   const titleId = `${anchor}-title`;
+  const passage = finding.passages[0];
 
   return (
     <article
@@ -65,14 +65,22 @@ export function FindingCard({ finding, view, ratingId, document }: FindingCardPr
         {finding.message}
       </p>
 
-      <PassagePreview
-        ratingId={ratingId}
-        itemId={anchor}
-        view={view}
-        passages={finding.passages}
-        document={document}
-        tone={SEVERITY_TONE[finding.severity]}
-      />
+      {passage && (
+        <Link
+          to={{
+            pathname: `/ratings/${ratingId}/contract`,
+            search: `?${new URLSearchParams({
+              view,
+              focus: anchor,
+              clause: passage.clause,
+              page: String(passage.page),
+            })}`,
+          }}
+          className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+        >
+          {t("report.passage.open")}
+        </Link>
+      )}
 
       {finding.impactSar && (
         <ImpactTable kind={finding.impactKind} sar={finding.impactSar} />

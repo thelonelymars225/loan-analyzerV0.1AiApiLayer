@@ -64,22 +64,19 @@ A `needs_review` report still shows its findings, and lists in plain English why
 should check it: each extraction problem (such as a missing field, or wage parts that do not
 add up), plus one line when a Section 15 clause could not be analysed automatically.
 
-Each finding in a report carries its passages: the clause's box on the page, the crop to
-show, and the clause text as it was rated. The image itself is cut from the stored PDF when
-asked for (`GET /api/v1/ratings/{id}/passages/{clause}/{page}`) and sent with `no-store`; it
-is never written anywhere, so once the PDF is deleted the previews are gone too and the
-report shows the clause text only. The PDF can be opened in the browser with
+Each finding in a report carries its passages: the clause's box on the page and the clause
+text as it was rated. The PDF can be opened in the browser with
 `GET /api/v1/ratings/{id}/document?disposition=inline`, which is audited as `view_document`,
 separately from a download.
 
 "Open in contract" on a finding card opens the contract viewer (`/ratings/{id}/contract`):
 every page of the PDF, as images the API cuts on request
-(`GET /api/v1/ratings/{id}/pages/{page}`, same no-store rule as the passages), with each
-finding marked where it is and numbered in contract order. Its side panel is the table of
-contents for the findings: an Issues tab sorted by severity, a What's good tab (whose green
-marks only show while it is open), a severity filter and a previous/next stepper. The URL
-carries the view, the tab and the focused passage, so a link lands on the right lines. Once
-the PDF is deleted the viewer shows the clause text as it was rated instead.
+(`GET /api/v1/ratings/{id}/pages/{page}`, sent with `no-store` and never written anywhere),
+with each finding marked where it is and numbered in contract order. Its side panel is the
+table of contents for the findings: an Issues tab sorted by severity, a What's good tab (whose
+green marks only show while it is open), a severity filter and a previous/next stepper. The
+URL carries the view, the tab and the focused passage, so a link lands on the right lines.
+Once the PDF is deleted the viewer shows the clause text as it was rated instead.
 
 A rating whose job was lost (the worker was killed mid-job, or the queue gave up on it) would
 show "in progress" forever. An hourly sweep in the worker marks it `failed` with the error

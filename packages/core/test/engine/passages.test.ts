@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ClauseLocation } from "@rater/contracts";
-import { CROP_CONTEXT_PT, passageCrop, passagesFor } from "../../src/passages";
+import { passagesFor } from "../../src/passages";
 
 const PAGE = { pageWidth: 595.92, pageHeight: 842.04 };
 
@@ -33,33 +33,14 @@ const CLAUSES = [
   { number: "15.4", textEn: "Two months of basic wage.", textAr: null },
 ];
 
-describe("passageCrop", () => {
-  it("takes the full page width and a line of context above and below", () => {
-    expect(passageCrop(located("15.4", 8, 520))).toEqual({
-      xMin: 0,
-      yMin: 520 - CROP_CONTEXT_PT,
-      xMax: PAGE.pageWidth,
-      yMax: 560 + CROP_CONTEXT_PT,
-    });
-  });
-
-  it("stays inside the page at the top and bottom edges", () => {
-    expect(passageCrop(located("1", 1, 5)).yMin).toBe(0);
-    expect(passageCrop(located("14", 9, PAGE.pageHeight - 20)).yMax).toBe(
-      PAGE.pageHeight,
-    );
-  });
-});
-
 describe("passagesFor", () => {
-  it("gives a located clause its box, its crop and its stored text", () => {
+  it("gives a located clause its box and its stored text", () => {
     expect(passagesFor(["15.4"], LOCATIONS, CLAUSES)).toEqual([
       {
         clause: "15.4",
         page: 8,
         ...PAGE,
         box: { xMin: 45.4, yMin: 520, xMax: 574.2, yMax: 560 },
-        crop: passageCrop(located("15.4", 8, 520)),
         textEn: "Two months of basic wage.",
         textAr: null,
         approximate: false,

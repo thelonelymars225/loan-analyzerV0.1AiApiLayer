@@ -41,6 +41,7 @@ question here once it is answered.
 | 2026-10-07 | Opening the PDF in the contract viewer (`disposition=inline`) is audited as `view_document`, apart from a download. Passage images are not audited one by one: viewing the report already is.                                                                                                                            |
 | 2026-10-07 | The contract viewer shows server-rendered page images (same no-store rule as the passages) rather than running a PDF renderer in the browser: less code to keep, nothing of the PDF cached on the client, and the same highlight maths as the previews. The original PDF opens inline for anything else (print, search). |
 | 2026-10-07 | In the viewer, findings are numbered in contract order (the same number on the pin and in the list) while the Issues list is sorted by severity, then by place; a finding placed only as a whole section gets no number. What's good is a second tab, and its green marks show only while it is open.                    |
+| 2026-10-07 | Finding cards no longer show a cropped image of their passage; "Open in contract" opens the viewer at it instead. The passage image route (`/ratings/{id}/passages/{clause}/{page}`) and the `crop` field of a passage are gone.                                                                                         |
 
 ## Open questions
 

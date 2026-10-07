@@ -4,11 +4,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { cn } from "../../lib/cn";
-import { isSectionNumber } from "../../lib/passages";
 import { PIN_CLASSES, SEVERITY_TONE } from "../../lib/report";
 import {
   SEVERITY_FILTERS,
   VIEWER_TABS,
+  isSectionNumber,
   type SeverityFilter,
   type ViewerItem,
   type ViewerTab,

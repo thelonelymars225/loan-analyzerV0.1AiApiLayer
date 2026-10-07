@@ -286,9 +286,6 @@ export type Api = typeof api;
  * session cookie goes along as on any same-origin request.
  */
 export const apiUrls = {
-  /** PNG of the passage behind a finding, cut from the PDF on request (404 once it is deleted). */
-  passageImage: (ratingId: string, clause: string, page: number) =>
-    `${API_BASE}/ratings/${enc(ratingId)}/passages/${enc(clause)}/${page}`,
   /** PNG of one whole page, for the contract viewer (404 past the last page or once deleted). */
   page: (ratingId: string, page: number) =>
     `${API_BASE}/ratings/${enc(ratingId)}/pages/${page}`,

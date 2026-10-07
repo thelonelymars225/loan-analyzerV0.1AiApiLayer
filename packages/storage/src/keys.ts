@@ -11,8 +11,8 @@ const SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 /**
  * Keys are relative paths made of safe segments joined by "/". This is an allow-list
  * rather than a search for "..", so absolute paths, backslashes, empty segments and
- * control characters are all rejected too. Both drivers apply it, so a key that works
- * locally also works in S3 and the other way round.
+ * control characters are all rejected too. Keys that pass are also valid object names in
+ * a bucket, should a bucket driver come back.
  */
 export function assertValidKey(key: string): void {
   if (key.length === 0) {

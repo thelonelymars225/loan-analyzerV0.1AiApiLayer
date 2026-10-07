@@ -13,11 +13,6 @@ const Env = z
     BETTER_AUTH_URL: z.url().default("http://localhost:3000"),
     /** Where the web app is served from. Allowed by CORS and Better Auth's origin check. */
     WEB_ORIGIN: z.url().default("http://localhost:5173"),
-    /**
-     * "local" or "s3". The driver reads its own variables (LOCAL_STORAGE_DIR,
-     * STORAGE_ENCRYPTION_KEY, S3_*) in @rater/storage; this only fails fast on a typo.
-     */
-    STORAGE_DRIVER: z.enum(["local", "s3"]).default("local"),
     LOG_LEVEL: z
       .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
       .default("info"),

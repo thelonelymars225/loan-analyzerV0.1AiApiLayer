@@ -41,6 +41,7 @@ question here once it is answered.
 | 2026-10-07 | Opening the PDF in the contract viewer (`disposition=inline`) is audited as `view_document`, apart from a download. Passage images are not audited one by one: viewing the report already is.                                                                                                                            |
 | 2026-10-07 | The contract viewer shows server-rendered page images (same no-store rule as the passages) rather than running a PDF renderer in the browser: less code to keep, nothing of the PDF cached on the client, and the same highlight maths as the previews. The original PDF opens inline for anything else (print, search). |
 | 2026-10-07 | In the viewer, findings are numbered in contract order (the same number on the pin and in the list) while the Issues list is sorted by severity, then by place; a finding placed only as a whole section gets no number. What's good is a second tab, and its green marks show only while it is open.                    |
+| 2026-10-07 | v1 stores PDFs on an encrypted local volume (AES-256-GCM) shared by the API and the worker; the S3 driver and MinIO are gone, replacing the 2026-10-04 MinIO row. The `ObjectStorage` interface stays, so a bucket driver can come back once hosting is decided.                                                         |
 
 ## Open questions
 

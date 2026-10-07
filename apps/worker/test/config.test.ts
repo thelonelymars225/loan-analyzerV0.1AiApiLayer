@@ -10,7 +10,6 @@ describe("loadConfig", () => {
       WORKER_CONCURRENCY: 2,
       OCR_ENABLED: true,
       DB_MIGRATE_ON_START: true,
-      STORAGE_DRIVER: "local",
       LOG_LEVEL: "info",
     });
   });
@@ -54,6 +53,5 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ DATABASE_URL, OCR_ENABLED: "maybe" })).toThrow(
       /OCR_ENABLED/,
     );
-    expect(() => loadConfig({ DATABASE_URL, STORAGE_DRIVER: "s3" })).toThrow(/S3_BUCKET/);
   });
 });

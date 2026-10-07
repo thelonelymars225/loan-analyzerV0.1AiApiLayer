@@ -131,7 +131,6 @@ describe.skipIf(!DATABASE_URL)("rating jobs against Postgres", () => {
     const env = {
       DATABASE_URL: testDb.url,
       LLM_PROVIDER: "heuristic",
-      STORAGE_DRIVER: "local",
       LOCAL_STORAGE_DIR: temp.dir,
       STORAGE_ENCRYPTION_KEY: temp.encryptionKey.toString("base64"),
       OCR_ENABLED: "false",

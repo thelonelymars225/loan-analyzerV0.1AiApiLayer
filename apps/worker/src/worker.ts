@@ -60,7 +60,6 @@ export async function startWorker(options: StartWorkerOptions): Promise<RunningW
     logger.info(
       {
         concurrency: config.WORKER_CONCURRENCY,
-        storage: config.STORAGE_DRIVER,
         model: deps.llm.model,
         promptVersion: deps.llm.promptVersion,
         rulesetVersion: deps.rules.rulesetVersion,

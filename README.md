@@ -110,16 +110,16 @@ web app.
 | `packages/llm`       | `LlmClient`: the Claude adapter, the offline analyser, versioned prompts       |
 | `packages/law`       | The rules table, the law corpus, article lookup, the ingest script             |
 | `packages/db`        | Drizzle schema and migrations (Postgres 16 + pgvector)                         |
-| `packages/storage`   | Encrypted file storage: S3 bucket or local disk                                |
+| `packages/storage`   | Encrypted file storage on local disk                                           |
 | `evals`              | Synthetic contracts, the Qiwa template, the eval runner                        |
 | `infra`              | Docker Compose stack, Dockerfiles, nginx config                                |
 
-Request flow: the web app uploads a PDF. The API checks it, stores it in the bucket, creates
+Request flow: the web app uploads a PDF. The API checks it, stores it encrypted on disk, creates
 a `queued` rating and sends a job. The worker fetches the PDF, runs the pipeline and writes
 fields, clauses and findings to Postgres. The web app renders the report in either view.
 
 Postgres holds the app data, the job queue (pg-boss) and the law vectors (pgvector). The PDFs
-live only in the bucket.
+live only in the encrypted storage folder.
 
 ## Accounts and workspaces
 
@@ -150,11 +150,11 @@ pnpm docker:up        # or: docker compose -f infra/docker-compose.yml up --buil
 Then open http://localhost:8080, create an account and upload a contract. The synthetic
 contracts in `evals/cases/*/contract.pdf` work well for a first try.
 
-The stack runs Postgres + pgvector, MinIO (an S3 stand-in, encrypted at rest), a one-shot job
-that migrates the database and loads the law corpus, the API, the worker, and nginx serving
-the web app. Because that job migrates, the API and the worker start with
+The stack runs Postgres + pgvector, a one-shot job that migrates the database and loads the
+law corpus, the API, the worker, and nginx serving the web app. The API and the worker share
+a volume for the encrypted PDFs. Because that job migrates, the API and the worker start with
 `DB_MIGRATE_ON_START=false`. Everything is published on localhost only. If a port is taken,
-set `WEB_PORT`, `API_PORT`, `POSTGRES_PORT`, `MINIO_PORT` or `MINIO_CONSOLE_PORT`.
+set `WEB_PORT`, `API_PORT` or `POSTGRES_PORT`.
 
 nginx passes the client's address to the API in `X-Forwarded-For`, replacing any value the
 client sent, so sign-in rate limiting works per client. That assumes nginx faces the clients.
@@ -165,7 +165,6 @@ Behind a load balancer, set nginx's real-IP settings first (see `infra/nginx.con
 | Web app    | http://localhost:8080                   |
 | API health | http://localhost:3000/api/v1/healthz    |
 | API docs   | http://localhost:3000/api/docs          |
-| MinIO      | http://localhost:9001 (console)         |
 | Postgres   | `localhost:5432`, `postgres`/`postgres` |
 
 Compose reads settings from your shell or from `infra/.env`. Every setting has a local
@@ -253,11 +252,10 @@ in:
 
 - **Redaction before any LLM call.** IDs, IBANs, phone numbers, e-mail addresses and party
   names are replaced before Section 15 reaches the analyser. The redaction has its own tests.
-- **Encrypted files.** The local driver encrypts each PDF with AES-256-GCM. The S3 driver asks
-  for server-side encryption on every object. The Compose stack gives MinIO a KMS key and
-  turns on default encryption for the bucket.
+- **Encrypted files.** Each PDF is encrypted with AES-256-GCM before it is written to disk
+  (`STORAGE_ENCRYPTION_KEY`, required in production).
 - **Little personal data in Postgres.** The database keeps the extracted fields (no names, IDs
-  or IBANs), the redacted clauses, the findings and a storage key. PDFs stay in the bucket.
+  or IBANs), the redacted clauses, the findings and a storage key. PDFs stay in the storage folder.
 - **Retention.** Each PDF gets a delete date: upload time plus the workspace's retention days
   (default 30, between 1 and 365). The worker deletes expired PDFs every hour.
 - **Delete at any time.** `DELETE /api/v1/ratings/{id}` removes the rating, its findings and

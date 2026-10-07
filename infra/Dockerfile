@@ -45,7 +45,7 @@ ENV NODE_ENV=production \
 # The workspace includes the files read at run time: packages/db/migrations,
 # packages/law/rules, packages/law/corpus and packages/llm/prompts.
 COPY --from=build /app /app
-# /data is only used with STORAGE_DRIVER=local; mount a volume there to keep the files.
+# The encrypted PDFs live in /data/storage; mount a volume there to keep the files.
 RUN mkdir -p /data/storage && chown -R node:node /data
 USER node
 

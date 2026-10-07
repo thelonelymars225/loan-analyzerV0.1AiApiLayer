@@ -42,7 +42,6 @@ export interface LocalStorageOptions {
 
 /**
  * Stores each object as an encrypted file under `dir`, at the path given by its key.
- * For development and single-machine pilots; production uses S3Storage.
  */
 export class LocalStorage implements ObjectStorage {
   /** The absolute root folder. */

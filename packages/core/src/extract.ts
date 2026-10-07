@@ -10,6 +10,7 @@ import type {
 } from "@rater/contracts";
 import { pageRows, rowText, type TextRow, type TextSegment } from "./bbox";
 import { arabicPhrasePattern, isArabicText, normaliseArabic } from "./detect";
+import { locateClauses } from "./locate";
 import type {
   ExtractionIssue,
   ExtractionResult,
@@ -71,6 +72,8 @@ const SECTION_TITLES: [SectionKey, RegExp][] = [
 
 interface Section {
   key: SectionKey;
+  /** The number printed before the title: "15" for "15. Additional Terms". */
+  number: string;
   /** Index of the heading line. */
   start: number;
   /** Index of the next heading line (exclusive end of the body). */
@@ -135,19 +138,20 @@ function isFooter(row: TextRow, page: PageLayout): boolean {
 }
 
 function findSections(lines: Line[]): Section[] {
-  const headings: { key: SectionKey; index: number }[] = [];
+  const headings: { key: SectionKey; number: string; index: number }[] = [];
   lines.forEach((line, index) => {
     const first = line.en[0];
     const match = first ? /^(\d{1,2})\.\s+(.+)$/.exec(cleanEnglish(first.text)) : null;
-    if (!match?.[2]) return;
+    if (!match?.[1] || !match[2]) return;
     const title = match[2];
     const found = SECTION_TITLES.find(
       ([key, pattern]) => pattern.test(title) && !headings.some((h) => h.key === key),
     );
-    if (found) headings.push({ key: found[0], index });
+    if (found) headings.push({ key: found[0], number: match[1], index });
   });
   return headings.map((heading, i) => ({
     key: heading.key,
+    number: heading.number,
     start: heading.index,
     end: headings[i + 1]?.index ?? lines.length,
   }));
@@ -483,6 +487,7 @@ export function extractContract(pages: PageLayout[]): ExtractionResult {
     fields,
     provenance: reader.provenance,
     clauses: section15.clauses,
+    clauseLocations: locateClauses(reader.doc),
     section15ArabicRegions: section15.regions,
     identifyingStrings: parties.strings,
     namePlaceholders: parties.placeholders,

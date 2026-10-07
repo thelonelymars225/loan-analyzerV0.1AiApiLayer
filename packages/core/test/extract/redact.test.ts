@@ -101,6 +101,7 @@ function extraction(
     fields: {} as ExtractionResult["fields"],
     provenance: {},
     clauses: [],
+    clauseLocations: [],
     section15ArabicRegions: [],
     identifyingStrings,
     namePlaceholders,

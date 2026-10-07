@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   date,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -132,6 +133,30 @@ export const clauses = pgTable(
   (t) => [index("clauses_rating_idx").on(t.ratingId)],
 );
 
+/**
+ * Where each numbered clause (and each section) is printed: one row per page it touches, in
+ * PDF points. Boxes only, no text, so a report can show the passage behind a finding and the
+ * contract viewer can open at it. Written by the worker with the other results.
+ */
+export const clauseLocations = pgTable(
+  "clause_locations",
+  {
+    ratingId: text("rating_id")
+      .notNull()
+      .references(() => ratings.id, { onDelete: "cascade" }),
+    /** "15.4", "9.1.1", or "7" for the whole of Section 7. */
+    clause: text("clause").notNull(),
+    page: integer("page").notNull(),
+    pageWidth: doublePrecision("page_width").notNull(),
+    pageHeight: doublePrecision("page_height").notNull(),
+    xMin: doublePrecision("x_min").notNull(),
+    yMin: doublePrecision("y_min").notNull(),
+    xMax: doublePrecision("x_max").notNull(),
+    yMax: doublePrecision("y_max").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.ratingId, t.clause, t.page] })],
+);
+
 /** Feeds both views. */
 export const findings = pgTable(
   "findings",
@@ -142,6 +167,8 @@ export const findings = pgTable(
       .references(() => ratings.id, { onDelete: "cascade" }),
     ruleId: text("rule_id").notNull(),
     clauseRef: text("clause_ref"),
+    /** A cross-check conflict's other side: the template clause it contradicts. */
+    relatedClause: text("related_clause"),
     verdict: text("verdict").notNull(),
     severity: text("severity").notNull(),
     confidence: text("confidence").notNull(),

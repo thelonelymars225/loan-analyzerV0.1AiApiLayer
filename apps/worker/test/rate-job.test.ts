@@ -4,7 +4,14 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { ContractFields } from "@rater/contracts";
 import { extractContract, MemoryClauseCache, parseBboxXhtml } from "@rater/core";
 import type { ArticleLookup } from "@rater/core";
-import { clauseCache, clauses, contractFields, findings, ratings } from "@rater/db";
+import {
+  clauseCache,
+  clauseLocations,
+  clauses,
+  contractFields,
+  findings,
+  ratings,
+} from "@rater/db";
 import type { Db } from "@rater/db";
 import { loadRules } from "@rater/law";
 import { HeuristicLlmClient } from "@rater/llm";
@@ -181,6 +188,19 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
     expect(savedClauses.every((c) => c.textAr === null && c.textHash.length === 64)).toBe(
       true,
     );
+
+    // Every Section 15 clause has a box on the page, and the conflict names its other side.
+    const savedLocations = await db
+      .select()
+      .from(clauseLocations)
+      .where(eq(clauseLocations.ratingId, ratingId));
+    const section15 = savedLocations.filter((l) => l.clause.startsWith("15."));
+    expect(section15.map((l) => l.clause).sort()).toEqual(
+      savedClauses.map((c) => c.number).sort(),
+    );
+    expect(section15.every((l) => l.page === 8 && l.yMax > l.yMin)).toBe(true);
+    const conflict = savedFindings.find((f) => f.ruleId === "TYPE-CONFLICT-01");
+    expect(conflict?.relatedClause).toBe("1");
 
     // Every field has a row, so the API can rebuild ContractFields from them.
     const fieldRows = await db

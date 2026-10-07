@@ -65,6 +65,7 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
       "accounts",
       "audit_events",
       "clause_cache",
+      "clause_locations",
       "clauses",
       "contract_fields",
       "documents",

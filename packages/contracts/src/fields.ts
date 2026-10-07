@@ -76,6 +76,24 @@ export const FieldProvenance = z.object({
 });
 export type FieldProvenance = z.infer<typeof FieldProvenance>;
 
+/**
+ * Where a numbered clause is printed, so a report can show the passage behind a finding.
+ * `clause` is a clause number ("15.4", "9.1.1") or a section number ("7") for the whole
+ * section. One entry per page the clause touches, with the box that covers its rows across
+ * both columns, in PDF points from the page's top-left corner. Boxes hold no text.
+ */
+export const ClauseLocation = z.object({
+  clause: z.string(),
+  page: z.number().int().positive(),
+  pageWidth: z.number().positive(),
+  pageHeight: z.number().positive(),
+  xMin: z.number(),
+  yMin: z.number(),
+  xMax: z.number(),
+  yMax: z.number(),
+});
+export type ClauseLocation = z.infer<typeof ClauseLocation>;
+
 /** One Section 15 ("Additional Terms") item. */
 export const Clause = z.object({
   section: z.number().int(),

@@ -29,6 +29,13 @@
       "when": 1791082143612,
       "tag": "0003_audit_user_index",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791362604184,
+      "tag": "0004_clause_locations",
+      "breakpoints": true
     }
   ]
 }

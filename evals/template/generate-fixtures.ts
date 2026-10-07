@@ -3,7 +3,7 @@
  *
  *   pnpm --filter @rater/evals exec tsx template/generate-fixtures.ts
  *
- * Writes <id>.pdf and <id>.bbox.html (pdftotext -bbox-layout output) for every case in
+ * Writes <id>.pdf and <id>.bbox.html (pdftotext -bbox-layout output, pages and words only) for every case in
  * fixture-cases.ts, plus not-qiwa.pdf / not-qiwa.bbox.html, into packages/core/test/fixtures/.
  * Needs Playwright Chromium and poppler (pdftotext).
  */
@@ -47,9 +47,12 @@ async function main(): Promise<void> {
 async function writeBbox(pdfPath: string, outPath: string): Promise<void> {
   const xhtml = await pdftotextBbox(readFileSync(pdfPath));
   // The creation date changes on every run; drop it so regenerating gives a clean diff.
+  // The parser reads only <page> and <word>, so poppler's flow/block/line tags are dropped too.
   writeFileSync(
     outPath,
-    xhtml.replace(/<meta name="(CreationDate|ModDate)"[^>]*>\n?/g, ""),
+    xhtml
+      .replace(/<meta name="(CreationDate|ModDate)"[^>]*>\n?/g, "")
+      .replace(/^\s*<\/?(flow|block|line)( [^>]*)?>\n/gm, ""),
   );
 }
 

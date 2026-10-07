@@ -16,7 +16,6 @@ import { Checkbox, Label } from "../components/ui/input";
 import { useToast } from "../components/ui/toast-context";
 import { LANGUAGE_NAMES, LANGUAGES } from "../i18n";
 import { deleteMyData } from "../lib/account";
-import { cn } from "../lib/cn";
 import { errorMessage } from "../lib/errors";
 import { useSession } from "../lib/session";
 
@@ -90,7 +89,6 @@ function LanguageCard() {
 
 function DeleteMyDataCard() {
   const { t } = useTranslation();
-  const { personalOrg } = useSession();
   const toast = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -99,7 +97,6 @@ function DeleteMyDataCard() {
   const [understood, setUnderstood] = useState(false);
 
   const deletion = useMutation({
-    // The API finds the personal workspace itself, whichever workspace this tab shows.
     mutationFn: () => deleteMyData(),
     onSuccess: () => {
       queryClient.clear();
@@ -121,13 +118,10 @@ function DeleteMyDataCard() {
         <CardTitle id="delete-data-title">{t("account.deleteTitle")}</CardTitle>
         <CardDescription>{t("account.deleteBody")}</CardDescription>
       </CardHeader>
-      <CardFooter className={cn(!personalOrg && "flex-col items-start")}>
-        <Button variant="danger" onClick={() => setOpen(true)} disabled={!personalOrg}>
+      <CardFooter>
+        <Button variant="danger" onClick={() => setOpen(true)}>
           {t("account.deleteButton")}
         </Button>
-        {!personalOrg && (
-          <p className="text-sm text-muted-foreground">{t("account.noPersonal")}</p>
-        )}
       </CardFooter>
 
       <Dialog

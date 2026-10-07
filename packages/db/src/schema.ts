@@ -21,12 +21,12 @@ import type {
   ScoreCategory,
   View,
 } from "@rater/contracts";
-import { orgs, users } from "./auth-schema";
+import { users } from "./auth-schema";
 
 export * from "./auth-schema";
 
 /**
- * Application tables. Every table that holds customer data carries org_id (directly, or
+ * Application tables. Every table that holds customer data carries user_id (directly, or
  * through its rating), and every query is scoped by it.
  */
 
@@ -38,10 +38,9 @@ export const documents = pgTable(
   "documents",
   {
     id: text("id").primaryKey(),
-    orgId: text("org_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => orgs.id, { onDelete: "cascade" }),
-    uploadedBy: text("uploaded_by").references(() => users.id, { onDelete: "set null" }),
+      .references(() => users.id, { onDelete: "cascade" }),
     storageKey: text("storage_key").notNull(),
     sha256: text("sha256").notNull(),
     sizeBytes: integer("size_bytes").notNull(),
@@ -53,8 +52,7 @@ export const documents = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    index("documents_org_idx").on(t.orgId),
-    index("documents_uploaded_by_idx").on(t.uploadedBy),
+    index("documents_user_idx").on(t.userId),
     index("documents_delete_after_idx").on(t.deleteAfter),
   ],
 );
@@ -63,13 +61,12 @@ export const ratings = pgTable(
   "ratings",
   {
     id: text("id").primaryKey(),
-    orgId: text("org_id")
+    userId: text("user_id")
       .notNull()
-      .references(() => orgs.id, { onDelete: "cascade" }),
+      .references(() => users.id, { onDelete: "cascade" }),
     documentId: text("document_id").references(() => documents.id, {
       onDelete: "set null",
     }),
-    createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
     status: text("status").$type<RatingStatus>().notNull().default("queued"),
     /** Last pipeline step that finished. Diagnostic only: a retry re-runs the whole job. */
     lastStep: text("last_step"),
@@ -95,8 +92,7 @@ export const ratings = pgTable(
     finishedAt: timestamp("finished_at", { withTimezone: true }),
   },
   (t) => [
-    index("ratings_org_created_idx").on(t.orgId, t.createdAt),
-    index("ratings_created_by_idx").on(t.createdBy, t.createdAt),
+    index("ratings_user_created_idx").on(t.userId, t.createdAt),
     index("ratings_document_idx").on(t.documentId),
   ],
 );
@@ -244,15 +240,14 @@ export const auditEvents = pgTable(
   "audit_events",
   {
     id: text("id").primaryKey(),
-    orgId: text("org_id").notNull(),
-    userId: text("user_id"),
+    /** Whose data it was about. Retention deletes have no actor and say so in `meta`. */
+    userId: text("user_id").notNull(),
     action: text("action").notNull(),
     targetId: text("target_id"),
     meta: jsonb("meta"),
     at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    index("audit_events_org_at_idx").on(t.orgId, t.at),
     // The daily upload limit counts "upload" events per user, so deleting ratings frees nothing.
     index("audit_events_user_action_at_idx").on(t.userId, t.action, t.at),
   ],

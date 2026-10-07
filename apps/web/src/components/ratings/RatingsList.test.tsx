@@ -23,12 +23,12 @@ describe("RatingsList", () => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
     const EventSourceSpy = vi.fn();
     vi.stubGlobal("EventSource", EventSourceSpy);
-    // An HR workspace with more running ratings than the browser has connections per host.
+    // More running ratings than the browser has connections per host.
     const running = ["rt_1", "rt_2", "rt_3", "rt_4", "rt_5", "rt_6", "rt_7"].map(queued);
     const fetchMock = routeFetch({
       "GET /api/v1/ratings": () => jsonResponse({ items: running, nextCursor: null }),
     });
-    renderWithProviders(<RatingsList orgId="org_co" />);
+    renderWithProviders(<RatingsList />);
 
     expect(await screen.findAllByText("Queued")).toHaveLength(7);
     expect(EventSourceSpy).not.toHaveBeenCalled();
@@ -47,7 +47,7 @@ describe("RatingsList", () => {
           nextCursor: null,
         }),
     });
-    renderWithProviders(<RatingsList orgId="org_co" />);
+    renderWithProviders(<RatingsList />);
 
     expect(await screen.findByText("Done")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(POLL_MS_WITHOUT_EVENTS * 3));

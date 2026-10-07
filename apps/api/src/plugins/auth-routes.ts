@@ -3,13 +3,8 @@ import { fromNodeHeaders } from "better-auth/node";
 import { AUTH_BASE_PATH, type Auth } from "../auth";
 
 /**
- * The only Better Auth endpoints reachable over HTTP, as paths under /api/auth.
- *
- * Better Auth's organization endpoints apply its own role rules, not ours: any member could
- * list pending invitations (and so take one over, since sign-up does not verify email), an
- * admin could rename the workspace, an owner could invite people into a personal workspace.
- * So every /organization/* path answers 404, and workspaces are managed through /api/v1.
- * Server-side `auth.api.*` calls do not go through this handler and still work.
+ * The only Better Auth endpoints reachable over HTTP, as paths under /api/auth. Everything
+ * else answers 404. Server-side `auth.api.*` calls do not go through this handler.
  */
 const ALLOWED_PATHS: ReadonlySet<string> = new Set([
   "/sign-up/email",

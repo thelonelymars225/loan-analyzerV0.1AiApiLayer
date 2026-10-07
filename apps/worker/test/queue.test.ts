@@ -17,7 +17,7 @@ import {
   createTempStorage,
   readFixturePdf,
   seedDocument,
-  seedOrg,
+  seedUser,
   seedRating,
 } from "./helpers/seed";
 import type { TempStorage } from "./helpers/seed";
@@ -38,13 +38,13 @@ describe("handleRateJob", () => {
 describe.skipIf(!DATABASE_URL)("rating jobs against Postgres", () => {
   let testDb: TestDatabase;
   let temp: TempStorage;
-  let org: { orgId: string; userId: string };
+  let owner: { userId: string };
 
   beforeAll(async () => {
     testDb = await createTestDatabase();
     await ingestCorpus(testDb.db);
     temp = await createTempStorage();
-    org = await seedOrg(testDb.db);
+    owner = await seedUser(testDb.db);
   }, 60_000);
 
   afterAll(async () => {
@@ -62,7 +62,7 @@ describe.skipIf(!DATABASE_URL)("rating jobs against Postgres", () => {
 
   async function queuedRating(): Promise<string> {
     const { ratingId } = await seedRating(testDb.db, temp.storage, {
-      ...org,
+      ...owner,
       pdf: await readFixturePdf("fixed-term-bad-s15"),
     });
     return ratingId;
@@ -113,7 +113,7 @@ describe.skipIf(!DATABASE_URL)("rating jobs against Postgres", () => {
       .set({ status: "analysing", startedAt: twoHoursAgo })
       .where(eq(ratings.id, stuck));
     await seedDocument(testDb.db, temp.storage, {
-      ...org,
+      ...owner,
       pdf: Buffer.from("%PDF-1.7 synthetic test file"),
       deleteAfter: twoHoursAgo,
     });

@@ -1,4 +1,4 @@
-import type { Band, OrgKind, RatingStatus, View } from "@rater/contracts";
+import type { Band, RatingStatus } from "@rater/contracts";
 
 /** Pipeline steps in the order a rating moves through them. */
 export const PIPELINE_STEPS = ["queued", "extracting", "analysing", "done"] as const;
@@ -39,9 +39,4 @@ export function bandForScore(score: number): Band {
   if (score >= 60) return "Fair";
   if (score >= 40) return "Weak";
   return "Poor";
-}
-
-/** Personal workspaces rate from the employee's side, company workspaces from HR's. */
-export function defaultViewFor(kind: OrgKind | undefined): View {
-  return kind === "company" ? "hr" : "employee";
 }

@@ -12,7 +12,7 @@ import {
   STUCK_RUNNING_MS,
   TIMEOUT_MESSAGE,
 } from "../src/stuck-ratings";
-import { createTempStorage, seedOrg, seedRating } from "./helpers/seed";
+import { createTempStorage, seedUser, seedRating } from "./helpers/seed";
 import { createTestDatabase, DATABASE_URL } from "./helpers/test-db";
 import type { TestDatabase } from "./helpers/test-db";
 
@@ -32,13 +32,13 @@ describe.skipIf(!DATABASE_URL)("failStuckRatings", () => {
   let db: Db;
   let storage: LocalStorage;
   let cleanupStorage: () => Promise<void>;
-  let org: { orgId: string; userId: string };
+  let owner: { userId: string };
 
   beforeAll(async () => {
     testDb = await createTestDatabase();
     db = testDb.db;
     ({ storage, cleanup: cleanupStorage } = await createTempStorage());
-    org = await seedOrg(db);
+    owner = await seedUser(db);
   }, 60_000);
 
   afterAll(async () => {
@@ -48,7 +48,7 @@ describe.skipIf(!DATABASE_URL)("failStuckRatings", () => {
 
   /** A rating in `status`, created and started `ageMs` before `now`. */
   async function ratingIn(status: RatingStatus, ageMs: number, now: Date) {
-    const { ratingId } = await seedRating(db, storage, { ...org, pdf: null });
+    const { ratingId } = await seedRating(db, storage, { ...owner, pdf: null });
     const since = new Date(now.getTime() - ageMs);
     await db
       .update(ratings)

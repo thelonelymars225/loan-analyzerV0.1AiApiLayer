@@ -38,12 +38,6 @@ export type ScoreCategory = z.infer<typeof ScoreCategory>;
 export const Band = z.enum(["Good", "Fair", "Weak", "Poor"]);
 export type Band = z.infer<typeof Band>;
 
-export const OrgKind = z.enum(["personal", "company"]);
-export type OrgKind = z.infer<typeof OrgKind>;
-
-export const OrgRole = z.enum(["owner", "admin", "member"]);
-export type OrgRole = z.infer<typeof OrgRole>;
-
 /** Where a finding came from in the pipeline. */
 export const FindingSource = z.enum([
   "field_rule",

@@ -50,16 +50,16 @@ export async function findRating(
   return rating;
 }
 
-/** The rating's document, looked up within the rating's org. */
+/** The rating's document, looked up within the rating's owner. */
 export async function findDocument(
   db: Db,
-  rating: Pick<RatingRow, "orgId" | "documentId">,
+  rating: Pick<RatingRow, "userId" | "documentId">,
 ): Promise<DocumentRow | undefined> {
   if (!rating.documentId) return undefined;
   const [document] = await db
     .select()
     .from(documents)
-    .where(and(eq(documents.id, rating.documentId), eq(documents.orgId, rating.orgId)));
+    .where(and(eq(documents.id, rating.documentId), eq(documents.userId, rating.userId)));
   return document;
 }
 

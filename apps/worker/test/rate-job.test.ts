@@ -32,7 +32,7 @@ import {
   createTempStorage,
   readFixturePdf,
   seedDocument,
-  seedOrg,
+  seedUser,
   seedRating,
 } from "./helpers/seed";
 import { createTestDatabase, DATABASE_URL, ingestCorpus } from "./helpers/test-db";
@@ -52,14 +52,14 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
   let db: Db;
   let storage: LocalStorage;
   let cleanupStorage: () => Promise<void>;
-  let org: { orgId: string; userId: string };
+  let owner: { userId: string };
 
   beforeAll(async () => {
     testDb = await createTestDatabase();
     db = testDb.db;
     await ingestCorpus(db);
     ({ storage, cleanup: cleanupStorage } = await createTempStorage());
-    org = await seedOrg(db);
+    owner = await seedUser(db);
   }, 60_000);
 
   afterAll(async () => {
@@ -111,7 +111,7 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
     defaultView: "employee" | "hr" = "employee",
   ) {
     const { ratingId } = await seedRating(db, storage, {
-      ...org,
+      ...owner,
       pdf: await readFixturePdf(fixture),
       defaultView,
     });
@@ -261,7 +261,7 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
 
   it("clears the reasons an earlier attempt stored when the rating ends done", async () => {
     const { ratingId } = await seedRating(db, storage, {
-      ...org,
+      ...owner,
       pdf: await readFixturePdf("indefinite-clean"),
     });
     await db
@@ -312,7 +312,7 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
 
   it("fails a file that is not a readable PDF with unsupported_document", async () => {
     const { ratingId } = await seedRating(db, storage, {
-      ...org,
+      ...owner,
       pdf: Buffer.from("%PDF-1.7 this is not really a PDF"),
     });
     expect(await processRating(ratingId, deps())).toBe("failed");
@@ -324,10 +324,10 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
 
   it("fails with document_missing when the PDF is gone", async () => {
     // The file was removed from storage, but the row was not updated.
-    const noFile = await seedRating(db, storage, { ...org, pdf: null });
+    const noFile = await seedRating(db, storage, { ...owner, pdf: null });
     // Retention already deleted the file and marked the row.
     const swept = await seedRating(db, storage, {
-      ...org,
+      ...owner,
       pdf: await readFixturePdf("indefinite-clean"),
       deletedAt: new Date(),
     });
@@ -342,13 +342,13 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
     }
   });
 
-  it("does not read a document that belongs to another org", async () => {
-    const other = await seedOrg(db);
+  it("does not read a document that belongs to another user", async () => {
+    const other = await seedUser(db);
     const { documentId } = await seedDocument(db, storage, {
       ...other,
       pdf: await readFixturePdf("indefinite-clean"),
     });
-    const { ratingId } = await seedRating(db, storage, { ...org, pdf: null });
+    const { ratingId } = await seedRating(db, storage, { ...owner, pdf: null });
     await db.update(ratings).set({ documentId }).where(eq(ratings.id, ratingId));
 
     expect(await processRating(ratingId, deps())).toBe("failed");
@@ -416,7 +416,7 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
 
     it("rethrows and leaves the rating running while pg-boss will retry", async () => {
       const { ratingId } = await seedRating(db, storage, {
-        ...org,
+        ...owner,
         pdf: await readFixturePdf("fixed-term-bad-s15"),
       });
       await expect(
@@ -436,7 +436,7 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
 
     it("marks the rating failed with a generic message on the final attempt", async () => {
       const { ratingId } = await seedRating(db, storage, {
-        ...org,
+        ...owner,
         pdf: await readFixturePdf("fixed-term-bad-s15"),
       });
       await expect(

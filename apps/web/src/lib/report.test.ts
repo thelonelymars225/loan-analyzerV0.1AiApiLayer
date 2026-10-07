@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { syntheticReport } from "../test/fixtures";
 import { findingAnchor, impactColumns, likelyVoidFindings } from "./report";
-import { bandForScore, defaultViewFor, pollInterval, progressPercent } from "./ratings";
+import { bandForScore, pollInterval, progressPercent } from "./ratings";
 
 describe("report helpers", () => {
   it("orders impact columns per kind and keeps unknown kinds", () => {
@@ -52,10 +52,8 @@ describe("rating helpers", () => {
     expect(pollInterval(false, false)).toBe(false);
   });
 
-  it("maps statuses to progress and workspaces to default views", () => {
+  it("maps statuses to progress", () => {
     expect(progressPercent("queued")).toBe(25);
     expect(progressPercent("analysing")).toBe(75);
-    expect(defaultViewFor("company")).toBe("hr");
-    expect(defaultViewFor("personal")).toBe("employee");
   });
 });

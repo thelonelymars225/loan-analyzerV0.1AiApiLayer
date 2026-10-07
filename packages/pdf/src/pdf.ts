@@ -46,21 +46,29 @@ const DEFAULT_CROP_DPI = 144;
 
 /**
  * Runs `pdftotext -bbox-layout` and returns its XHTML (word boxes per page). `firstPageOnly`
- * converts page 1 alone, which is all the API's upload check reads.
+ * converts page 1 alone, which is all the API's upload check reads. Page 1 of a contract
+ * takes milliseconds and about 30 KB, so that mode gets a tighter time and size limit.
  */
 export async function pdftotextBbox(
   pdf: Buffer,
   options: { firstPageOnly?: boolean } = {},
 ): Promise<string> {
-  const pages = options.firstPageOnly ? ["-f", "1", "-l", "1"] : [];
+  const firstPage = options.firstPageOnly === true;
   return withTempDir(async (dir) => {
     const input = await writePdf(dir, pdf);
     const { stdout } = await runTool(
       "pdftotext",
-      [...pages, "-bbox-layout", "-enc", "UTF-8", input, "-"],
-      {
-        timeoutMs: TEXT_TIMEOUT_MS,
-      },
+      [
+        ...(firstPage ? ["-f", "1", "-l", "1"] : []),
+        "-bbox-layout",
+        "-enc",
+        "UTF-8",
+        input,
+        "-",
+      ],
+      firstPage
+        ? { timeoutMs: 10_000, maxBufferBytes: 2 * 1024 * 1024 }
+        : { timeoutMs: TEXT_TIMEOUT_MS },
     );
     return stdout;
   });

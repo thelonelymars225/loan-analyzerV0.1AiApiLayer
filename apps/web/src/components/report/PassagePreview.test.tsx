@@ -1,7 +1,9 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import type { Passage, ReportDocument } from "@rater/contracts";
+import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { syntheticPassage } from "../../test/fixtures";
+import { renderWithProviders } from "../../test/render";
 import { PassagePreview } from "./PassagePreview";
 
 const AVAILABLE = { pages: 10, available: true, deletedAt: null };
@@ -12,14 +14,17 @@ const eos = syntheticPassage("15.6", 8, 600, {
   textAr: "تُحتسب مكافأة نهاية الخدمة على الأجر الأساسي.",
 });
 
-function renderPreview(props: Partial<Parameters<typeof PassagePreview>[0]> = {}) {
-  return render(
+function renderPreview(
+  overrides: { passages?: Passage[]; document?: ReportDocument } = {},
+) {
+  return renderWithProviders(
     <PassagePreview
       ratingId="rt_test_0001"
-      passages={[eos]}
-      document={AVAILABLE}
+      itemId="finding-EOS-BASE-01-15-6"
+      view="employee"
+      passages={overrides.passages ?? [eos]}
+      document={overrides.document ?? AVAILABLE}
       tone="critical"
-      {...props}
     />,
   );
 }
@@ -106,7 +111,8 @@ describe("PassagePreview", () => {
   });
 
   it("renders nothing for a finding with no passage", () => {
-    const { container } = renderPreview({ passages: [] });
-    expect(container).toBeEmptyDOMElement();
+    renderPreview({ passages: [] });
+    expect(screen.queryByRole("figure")).not.toBeInTheDocument();
+    expect(screen.queryByText("In the contract")).not.toBeInTheDocument();
   });
 });

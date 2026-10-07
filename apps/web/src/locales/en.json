@@ -178,7 +178,8 @@
       "noText": "No text was stored for this passage.",
       "deletedOn": "The contract file was deleted on {{date}}, so only the clause text as rated is shown.",
       "deleted": "The contract file is no longer stored, so only the clause text as rated is shown.",
-      "unavailable": "The page image could not be loaded; this is the clause text as rated."
+      "unavailable": "The page image could not be loaded; this is the clause text as rated.",
+      "open": "Open in contract"
     },
     "articles": "Articles",
     "askFor": "What to ask for",
@@ -216,6 +217,43 @@
     "tryAnother": "Upload another contract",
     "loadError": "Couldn't load this report.",
     "notFound": "This rating doesn't exist or was deleted."
+  },
+  "viewer": {
+    "title": "Contract",
+    "backToReport": "Back to report",
+    "pages_one": "{{count}} page",
+    "pages_other": "{{count}} pages",
+    "pageLabel": "Page {{page}} of {{pages}}",
+    "pageAlt": "Page {{page}} of the contract",
+    "zoomLabel": "Zoom",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "openPdf": "Open PDF",
+    "download": "Download",
+    "panelLabel": "Findings in this contract",
+    "tabs": {
+      "issues": "Issues",
+      "good": "What's good"
+    },
+    "filter": {
+      "label": "Severity",
+      "all": "All"
+    },
+    "step": "{{index}} of {{total}}",
+    "previous": "Previous finding",
+    "next": "Next finding",
+    "empty": {
+      "issues": "No issues to show.",
+      "good": "Nothing stood out as better than the law."
+    },
+    "notLocated": "Not located in the PDF",
+    "markLabel": "Finding {{number}}: {{title}}",
+    "backToCard": "Read in the report",
+    "textOnlyTitle": "The contract file is no longer stored",
+    "textOnlyBody": "It was deleted on {{date}}. The clause text as it was rated is shown instead.",
+    "textOnlyBodyNoDate": "The clause text as it was rated is shown instead.",
+    "notReady": "The contract viewer opens once the rating has finished.",
+    "loadError": "Couldn't load the contract."
   },
   "impact": {
     "kind": {

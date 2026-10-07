@@ -4,6 +4,7 @@ export {
   ocrArabicRegions,
   pdfPageCount,
   pdftotextBbox,
+  renderPage,
   renderPageCrop,
   toolsAvailable,
   type CropOptions,

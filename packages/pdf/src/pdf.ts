@@ -39,7 +39,7 @@ export interface ToolsAvailable {
 
 const TEXT_TIMEOUT_MS = 30_000;
 const OCR_TIMEOUT_MS = 60_000;
-/** A crop of one page renders in well under a second; a document that needs longer is odd. */
+/** A page or a crop renders in well under a second; a document that needs longer is odd. */
 const CROP_TIMEOUT_MS = 15_000;
 const POINTS_PER_INCH = 72;
 const DEFAULT_CROP_DPI = 144;
@@ -113,11 +113,13 @@ export async function ocrArabicRegions(
     const texts: string[] = [];
     for (const [index, region] of regions.entries()) {
       try {
-        const image = await renderRegion(input, region, join(dir, `region-${index}`), {
-          dpi: options.dpi ?? 300,
-          gray: true,
-          timeoutMs: options.timeoutMs ?? OCR_TIMEOUT_MS,
-        });
+        const image = await renderToFile(
+          input,
+          region.page,
+          cropArgs(region, options.dpi ?? 300),
+          join(dir, `region-${index}`),
+          { gray: true, timeoutMs: options.timeoutMs ?? OCR_TIMEOUT_MS },
+        );
         const text = await recognise(image, lang, options);
         if (text) texts.push(text);
       } catch (error) {
@@ -141,15 +143,27 @@ export async function renderPageCrop(
   region: PageRegion,
   options: CropOptions = {},
 ): Promise<Buffer> {
-  return withTempDir(async (dir) => {
-    const input = await writePdf(dir, pdf);
-    const image = await renderRegion(input, region, join(dir, "crop"), {
-      dpi: options.dpi ?? DEFAULT_CROP_DPI,
-      gray: false,
-      timeoutMs: options.timeoutMs ?? CROP_TIMEOUT_MS,
-    });
-    return readFile(image);
+  return renderPng(pdf, region.page, cropArgs(region, options.dpi ?? DEFAULT_CROP_DPI), {
+    gray: false,
+    timeoutMs: options.timeoutMs ?? CROP_TIMEOUT_MS,
   });
+}
+
+/** Renders one whole page as a colour PNG, for the contract viewer. Same handling as a crop. */
+export async function renderPage(
+  pdf: Buffer,
+  page: number,
+  options: CropOptions = {},
+): Promise<Buffer> {
+  return renderPng(pdf, page, pageArgs(page, options.dpi ?? DEFAULT_CROP_DPI), {
+    gray: false,
+    timeoutMs: options.timeoutMs ?? CROP_TIMEOUT_MS,
+  });
+}
+
+/** pdftoppm arguments that select one page at a resolution. */
+function pageArgs(page: number, dpi: number): string[] {
+  return ["-r", String(dpi), "-f", String(page), "-l", String(page)];
 }
 
 /** pdftoppm arguments that crop one region of one page, converting points to pixels. */
@@ -159,14 +173,8 @@ export function cropArgs(region: PageRegion, dpi: number): string[] {
   const y = Math.max(0, Math.floor(region.yMin * scale));
   const width = Math.max(1, Math.ceil((region.xMax - region.xMin) * scale));
   const height = Math.max(1, Math.ceil((region.yMax - region.yMin) * scale));
-  const page = String(region.page);
   return [
-    "-r",
-    String(dpi),
-    "-f",
-    page,
-    "-l",
-    page,
+    ...pageArgs(region.page, dpi),
     "-x",
     String(x),
     "-y",
@@ -178,15 +186,30 @@ export function cropArgs(region: PageRegion, dpi: number): string[] {
   ];
 }
 
-/** Renders one region to `${outPrefix}.png` with pdftoppm and returns that path. */
-async function renderRegion(
+/** Writes the PDF to a private temporary folder, renders with pdftoppm, and returns the PNG bytes. */
+async function renderPng(
+  pdf: Buffer,
+  page: number,
+  selection: string[],
+  options: { gray: boolean; timeoutMs: number },
+): Promise<Buffer> {
+  return withTempDir(async (dir) => {
+    const input = await writePdf(dir, pdf);
+    const image = await renderToFile(input, page, selection, join(dir, "page"), options);
+    return readFile(image);
+  });
+}
+
+/** Renders `selection` (a page, or a crop of one) to `${outPrefix}.png` and returns that path. */
+async function renderToFile(
   input: string,
-  region: PageRegion,
+  page: number,
+  selection: string[],
   outPrefix: string,
-  options: { dpi: number; gray: boolean; timeoutMs: number },
+  options: { gray: boolean; timeoutMs: number },
 ): Promise<string> {
   const args = [
-    ...cropArgs(region, options.dpi),
+    ...selection,
     "-q",
     ...(options.gray ? ["-gray"] : []),
     "-png",
@@ -198,7 +221,7 @@ async function renderRegion(
   const image = `${outPrefix}.png`;
   // pdftoppm exits 0 but writes nothing for a page out of range; fail here with a clear error.
   await readFile(image).catch(() => {
-    throw new PdfToolError("pdftoppm", `no image for page ${region.page}`);
+    throw new PdfToolError("pdftoppm", `no image for page ${page}`);
   });
   return image;
 }

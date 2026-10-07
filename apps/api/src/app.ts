@@ -18,9 +18,7 @@ import { sessionHook, type RequestContext } from "./plugins/session";
 import type { RatingQueue } from "./queue";
 import { docsRoutes } from "./routes/docs";
 import { healthRoutes } from "./routes/health";
-import { inviteRoutes } from "./routes/invites";
 import { meRoutes } from "./routes/me";
-import { orgRoutes } from "./routes/orgs";
 import { ratingRoutes } from "./routes/ratings";
 import { ruleRoutes } from "./routes/rules";
 
@@ -76,7 +74,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
   await app.register(fastifyCors, {
     origin: trustedOrigins(config),
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    methods: ["GET", "POST", "DELETE"],
   });
   await app.register(fastifyMultipart);
   await registerDocs(app);
@@ -90,8 +88,6 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await v1.register(docsRoutes);
       await v1.register(meRoutes, deps);
       await v1.register(ratingRoutes, deps);
-      await v1.register(orgRoutes, deps);
-      await v1.register(inviteRoutes, deps);
     },
     { prefix: API_BASE },
   );

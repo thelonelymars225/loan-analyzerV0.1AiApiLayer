@@ -149,37 +149,11 @@ export async function signUp(
   return { id: body.user.id, email, cookie: sessionCookie(response) };
 }
 
-/** Signs in an existing user (a new session) and returns the session cookie. */
-export async function signIn(app: FastifyInstance, email: string): Promise<string> {
-  const response = await app.inject({
-    method: "POST",
-    url: "/api/auth/sign-in/email",
-    headers: { origin: ORIGIN, "content-type": "application/json" },
-    payload: { email, password: "correct-horse-battery-staple" },
-  });
-  if (response.statusCode !== 200) {
-    throw new Error(`sign-in failed: ${response.statusCode} ${response.body}`);
-  }
-  return sessionCookie(response);
-}
-
 /** "name=value" pairs of every Set-Cookie header, ready for a Cookie header. */
 export function sessionCookie(response: LightMyRequestResponse): string {
   const header = response.headers["set-cookie"];
   const cookies = Array.isArray(header) ? header : header ? [header] : [];
   return cookies.map((cookie) => cookie.split(";")[0]).join("; ");
-}
-
-/** Makes `orgId` the session's active org (PUT /me/active-org), like the web app. */
-export async function setActiveOrg(
-  app: FastifyInstance,
-  cookie: string,
-  orgId: string,
-): Promise<void> {
-  const response = await api(app, cookie, "PUT", "/me/active-org", { orgId });
-  if (response.statusCode !== 200) {
-    throw new Error(`set-active failed: ${response.statusCode} ${response.body}`);
-  }
 }
 
 /** Builds a multipart/form-data body the way a browser's FormData does. */
@@ -222,7 +196,7 @@ export async function upload(
 export function api(
   app: FastifyInstance,
   cookie: string,
-  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE",
+  method: "GET" | "POST" | "DELETE",
   url: string,
   payload?: object,
   headers: Record<string, string> = {},

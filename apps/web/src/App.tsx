@@ -22,16 +22,8 @@ const ContractViewerPage = lazy(() =>
     default: module.ContractViewerPage,
   })),
 );
-const OrgSettingsPage = lazy(() =>
-  import("./pages/OrgSettingsPage").then((module) => ({
-    default: module.OrgSettingsPage,
-  })),
-);
 const AccountPage = lazy(() =>
   import("./pages/AccountPage").then((module) => ({ default: module.AccountPage })),
-);
-const InvitePage = lazy(() =>
-  import("./pages/InvitePage").then((module) => ({ default: module.InvitePage })),
 );
 
 /** Providers and routes. The router itself is supplied by main.tsx (or a test). */
@@ -55,10 +47,7 @@ export function AppRoutes() {
           <Route index element={<RatingsPage />} />
           <Route path="ratings/:id" element={<ReportPage />} />
           <Route path="ratings/:id/contract" element={<ContractViewerPage />} />
-          <Route path="workspace" element={<OrgSettingsPage />} />
           <Route path="account" element={<AccountPage />} />
-          {/* The link from an invitation; signed-out visitors sign in first and come back. */}
-          <Route path="invite/:id" element={<InvitePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

@@ -8,11 +8,9 @@ import { cn } from "../../lib/cn";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/toast-context";
 import { LanguageToggle } from "./LanguageToggle";
-import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 const NAV_ITEMS = [
   { to: "/", key: "nav.ratings", end: true },
-  { to: "/workspace", key: "nav.workspace", end: false },
   { to: "/account", key: "nav.account", end: false },
 ] as const;
 
@@ -49,7 +47,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             <BrandMark />
             <span>{t("app.name")}</span>
           </Link>
-          <WorkspaceSwitcher />
           <div className="ms-auto flex items-center gap-1">
             <LanguageToggle />
             <Button

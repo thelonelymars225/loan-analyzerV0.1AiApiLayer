@@ -9,9 +9,7 @@ interface DeleteMyDataDeps {
 const defaultDeps: DeleteMyDataDeps = { deleteMyData: api.deleteMyData, signOut };
 
 /**
- * "Delete my data": the API deletes every rating and PDF in the personal workspace, then we
- * sign out. The API finds the personal workspace itself, whatever workspace is active (another
- * tab may have switched it), so a company workspace is never touched by mistake.
+ * "Delete my data": the API deletes every rating and PDF the user uploaded, then we sign out.
  * If the delete fails the user stays signed in and sees the error.
  */
 export async function deleteMyData(deps: DeleteMyDataDeps = defaultDeps): Promise<void> {

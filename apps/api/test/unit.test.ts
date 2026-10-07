@@ -1,17 +1,12 @@
 import { DrizzleQueryError } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
-import type { OrgSummary } from "@rater/contracts";
 import { loadConfig, trustedOrigins } from "../src/config";
 import { ApiError, rateLimited } from "../src/errors";
-import { acceptPath, toInviteResponse } from "../src/invites";
 import { ConcurrencyLimit, ConnectionSlots } from "../src/limiter";
 import { errorForLog } from "../src/logger";
-import { parseRole, personalOrgName, slugify } from "../src/orgs";
 import { isAllowed } from "../src/plugins/auth-routes";
 import { toProblem } from "../src/plugins/errors";
-import { pickActiveOrg } from "../src/plugins/session";
 import { decodeCursor, encodeCursor } from "../src/ratings/cursor";
-import { defaultViewFor } from "../src/ratings/store";
 import { parseBboxXhtml } from "@rater/core";
 import { firstPageBbox, pageCount } from "../src/ratings/first-page";
 import { checkQiwaPdf, looksLikePdf } from "../src/ratings/upload";
@@ -119,49 +114,6 @@ describe("toProblem", () => {
   });
 });
 
-describe("workspaces", () => {
-  it("reads the strongest of several stored roles", () => {
-    expect(parseRole("member")).toBe("member");
-    expect(parseRole("admin, member")).toBe("admin");
-    expect(parseRole("member,owner")).toBe("owner");
-    expect(parseRole("auditor")).toBe("member");
-  });
-
-  it("names and slugs workspaces", () => {
-    expect(personalOrgName("Nour Al-Harbi")).toBe("Nour Al-Harbi's workspace");
-    expect(slugify("Example Trading Co.")).toBe("example-trading-co");
-    expect(slugify("شركة المثال")).toBe("workspace");
-  });
-
-  it("falls back from a stale active org to the personal workspace", () => {
-    const orgs: OrgSummary[] = [
-      {
-        id: "org_company",
-        name: "Example Trading Co.",
-        kind: "company",
-        role: "admin",
-        retentionDays: 30,
-      },
-      {
-        id: "org_personal",
-        name: "Nour's workspace",
-        kind: "personal",
-        role: "owner",
-        retentionDays: 30,
-      },
-    ];
-    expect(pickActiveOrg(orgs, "org_company")?.id).toBe("org_company");
-    expect(pickActiveOrg(orgs, "org_gone")?.id).toBe("org_personal");
-    expect(pickActiveOrg(orgs, null)?.id).toBe("org_personal");
-    expect(pickActiveOrg([], null)).toBeUndefined();
-  });
-
-  it("rates personal uploads for the employee and company uploads for HR", () => {
-    expect(defaultViewFor("personal")).toBe("employee");
-    expect(defaultViewFor("company")).toBe("hr");
-  });
-});
-
 describe("uploads and reports", () => {
   it("recognises PDF files by their header", () => {
     expect(looksLikePdf(Buffer.from("%PDF-1.7\n..."))).toBe(true);
@@ -253,7 +205,7 @@ describe("Better Auth allow-list", () => {
     expect(allowed("/get-session?disableCookieCache=true")).toBe(true);
   });
 
-  it("closes every organization endpoint and anything else", () => {
+  it("closes every other endpoint", () => {
     for (const path of [
       "/organization/list-invitations",
       "/organization/accept-invitation",
@@ -268,28 +220,6 @@ describe("Better Auth allow-list", () => {
     ]) {
       expect(allowed(path), path).toBe(false);
     }
-  });
-});
-
-describe("invitations", () => {
-  it("links to the web app's accept page", () => {
-    expect(acceptPath("inv_01abc")).toBe("/invite/inv_01abc");
-    expect(
-      toInviteResponse({
-        id: "inv_01abc",
-        email: "huda@example.com",
-        role: "admin",
-        status: "pending",
-        expiresAt: new Date("2026-10-06T08:00:00Z"),
-      }),
-    ).toEqual({
-      id: "inv_01abc",
-      email: "huda@example.com",
-      role: "admin",
-      status: "pending",
-      expiresAt: "2026-10-06T08:00:00.000Z",
-      acceptPath: "/invite/inv_01abc",
-    });
   });
 });
 

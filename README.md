@@ -101,7 +101,7 @@ web app.
 
 | Path                 | What it is                                                                     |
 | -------------------- | ------------------------------------------------------------------------------ |
-| `apps/api`           | Fastify REST API under `/api/v1`: accounts, workspaces, uploads, reports, SSE  |
+| `apps/api`           | Fastify REST API under `/api/v1`: accounts, uploads, reports, SSE              |
 | `apps/worker`        | pg-boss consumer: runs the pipeline, deletes expired PDFs, fails stuck ratings |
 | `apps/web`           | React + Vite app, both views, the contract viewer, English and Arabic (RTL)    |
 | `packages/contracts` | Shared Zod schemas: API types, Finding, Rule, Rating, constants                |
@@ -121,23 +121,11 @@ fields, clauses and findings to Postgres. The web app renders the report in eith
 Postgres holds the app data, the job queue (pg-boss) and the law vectors (pgvector). The PDFs
 live only in the bucket.
 
-## Accounts and workspaces
+## Accounts
 
-- **Workspaces.** Every account gets a personal workspace of one. An HR team creates a company
-  workspace, whose members are owners, admins or members. Ratings belong to a workspace.
-- **Switching.** The header menu switches the active workspace (`PUT /api/v1/me/active-org`).
-  The active workspace is kept in the session, so it changes in every open tab. Each tab sends
-  the workspace it shows in the `x-org-id` header with every change. If another tab has
-  switched in the meantime, the API refuses the change (`409`) and nothing is saved; the tab
-  then moves to the new workspace and says why.
-- **Invitations by link.** No email is sent in v1. An owner or admin of a company workspace
-  invites an email address and gets a link (`/invite/<id>`) to share however they like. Only
-  someone signed in with that email address (in any letter case) can open the link and
-  accept; anyone else gets "not found". Accepting adds them with the invited role and switches them to the workspace.
-  A link expires after 48 hours, and owners and admins can list and cancel pending ones.
-- **One place for workspace rules.** Over HTTP, Better Auth only serves sign-up, sign-in,
-  sign-out and the session. Its own organization endpoints answer `404`, so every workspace
-  change goes through `/api/v1`, where the role checks live.
+- **Your own ratings only.** Each account sees and manages only the ratings it uploaded.
+  There are no workspaces, members or invitations.
+- Over HTTP, Better Auth only serves sign-up, sign-in, sign-out and the session.
 
 ## Quick start with Docker
 
@@ -258,18 +246,17 @@ in:
   turns on default encryption for the bucket.
 - **Little personal data in Postgres.** The database keeps the extracted fields (no names, IDs
   or IBANs), the redacted clauses, the findings and a storage key. PDFs stay in the bucket.
-- **Retention.** Each PDF gets a delete date: upload time plus the workspace's retention days
-  (default 30, between 1 and 365). The worker deletes expired PDFs every hour.
+- **Retention.** Each PDF gets a delete date: upload time plus 30 days. The worker deletes
+  expired PDFs every hour.
 - **Delete at any time.** `DELETE /api/v1/ratings/{id}` removes the rating, its findings and
   its PDF.
 - **Delete my data.** The account page's "Delete my data" (`DELETE /api/v1/me/data`) removes
-  every rating, finding, document record and stored PDF in the user's personal workspace,
-  whichever workspace is active, and then signs them out. Ratings in a company workspace
-  belong to that company and stay. Each deletion is audited.
-- **Workspace scoping and roles.** Every query is scoped by the session's active workspace.
-  Role checks live in one place (`apps/api/src/plugins/access.ts`).
+  every rating, finding, document record and stored PDF the user uploaded, and then signs
+  them out. Each deletion is audited.
+- **Owner only.** Every query is scoped by the signed-in user: only the uploader can see,
+  download, view or delete a rating.
 - **Daily upload limit.** Each user can upload `RATE_LIMIT_PER_DAY` contracts (default 20)
-  in any 24 hours, across all their workspaces. Uploads are counted from the audit log, so
+  in any 24 hours. Uploads are counted from the audit log, so
   deleting a rating does not give one back, while a rejected upload does not count. The
   count and the new upload happen under a per-user lock, so parallel uploads cannot slip past
   the limit. Over it, the API answers `429` with `Retry-After`.

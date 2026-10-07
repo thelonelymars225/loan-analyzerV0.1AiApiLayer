@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { View } from "@rater/contracts";
-import { documents, newId, orgs, ratings, users } from "@rater/db";
+import { documents, newId, ratings, users } from "@rater/db";
 import type { Db } from "@rater/db";
 import { LocalStorage } from "@rater/storage";
 
@@ -44,20 +44,17 @@ export async function createTempStorage(): Promise<TempStorage> {
   };
 }
 
-export async function seedOrg(db: Db): Promise<{ orgId: string; userId: string }> {
-  const orgId = newId("org");
+export async function seedUser(db: Db): Promise<{ userId: string }> {
   const userId = newId("usr");
   await db.insert(users).values({
     id: userId,
     name: "Nour Al-Harbi",
     email: `nour.${userId}@example.com`,
   });
-  await db.insert(orgs).values({ id: orgId, name: "Example Trading Co.", slug: orgId });
-  return { orgId, userId };
+  return { userId };
 }
 
 export interface SeedDocumentInput {
-  orgId: string;
   userId: string;
   /** Stored in the bucket unless null (a document whose file is gone). */
   pdf: Buffer | null;
@@ -72,12 +69,11 @@ export async function seedDocument(
   input: SeedDocumentInput,
 ): Promise<{ documentId: string; storageKey: string }> {
   const documentId = newId("doc");
-  const storageKey = `orgs/${input.orgId}/documents/${documentId}.pdf`;
+  const storageKey = `users/${input.userId}/documents/${documentId}.pdf`;
   if (input.pdf) await storage.put(storageKey, input.pdf, "application/pdf");
   await db.insert(documents).values({
     id: documentId,
-    orgId: input.orgId,
-    uploadedBy: input.userId,
+    userId: input.userId,
     storageKey,
     sha256: "0".repeat(64),
     sizeBytes: input.pdf?.length ?? 0,
@@ -97,9 +93,8 @@ export async function seedRating(
   const ratingId = newId("rt");
   await db.insert(ratings).values({
     id: ratingId,
-    orgId: input.orgId,
+    userId: input.userId,
     documentId: document.documentId,
-    createdBy: input.userId,
     defaultView: input.defaultView ?? "employee",
   });
   return { ratingId, ...document };

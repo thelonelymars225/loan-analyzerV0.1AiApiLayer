@@ -65,8 +65,8 @@ describe.skipIf(!DATABASE_URL)("POST /ratings", () => {
     const [rating] = await t.db.select().from(ratings).where(eq(ratings.id, body.id));
     expect(rating).toMatchObject({
       status: "queued",
-      createdBy: user.id,
-      defaultView: "employee", // personal workspace
+      userId: user.id,
+      defaultView: "employee",
     });
 
     const [document] = await t.db
@@ -74,9 +74,8 @@ describe.skipIf(!DATABASE_URL)("POST /ratings", () => {
       .from(documents)
       .where(eq(documents.id, rating?.documentId ?? ""));
     expect(document).toMatchObject({
-      orgId: rating?.orgId,
-      uploadedBy: user.id,
-      storageKey: `orgs/${rating?.orgId}/documents/${document?.id}.pdf`,
+      userId: user.id,
+      storageKey: `users/${user.id}/documents/${document?.id}.pdf`,
       sizeBytes: qiwaPdf.length,
     });
     expect(document?.sha256).toMatch(/^[0-9a-f]{64}$/);
@@ -248,10 +247,7 @@ describe.skipIf(!DATABASE_URL)("daily limit", () => {
     const statuses = responses.map((response) => response.statusCode).sort();
     expect(statuses).toEqual([202, 202, 429, 429, 429, 429]);
 
-    const stored = await t.db
-      .select()
-      .from(ratings)
-      .where(eq(ratings.createdBy, user.id));
+    const stored = await t.db.select().from(ratings).where(eq(ratings.userId, user.id));
     expect(stored).toHaveLength(2);
     // Every refused upload removed its stored PDF again.
     const files = await readdir(t.storageDir, { recursive: true });
@@ -348,12 +344,7 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
   }
 
   it("lists ratings newest first in pages of 20", async () => {
-    const orgId = (await t.db.select().from(ratings).limit(1))[0]?.orgId;
     const fresh = await signUp(t.app, "Huda Al-Shehri");
-    const freshOrg = (await api(t.app, fresh.cookie, "GET", "/me")).json<{
-      activeOrgId: string;
-    }>().activeOrgId;
-    expect(freshOrg).not.toBe(orgId);
 
     const base = Date.parse("2026-01-01T00:00:00Z");
     const ids: string[] = [];
@@ -362,8 +353,7 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
       ids.push(id);
       await t.db.insert(ratings).values({
         id,
-        orgId: freshOrg,
-        createdBy: fresh.id,
+        userId: fresh.id,
         defaultView: "employee",
         // Two ratings share each timestamp, so the id breaks ties.
         createdAt: new Date(base + Math.floor(i / 2) * 1000),

@@ -21,15 +21,10 @@ export class ApiError extends Error {
 export const unauthorized = (detail = "Sign in to continue.") =>
   new ApiError(401, "unauthorized", detail);
 
-export const forbidden = (detail = "You do not have permission to do this.") =>
-  new ApiError(403, "forbidden", detail);
-
 export const notFound = (detail = "Not found.") => new ApiError(404, "not_found", detail);
 
 export const validationError = (detail: string) =>
   new ApiError(400, "validation_error", detail);
-
-export const conflict = (detail: string) => new ApiError(409, "conflict", detail);
 
 export const fileTooLarge = (maxBytes: number) =>
   new ApiError(
@@ -54,10 +49,3 @@ export const tooManyStreams = () =>
   new ApiError(429, "rate_limited", "Too many open live updates. Try again later.", {
     "retry-after": "30",
   });
-
-/** The browser tab acts on a different workspace than the session's active one. */
-export const workspaceChanged = () =>
-  conflict(
-    "Your active workspace was changed, probably in another tab. Reload to see it before " +
-      "making changes.",
-  );

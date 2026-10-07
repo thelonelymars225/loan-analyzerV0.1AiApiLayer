@@ -564,7 +564,7 @@ describe("offline analyser: Arabic text when the English is missing", () => {
       "EOS-BASE-01",
       "compliant",
     ],
-    // Paraphrases from evals/clause-library.json.
+    // More paraphrases.
     [
       "لا يحق للموظف مشاركة معلومات الشركة أو مستنداتها مع الغير.",
       "CONFIDENTIAL-01",

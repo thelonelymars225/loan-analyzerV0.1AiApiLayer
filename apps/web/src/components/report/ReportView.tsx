@@ -71,12 +71,7 @@ export function ReportView({ report, onViewChange }: ReportViewProps) {
             <ol className="space-y-4">
               {report.findings.map((finding) => (
                 <li key={`${finding.ruleId}-${finding.clause ?? ""}`}>
-                  <FindingCard
-                    finding={finding}
-                    view={view}
-                    ratingId={report.id}
-                    document={report.document}
-                  />
+                  <FindingCard finding={finding} view={view} ratingId={report.id} />
                 </li>
               ))}
             </ol>

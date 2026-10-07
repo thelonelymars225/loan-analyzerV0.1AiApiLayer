@@ -134,22 +134,10 @@ export async function ocrArabicRegions(
 }
 
 /**
- * Renders one region of one page as a colour PNG, for showing the passage behind a finding.
- * The PDF and the image only ever exist in a private temporary folder that is removed before
- * this returns; the caller decides what to do with the bytes (the API sends them uncached).
+ * Renders one whole page as a colour PNG, for the contract viewer. The PDF and the image only
+ * ever exist in a private temporary folder that is removed before this returns; the caller
+ * decides what to do with the bytes (the API sends them uncached).
  */
-export async function renderPageCrop(
-  pdf: Buffer,
-  region: PageRegion,
-  options: CropOptions = {},
-): Promise<Buffer> {
-  return renderPng(pdf, region.page, cropArgs(region, options.dpi ?? DEFAULT_CROP_DPI), {
-    gray: false,
-    timeoutMs: options.timeoutMs ?? CROP_TIMEOUT_MS,
-  });
-}
-
-/** Renders one whole page as a colour PNG, for the contract viewer. Same handling as a crop. */
 export async function renderPage(
   pdf: Buffer,
   page: number,

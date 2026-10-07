@@ -144,18 +144,12 @@
     "clause": "Clause {{clause}}",
     "noClause": "Whole contract",
     "passage": {
-      "label": "In the contract",
       "page": "Page {{page}}",
       "section": "Section {{clause}}",
       "pick": "Passages",
-      "alt": "Page {{page}} of the contract with clause {{clause}} highlighted",
-      "approximate": "The exact lines were not found, so this shows {{clause}} as a whole.",
       "arabic": "Arabic (prevails)",
       "english": "English",
       "noText": "No text was stored for this passage.",
-      "deletedOn": "The contract file was deleted on {{date}}, so only the clause text as rated is shown.",
-      "deleted": "The contract file is no longer stored, so only the clause text as rated is shown.",
-      "unavailable": "The page image could not be loaded; this is the clause text as rated.",
       "open": "Open in contract"
     },
     "articles": "Articles",

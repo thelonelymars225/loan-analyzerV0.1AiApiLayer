@@ -5,7 +5,6 @@ export {
   pdfPageCount,
   pdftotextBbox,
   renderPage,
-  renderPageCrop,
   toolsAvailable,
   type CropOptions,
   type OcrOptions,

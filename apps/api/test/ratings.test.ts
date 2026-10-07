@@ -487,7 +487,7 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
     const { findings: problems, good, info, document } = await report(id);
     expect(document).toEqual({ pages: 10, available: true, deletedAt: null });
 
-    // A located Section 15 clause: its box, the crop to ask for, and its stored text.
+    // A located Section 15 clause: its box and its stored text.
     const eos = problems.find((f) => f.ruleId === "EOS-BASE-01");
     expect(eos?.passages).toEqual([
       {
@@ -496,7 +496,6 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
         pageWidth: 595.92,
         pageHeight: 842.04,
         box: { xMin: 45.4, yMin: 600, xMax: 574.2, yMax: 640 },
-        crop: { xMin: 0, yMin: 582, xMax: 595.92, yMax: 658 },
         textEn: "End of service is calculated on the basic wage.",
         textAr: "تحتسب مكافأة نهاية الخدمة على الأجر الأساسي",
         approximate: false,
@@ -515,49 +514,6 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
     // Template clauses have a place but no stored text; a finding with no clause has none.
     expect(good[0]?.passages[0]).toMatchObject({ clause: "8.1", page: 2, textEn: null });
     expect(info[0]?.passages).toEqual([]);
-  });
-
-  it("cuts the passage behind a finding from the PDF on request, storing nothing", async () => {
-    const id = await newRating(owner);
-    await storeResults(t, id);
-    const storedBefore = await readdir(t.storageDir, { recursive: true });
-    const response = await api(
-      t.app,
-      owner.cookie,
-      "GET",
-      `/ratings/${id}/passages/15.6/8`,
-    );
-    expect(response.statusCode).toBe(200);
-    expect(response.headers["content-type"]).toBe("image/png");
-    expect(response.headers["cache-control"]).toBe("private, no-store");
-    // The crop (0, 582) to (595.92, 658) at 144 dpi: 1192 by 152 pixels (PNG IHDR).
-    const png = response.rawPayload;
-    expect(png.readUInt32BE(16)).toBe(1192);
-    expect(png.readUInt32BE(20)).toBe(152);
-
-    // Not audited (viewing the report is), and nothing new in storage.
-    const audit = await t.db
-      .select()
-      .from(auditEvents)
-      .where(eq(auditEvents.targetId, id));
-    expect(audit.map((event) => event.action)).toEqual(["upload"]);
-    expect(await readdir(t.storageDir, { recursive: true })).toEqual(storedBefore);
-
-    for (const url of [
-      `/ratings/${id}/passages/15.9/8`, // not located
-      `/ratings/${id}/passages/15.6/9`, // located, but not on that page
-    ]) {
-      const missing = await api(t.app, owner.cookie, "GET", url);
-      expect(missing.statusCode, url).toBe(404);
-      expect(Problem.parse(missing.json()).code).toBe("not_found");
-    }
-    const malformed = await api(
-      t.app,
-      owner.cookie,
-      "GET",
-      `/ratings/${id}/passages/x/8`,
-    );
-    expect(malformed.statusCode).toBe(400);
   });
 
   it("says why a rating needs review", async () => {
@@ -619,7 +575,6 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
       ["GET", `/ratings/${id}`],
       ["GET", `/ratings/${id}/events`],
       ["GET", `/ratings/${id}/document`],
-      ["GET", `/ratings/${id}/passages/15.6/8`],
       ["GET", `/ratings/${id}/pages/1`],
       ["DELETE", `/ratings/${id}`],
     ] as const) {
@@ -700,15 +655,8 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
     expect(response.statusCode).toBe(404);
     expect(Problem.parse(response.json()).code).toBe("not_found");
 
-    // The passages go with it; the report says so instead of offering them.
+    // The page images go with it; the report says so instead of offering them.
     await storeResults(t, id);
-    const passage = await api(
-      t.app,
-      owner.cookie,
-      "GET",
-      `/ratings/${id}/passages/15.6/8`,
-    );
-    expect(passage.statusCode).toBe(404);
     const page = await api(t.app, owner.cookie, "GET", `/ratings/${id}/pages/1`);
     expect(page.statusCode).toBe(404);
     await t.db

@@ -5,6 +5,7 @@ import {
   filterBySeverity,
   focusFromParams,
   focusParams,
+  isSectionNumber,
   pageMarks,
   pageSizes,
   tabFromParams,
@@ -93,6 +94,14 @@ describe("pageSizes", () => {
     expect(sizes).toHaveLength(10);
     expect(sizes[7]).toEqual({ width: 595.92, height: 842.04 });
     expect(sizes[4]).toBe(DEFAULT_PAGE_SIZE);
+  });
+});
+
+describe("isSectionNumber", () => {
+  it("tells a section from a clause", () => {
+    expect(isSectionNumber("7")).toBe(true);
+    expect(isSectionNumber("7.1")).toBe(false);
+    expect(isSectionNumber("15.4.2")).toBe(false);
   });
 });
 

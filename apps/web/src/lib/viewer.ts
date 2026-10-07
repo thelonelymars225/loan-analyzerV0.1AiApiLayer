@@ -132,6 +132,11 @@ export function samePlace(
   return a.clause === b.clause && a.page === b.page;
 }
 
+/** "7" is a whole section; "7.1" or "15.4.2" is a clause inside one. */
+export function isSectionNumber(clause: string): boolean {
+  return !clause.includes(".");
+}
+
 export interface PageSize {
   width: number;
   height: number;

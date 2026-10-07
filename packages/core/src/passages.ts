@@ -1,26 +1,9 @@
-import type { Clause, ClauseLocation, PageBox, Passage } from "@rater/contracts";
+import type { Clause, ClauseLocation, Passage } from "@rater/contracts";
 
 /*
  * Passages: the places in the contract a finding is about, built from the clause locations the
- * extractor saved. The report attaches them to each finding; the API renders their crops.
+ * extractor saved. The report attaches them to each finding; the contract viewer marks them.
  */
-
-/** Context kept above and below a clause in its crop: about one printed text line. */
-export const CROP_CONTEXT_PT = 18;
-
-/**
- * The crop a passage preview shows: the full page width (both language columns), from a line
- * above the clause to a line below it, kept inside the page. The API renders exactly this box,
- * so the web app can place the highlight by comparing `box` with `crop`.
- */
-export function passageCrop(location: ClauseLocation): PageBox {
-  return {
-    xMin: 0,
-    yMin: Math.max(0, location.yMin - CROP_CONTEXT_PT),
-    xMax: location.pageWidth,
-    yMax: Math.min(location.pageHeight, location.yMax + CROP_CONTEXT_PT),
-  };
-}
 
 /**
  * The passages for one or more clause references, in the order given, one per page the
@@ -53,7 +36,6 @@ export function passagesFor(
           xMax: location.xMax,
           yMax: location.yMax,
         },
-        crop: passageCrop(location),
         textEn: text?.textEn ?? null,
         textAr: text?.textAr ?? null,
         approximate: placed.clause !== reference,

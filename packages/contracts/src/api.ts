@@ -52,8 +52,8 @@ export const PageBox = z.object({
 export type PageBox = z.infer<typeof PageBox>;
 
 /**
- * One place in the contract a finding is about, so the report can show the passage behind it
- * and open the contract viewer there. A clause that runs onto a second page is two passages.
+ * One place in the contract a finding is about, so the report can open the contract viewer
+ * there. A clause that runs onto a second page is two passages.
  */
 export const Passage = z.object({
   /** The clause shown: "15.4", or "1" for the whole of Section 1. */
@@ -63,8 +63,6 @@ export const Passage = z.object({
   pageHeight: z.number().positive(),
   /** The clause's rows, across both language columns. */
   box: PageBox,
-  /** What GET /ratings/{id}/passages/{clause}/{page} renders: the box plus a line of context. */
-  crop: PageBox,
   /** The clause as it was rated (redacted). Only Section 15 items have stored text. */
   textEn: z.string().nullable(),
   textAr: z.string().nullable(),

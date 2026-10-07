@@ -137,7 +137,6 @@ describe("renderReport", () => {
         clause: "15.6",
         ...page,
         box: { xMin: 45.4, yMin: 600, xMax: 574.2, yMax: 640 },
-        crop: { xMin: 0, yMin: 582, xMax: 595.92, yMax: 658 },
         textEn: "Basic wage only.",
         textAr: "الأجر الأساسي",
         approximate: false,

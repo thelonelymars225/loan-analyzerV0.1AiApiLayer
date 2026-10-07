@@ -159,7 +159,6 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       LLM_PROVIDER: ${LLM_PROVIDER:-}
       LLM_MODEL: ${LLM_MODEL:-}
-      LLM_STRUCTURED_OUTPUT: ${LLM_STRUCTURED_OUTPUT:-}
       # The migrate job above already did this.
       DB_MIGRATE_ON_START: "false"
     depends_on:

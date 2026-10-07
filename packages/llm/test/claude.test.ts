@@ -5,7 +5,6 @@ import type {
 } from "@anthropic-ai/sdk/resources/messages";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  acceptsTemperature,
   ClaudeLlmClient,
   ClaudeReplyError,
   DEFAULT_CLAUDE_MODEL,
@@ -124,18 +123,6 @@ describe("ClaudeLlmClient request", () => {
     expect(sentSchema()?.required).toEqual(["clause", "matches"]);
   });
 
-  it("sends temperature 0 to models that accept it, and omits it where the API rejects it", async () => {
-    await new ClaudeLlmClient({ model: "claude-sonnet-4-6" }).analyzeClause(
-      clauseRequest({ en: EOS_CLAUSE }),
-    );
-    expect(sentParams().temperature).toBe(0);
-
-    await new ClaudeLlmClient({ model: "claude-opus-5-5" }).analyzeClause(
-      clauseRequest({ en: EOS_CLAUSE }),
-    );
-    expect(sentParams()).not.toHaveProperty("temperature");
-  });
-
   it("caches the system prompt and the candidate rules", async () => {
     const request = clauseRequest({ en: EOS_CLAUSE });
     await new ClaudeLlmClient().analyzeClause(request);
@@ -184,13 +171,6 @@ describe("ClaudeLlmClient request", () => {
     expect(reply.json).toEqual({ conflicts: [] });
   });
 
-  it("can leave structured outputs off", async () => {
-    await new ClaudeLlmClient({ structuredOutput: false }).analyzeClause(
-      clauseRequest({ en: EOS_CLAUSE }),
-    );
-    expect(sentParams()).not.toHaveProperty("output_config");
-  });
-
   it("never logs the clause", async () => {
     const spies = (["log", "info", "warn", "error", "debug"] as const).map((method) =>
       vi.spyOn(console, method).mockImplementation(() => undefined),
@@ -212,20 +192,6 @@ describe("ClaudeLlmClient reply", () => {
     const reply = await ask();
     expect(ClauseAnalysis.parse(reply.json)).toEqual(VALID_REPLY);
     expect(reply.usage).toEqual({ inputTokens: 3120, outputTokens: 80 });
-  });
-
-  it("parses JSON inside a fenced code block", async () => {
-    sdk.create.mockResolvedValue(
-      apiMessage("```json\n" + JSON.stringify(VALID_REPLY, null, 2) + "\n```"),
-    );
-    expect((await ask()).json).toEqual(VALID_REPLY);
-  });
-
-  it("parses JSON after a sentence of prose", async () => {
-    sdk.create.mockResolvedValue(
-      apiMessage(`Here is my analysis: ${JSON.stringify(VALID_REPLY)}`),
-    );
-    expect((await ask()).json).toEqual(VALID_REPLY);
   });
 
   it("rejects a refusal with the usage it cost", async () => {
@@ -270,19 +236,6 @@ describe("replyJsonSchema", () => {
   it("closes every object and drops keywords structured outputs does not accept", () => {
     expect(schema).toContain('"additionalProperties":false');
     expect(schema).not.toMatch(/"\$schema"|"minLength"|"minimum"/);
-  });
-});
-
-describe("acceptsTemperature", () => {
-  it.each([
-    ["claude-opus-5-5", false],
-    ["claude-sonnet-5-5", false],
-    ["claude-opus-4-7", false],
-    ["claude-sonnet-4-6", true],
-    ["claude-haiku-4-5", true],
-    ["claude-opus-4-1-20250805", true],
-  ])("%s → %s", (model, expected) => {
-    expect(acceptsTemperature(model)).toBe(expected);
   });
 });
 

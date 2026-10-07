@@ -6,7 +6,6 @@ import type {
 } from "@anthropic-ai/sdk/resources/messages";
 import { z } from "zod";
 import { ClauseAnalysis, CrossCheckResult } from "@rater/contracts";
-import { extractJsonObject } from "./json";
 import { loadPrompt, PROMPT_VERSION } from "./prompts";
 import type { PromptName } from "./prompts";
 import type {
@@ -36,15 +35,9 @@ export interface ClaudeLlmClientOptions {
   /** Defaults to the SDK's own lookup (ANTHROPIC_API_KEY). */
   apiKey?: string;
   model?: string;
-  baseURL?: string;
   timeoutMs?: number;
   maxRetries?: number;
   maxTokens?: number;
-  /**
-   * Constrain replies to the reply schema with structured outputs (default true). Turn it off
-   * for a model that does not support `output_config.format`; replies are then parsed from text.
-   */
-  structuredOutput?: boolean;
 }
 
 /** A reply that holds no usable JSON. The engine retries once, then flags the clause for review. */
@@ -79,15 +72,12 @@ export class ClaudeLlmClient implements LlmClient {
   readonly promptVersion = PROMPT_VERSION;
   private readonly client: Anthropic;
   private readonly maxTokens: number;
-  private readonly structuredOutput: boolean;
 
   constructor(options: ClaudeLlmClientOptions = {}) {
     this.model = options.model ?? DEFAULT_CLAUDE_MODEL;
     this.maxTokens = options.maxTokens ?? DEFAULT_MAX_TOKENS;
-    this.structuredOutput = options.structuredOutput ?? true;
     this.client = new Anthropic({
       apiKey: options.apiKey,
-      baseURL: options.baseURL,
       timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       maxRetries: options.maxRetries ?? DEFAULT_MAX_RETRIES,
       // Fixed so that ANTHROPIC_LOG=debug cannot make the SDK log request bodies (clause text).
@@ -147,36 +137,9 @@ export class ClaudeLlmClient implements LlmClient {
           ],
         },
       ],
-      ...(acceptsTemperature(this.model) ? { temperature: 0 } : {}),
-      ...(this.structuredOutput
-        ? { output_config: { format: { type: "json_schema", schema: call.schema } } }
-        : {}),
+      output_config: { format: { type: "json_schema", schema: call.schema } },
     };
   }
-}
-
-/**
- * The spec asks for temperature 0. Claude Opus 4.7 and every later model reject sampling
- * parameters with a 400, so temperature 0 is only sent to the older models that accept it.
- * On the newer models repeatability comes from the pinned model, the reply schema and the
- * clause cache.
- */
-const MODELS_ACCEPTING_TEMPERATURE = [
-  "claude-3",
-  "claude-haiku-4-5",
-  "claude-sonnet-4-0",
-  "claude-sonnet-4-2025",
-  "claude-sonnet-4-5",
-  "claude-sonnet-4-6",
-  "claude-opus-4-0",
-  "claude-opus-4-1",
-  "claude-opus-4-2025",
-  "claude-opus-4-5",
-  "claude-opus-4-6",
-];
-
-export function acceptsTemperature(model: string): boolean {
-  return MODELS_ACCEPTING_TEMPERATURE.some((prefix) => model.startsWith(prefix));
 }
 
 /**
@@ -216,7 +179,10 @@ function withoutUnsupportedKeywords(value: unknown): unknown {
 const CLAUSE_ANALYSIS_SCHEMA = replyJsonSchema(ClauseAnalysis);
 const CROSS_CHECK_SCHEMA = replyJsonSchema(CrossCheckResult);
 
-/** The JSON object in the reply's text blocks (thinking blocks are skipped). */
+/**
+ * The reply's text blocks parsed as JSON; structured outputs make them plain JSON. Thinking
+ * blocks are skipped.
+ */
 function readReplyJson(message: Message, usage: LlmUsage): unknown {
   if (message.stop_reason === "refusal") {
     throw new ClaudeReplyError(
@@ -227,15 +193,16 @@ function readReplyJson(message: Message, usage: LlmUsage): unknown {
   const text = message.content
     .flatMap((block) => (block.type === "text" ? [block.text] : []))
     .join("");
-  const json = extractJsonObject(text);
-  if (json !== undefined) return json;
-  if (message.stop_reason === "max_tokens") {
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
     throw new ClaudeReplyError(
-      "The reply hit max_tokens before the JSON object was complete.",
+      message.stop_reason === "max_tokens"
+        ? "The reply hit max_tokens before the JSON object was complete."
+        : "The reply did not contain a JSON object.",
       usage,
     );
   }
-  throw new ClaudeReplyError("The reply did not contain a JSON object.", usage);
 }
 
 /**

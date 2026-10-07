@@ -7,8 +7,7 @@ import type { LlmClient } from "./types";
  * - LLM_PROVIDER=heuristic: the offline analyser, even when an API key is set.
  * - LLM_PROVIDER=claude: Claude; throws if ANTHROPIC_API_KEY is missing.
  * - LLM_PROVIDER unset (or "auto"): Claude when ANTHROPIC_API_KEY is set, offline otherwise.
- * LLM_MODEL overrides the pinned Claude model. LLM_STRUCTURED_OUTPUT=off turns off structured
- * outputs for a model that does not support them.
+ * LLM_MODEL overrides the pinned Claude model.
  */
 export function createLlmClient(env: NodeJS.ProcessEnv = process.env): LlmClient {
   const provider = (env.LLM_PROVIDER ?? "").trim().toLowerCase();
@@ -38,7 +37,5 @@ function claudeClient(env: NodeJS.ProcessEnv, apiKey: string): ClaudeLlmClient {
   return new ClaudeLlmClient({
     apiKey,
     model: env.LLM_MODEL?.trim() || undefined,
-    baseURL: env.ANTHROPIC_BASE_URL?.trim() || undefined,
-    structuredOutput: env.LLM_STRUCTURED_OUTPUT?.trim().toLowerCase() !== "off",
   });
 }

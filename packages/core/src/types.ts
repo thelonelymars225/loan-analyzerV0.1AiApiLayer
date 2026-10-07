@@ -1,6 +1,7 @@
 import type {
   ArticleRef,
   Clause,
+  ClauseLocation,
   ContractFieldName,
   ContractFields,
   Deadline,
@@ -55,6 +56,8 @@ export interface ExtractionResult {
   provenance: Partial<Record<ContractFieldName, FieldProvenance>>;
   /** Section 15 items. textAr is null until Arabic OCR is merged in with attachArabicOcr. */
   clauses: Clause[];
+  /** Where every numbered clause and section is printed (boxes only, no text). */
+  clauseLocations: ClauseLocation[];
   /** Arabic-column regions covering Section 15, for OCR. Empty if Section 15 was not found. */
   section15ArabicRegions: PageRegion[];
   /**

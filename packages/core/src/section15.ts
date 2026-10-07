@@ -294,6 +294,7 @@ function conflictFinding(conflict: CrossConflict, rule: Rule): AnalysedFinding {
   return {
     ruleId: rule.id,
     clause: conflict.clause,
+    relatedClause: conflict.templateClause,
     verdict: "conflict",
     severity: severityFor("conflict", conflict.severity, rule),
     confidence: conflict.confidence,

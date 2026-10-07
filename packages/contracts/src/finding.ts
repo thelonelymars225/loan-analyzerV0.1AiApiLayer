@@ -28,6 +28,11 @@ export const Finding = z.object({
   ruleId: z.string(),
   /** Clause number ("15.6"), or a template clause for field findings ("7.1"); null if none. */
   clause: z.string().nullable(),
+  /**
+   * A second place the finding is about: for a cross-check conflict, the template clause
+   * that Section 15 contradicts ("1" for the whole of Section 1, "5.1" for one clause).
+   */
+  relatedClause: z.string().optional(),
   verdict: Verdict,
   severity: Severity,
   confidence: Confidence,

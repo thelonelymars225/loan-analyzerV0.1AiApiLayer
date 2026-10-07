@@ -70,6 +70,7 @@ function toFinding(row: typeof findings.$inferSelect): Finding {
   return Finding.parse({
     ruleId: row.ruleId,
     clause: row.clauseRef,
+    relatedClause: row.relatedClause ?? undefined,
     verdict: row.verdict,
     severity: row.severity,
     confidence: row.confidence,

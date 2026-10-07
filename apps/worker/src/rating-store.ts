@@ -1,8 +1,21 @@
 import { and, eq } from "drizzle-orm";
-import type { Clause, ContractFieldName, Finding } from "@rater/contracts";
+import type {
+  Clause,
+  ClauseLocation,
+  ContractFieldName,
+  Finding,
+} from "@rater/contracts";
 import { REVIEW_RULE_ID } from "@rater/core";
 import type { ExtractionResult, PipelineResult } from "@rater/core";
-import { clauses, contractFields, documents, findings, newId, ratings } from "@rater/db";
+import {
+  clauseLocations,
+  clauses,
+  contractFields,
+  documents,
+  findings,
+  newId,
+  ratings,
+} from "@rater/db";
 import type { Db } from "@rater/db";
 
 /*
@@ -87,8 +100,8 @@ export async function markFailed(
 }
 
 /**
- * Replaces the rating's fields, clauses and findings with this result and finishes the rating,
- * all in one transaction. Replacing (delete, then insert) makes a retried or repeated job
+ * Replaces the rating's fields, clauses, clause locations and findings with this result and
+ * finishes the rating, all in one transaction. Replacing (delete, then insert) makes a retried or repeated job
  * idempotent; the row lock makes two attempts of the same job save one after the other.
  * Returns false when the rating was deleted while the job ran (nothing is written then).
  */
@@ -110,13 +123,16 @@ export async function saveResult(
 
     await tx.delete(contractFields).where(eq(contractFields.ratingId, ratingId));
     await tx.delete(clauses).where(eq(clauses.ratingId, ratingId));
+    await tx.delete(clauseLocations).where(eq(clauseLocations.ratingId, ratingId));
     await tx.delete(findings).where(eq(findings.ratingId, ratingId));
 
     const fieldRows = contractFieldRows(ratingId, result.extraction);
     const clauseRows = clauseRowsFor(ratingId, result.extraction.clauses);
+    const locationRows = clauseLocationRows(ratingId, result.extraction.clauseLocations);
     const findingRows = findingRowsFor(ratingId, result.findings);
     if (fieldRows.length > 0) await tx.insert(contractFields).values(fieldRows);
     if (clauseRows.length > 0) await tx.insert(clauses).values(clauseRows);
+    if (locationRows.length > 0) await tx.insert(clauseLocations).values(locationRows);
     if (findingRows.length > 0) await tx.insert(findings).values(findingRows);
 
     await tx
@@ -208,6 +224,14 @@ export function clauseRowsFor(
   }));
 }
 
+/** One row per clause per page. The boxes carry no text, so there is nothing to redact. */
+export function clauseLocationRows(
+  ratingId: string,
+  locations: ClauseLocation[],
+): (typeof clauseLocations.$inferInsert)[] {
+  return locations.map((location) => ({ ratingId, ...location }));
+}
+
 /** `position` keeps the pipeline's order, so reports list findings the same way every time. */
 export function findingRowsFor(
   ratingId: string,
@@ -218,6 +242,7 @@ export function findingRowsFor(
     ratingId,
     ruleId: finding.ruleId,
     clauseRef: finding.clause,
+    relatedClause: finding.relatedClause ?? null,
     verdict: finding.verdict,
     severity: finding.severity,
     confidence: finding.confidence,

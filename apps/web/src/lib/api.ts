@@ -280,3 +280,16 @@ export const api = {
 };
 
 export type Api = typeof api;
+
+/**
+ * URLs the browser fetches itself (an <img>, the PDF viewer) rather than through `api`. The
+ * session cookie goes along as on any same-origin request.
+ */
+export const apiUrls = {
+  /** PNG of the passage behind a finding, cut from the PDF on request (404 once it is deleted). */
+  passageImage: (ratingId: string, clause: string, page: number) =>
+    `${API_BASE}/ratings/${enc(ratingId)}/passages/${enc(clause)}/${page}`,
+  /** The uploaded PDF: "inline" opens it in the browser, "attachment" downloads it. */
+  document: (ratingId: string, disposition: "inline" | "attachment") =>
+    `${API_BASE}/ratings/${enc(ratingId)}/document?disposition=${disposition}`,
+};

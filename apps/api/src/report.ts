@@ -2,9 +2,11 @@ import { asc, eq } from "drizzle-orm";
 import { ContractFields, Finding } from "@rater/contracts";
 import type { RatingReport, Versions, View } from "@rater/contracts";
 import { renderReport } from "@rater/core";
-import { contractFields, findings } from "@rater/db";
+import { clauseLocations, clauses, contractFields, findings } from "@rater/db";
 import type { Db, ratings } from "@rater/db";
 import { loadRules } from "@rater/law";
+import { describeDocument, findRatingDocument } from "./ratings/document";
+import { clauseLocationColumns } from "./ratings/passages";
 
 export type RatingRow = typeof ratings.$inferSelect;
 export type Locale = "en" | "ar";
@@ -19,13 +21,22 @@ export async function loadReport(
   view: View,
   locale: Locale,
 ): Promise<RatingReport> {
-  const [findingRows, fieldRows] = await Promise.all([
+  const [findingRows, fieldRows, clauseRows, locationRows, document] = await Promise.all([
     db
       .select()
       .from(findings)
       .where(eq(findings.ratingId, rating.id))
       .orderBy(asc(findings.position), asc(findings.id)),
     db.select().from(contractFields).where(eq(contractFields.ratingId, rating.id)),
+    db
+      .select({ number: clauses.number, textEn: clauses.textEn, textAr: clauses.textAr })
+      .from(clauses)
+      .where(eq(clauses.ratingId, rating.id)),
+    db
+      .select(clauseLocationColumns)
+      .from(clauseLocations)
+      .where(eq(clauseLocations.ratingId, rating.id)),
+    findRatingDocument(db, rating),
   ]);
 
   return renderReport({
@@ -43,6 +54,9 @@ export async function loadReport(
     locale,
     // Why a needs_review rating needs a human look; stored by the worker.
     reviewReasons: rating.reviewReasons ?? [],
+    clauseLocations: locationRows,
+    clauses: clauseRows,
+    document: describeDocument(document),
   });
 }
 

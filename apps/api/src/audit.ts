@@ -1,8 +1,13 @@
 import { auditEvents, newId } from "@rater/db";
 import type { Db, DbTransaction } from "@rater/db";
 
-/** What the architecture doc asks us to audit: uploads, views, downloads and deletes. */
-export type AuditAction = "upload" | "view" | "download" | "delete";
+/**
+ * What the architecture doc asks us to audit: uploads, report views, downloads and deletes.
+ * "view_document" is the PDF opened in the contract viewer (inline), as opposed to a download.
+ * The passage images cut from it are not audited one by one: they are part of viewing the
+ * report, which already is.
+ */
+export type AuditAction = "upload" | "view" | "view_document" | "download" | "delete";
 
 export interface AuditEvent {
   orgId: string;

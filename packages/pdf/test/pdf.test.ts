@@ -7,8 +7,9 @@ import {
   ocrArabicRegions,
   pdfPageCount,
   pdftotextBbox,
+  renderPageCrop,
   toolsAvailable,
-  type OcrRegion,
+  type PageRegion,
 } from "../src/index";
 
 // Synthetic contract rendered by evals/template (no personal data).
@@ -16,7 +17,7 @@ const FIXTURE = fileURLToPath(
   new URL("../../core/test/fixtures/fixed-term-bad-s15.pdf", import.meta.url),
 );
 /** The Arabic half of Section 15 in that fixture (extractContract's section15ArabicRegions). */
-const SECTION_15_ARABIC: OcrRegion = {
+const SECTION_15_ARABIC: PageRegion = {
   page: 8,
   xMin: 297.96,
   yMin: 373.2,
@@ -88,6 +89,46 @@ describe.skipIf(!tools.pdftotext)("pdftotextBbox and pdfPageCount", () => {
     await expect(pdftotextBbox(Buffer.from("not a pdf"))).rejects.toBeInstanceOf(
       PdfToolError,
     );
+  });
+});
+
+describe.skipIf(!tools.pdftoppm)("renderPageCrop", () => {
+  const pdf = readFileSync(FIXTURE);
+
+  /** Width and height from a PNG's IHDR chunk (bytes 16-23, big-endian). */
+  const pngSize = (png: Buffer) => ({
+    width: png.readUInt32BE(16),
+    height: png.readUInt32BE(20),
+  });
+  /** The pixel size cropArgs asks pdftoppm for (its "-W" and "-H" values). */
+  const askedSize = (dpi: number) => {
+    const args = cropArgs(SECTION_15_ARABIC, dpi);
+    return {
+      width: Number(args[args.indexOf("-W") + 1]),
+      height: Number(args[args.indexOf("-H") + 1]),
+    };
+  };
+
+  it("renders the region as a PNG of the size cropArgs asks for", async () => {
+    const png = await renderPageCrop(pdf, SECTION_15_ARABIC, { dpi: 72 });
+    expect(png.subarray(0, 8)).toEqual(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    );
+    // At 72 dpi one point is one pixel: about 298 wide and 327 high.
+    expect(pngSize(png)).toEqual(askedSize(72));
+    expect(pngSize(png).width).toBe(298);
+  });
+
+  it("renders twice the pixels at the default 144 dpi", async () => {
+    const png = await renderPageCrop(pdf, SECTION_15_ARABIC);
+    expect(pngSize(png)).toEqual(askedSize(144));
+    expect(pngSize(png).width).toBe(596);
+  });
+
+  it("rejects a page the document does not have", async () => {
+    await expect(
+      renderPageCrop(pdf, { ...SECTION_15_ARABIC, page: 99 }),
+    ).rejects.toBeInstanceOf(PdfToolError);
   });
 });
 

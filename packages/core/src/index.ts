@@ -3,6 +3,7 @@ export * from "./bbox";
 export * from "./detect";
 export * from "./extract";
 export * from "./locate";
+export * from "./passages";
 export * from "./redact";
 export * from "./rules";
 export * from "./section15";

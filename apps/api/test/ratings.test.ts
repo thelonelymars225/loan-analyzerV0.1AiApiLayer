@@ -12,6 +12,8 @@ import {
 import type { FindingInput } from "@rater/contracts";
 import {
   auditEvents,
+  clauseLocations,
+  clauses,
   contractFields,
   documents,
   findings,
@@ -413,6 +415,7 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
       findings: [],
       fields: null,
       versions: null,
+      document: { pages: 10, available: true, deletedAt: null },
       disclaimer: DISCLAIMER_EN,
     });
     expect((await report(id, "", { "accept-language": "ar,en;q=0.8" })).disclaimer).toBe(
@@ -428,10 +431,11 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
     expect(employee.view).toBe("employee");
     expect(employee.status).toBe("done");
     expect(employee.score).not.toBeNull();
-    // Employee view: largest SAR first.
+    // Employee view: largest SAR first, then severity.
     expect(employee.findings.map((f) => f.ruleId)).toEqual([
       "COMP-ART77-01",
       "EOS-BASE-01",
+      "TYPE-CONFLICT-01",
       "TRANSFER-KSA-01",
       "CONFIDENTIAL-01",
     ]);
@@ -466,9 +470,10 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
 
     const hr = await report(id, "?view=hr");
     expect(hr.view).toBe("hr");
-    // HR view: severity first; ties keep the stored order.
+    // HR view: severity first, then legal risk; ties keep the stored order.
     expect(hr.findings.map((f) => f.ruleId)).toEqual([
       "EOS-BASE-01",
+      "TYPE-CONFLICT-01",
       "TRANSFER-KSA-01",
       "COMP-ART77-01",
       "CONFIDENTIAL-01",
@@ -484,6 +489,85 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
       clarity: employee.score?.clarity,
     });
     expect(employee.reviewReasons).toEqual([]);
+  });
+
+  it("points each finding at the passages behind it", async () => {
+    const id = await newRating(owner);
+    await storeResults(t, id);
+    const { findings: problems, good, info, document } = await report(id);
+    expect(document).toEqual({ pages: 10, available: true, deletedAt: null });
+
+    // A located Section 15 clause: its box, the crop to ask for, and its stored text.
+    const eos = problems.find((f) => f.ruleId === "EOS-BASE-01");
+    expect(eos?.passages).toEqual([
+      {
+        clause: "15.6",
+        page: 8,
+        pageWidth: 595.92,
+        pageHeight: 842.04,
+        box: { xMin: 45.4, yMin: 600, xMax: 574.2, yMax: 640 },
+        crop: { xMin: 0, yMin: 582, xMax: 595.92, yMax: 658 },
+        textEn: "End of service is calculated on the basic wage.",
+        textAr: "تحتسب مكافأة نهاية الخدمة على الأجر الأساسي",
+        approximate: false,
+      },
+    ]);
+    // A conflict shows its clause and then the template clause it contradicts.
+    const conflict = problems.find((f) => f.ruleId === "TYPE-CONFLICT-01");
+    expect(conflict?.passages.map((p) => [p.clause, p.page])).toEqual([
+      ["15.1", 8],
+      ["1", 1],
+    ]);
+    // A clause that was not located falls back to its section, marked approximate.
+    const confidential = problems.find((f) => f.ruleId === "CONFIDENTIAL-01");
+    expect(confidential?.passages).toHaveLength(1);
+    expect(confidential?.passages[0]).toMatchObject({ clause: "15", approximate: true });
+    // Template clauses have a place but no stored text; a finding with no clause has none.
+    expect(good[0]?.passages[0]).toMatchObject({ clause: "8.1", page: 2, textEn: null });
+    expect(info[0]?.passages).toEqual([]);
+  });
+
+  it("cuts the passage behind a finding from the PDF on request, storing nothing", async () => {
+    const id = await newRating(owner);
+    await storeResults(t, id);
+    const storedBefore = await readdir(t.storageDir, { recursive: true });
+    const response = await api(
+      t.app,
+      owner.cookie,
+      "GET",
+      `/ratings/${id}/passages/15.6/8`,
+    );
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["content-type"]).toBe("image/png");
+    expect(response.headers["cache-control"]).toBe("private, no-store");
+    // The crop (0, 582) to (595.92, 658) at 144 dpi: 1192 by 152 pixels (PNG IHDR).
+    const png = response.rawPayload;
+    expect(png.readUInt32BE(16)).toBe(1192);
+    expect(png.readUInt32BE(20)).toBe(152);
+
+    // Not audited (viewing the report is), and nothing new in storage.
+    const audit = await t.db
+      .select()
+      .from(auditEvents)
+      .where(eq(auditEvents.targetId, id));
+    expect(audit.map((event) => event.action)).toEqual(["upload"]);
+    expect(await readdir(t.storageDir, { recursive: true })).toEqual(storedBefore);
+
+    for (const url of [
+      `/ratings/${id}/passages/15.9/8`, // not located
+      `/ratings/${id}/passages/15.6/9`, // located, but not on that page
+    ]) {
+      const missing = await api(t.app, owner.cookie, "GET", url);
+      expect(missing.statusCode, url).toBe(404);
+      expect(Problem.parse(missing.json()).code).toBe("not_found");
+    }
+    const malformed = await api(
+      t.app,
+      owner.cookie,
+      "GET",
+      `/ratings/${id}/passages/x/8`,
+    );
+    expect(malformed.statusCode).toBe(400);
   });
 
   it("says why a rating needs review", async () => {
@@ -545,6 +629,7 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
       ["GET", `/ratings/${id}`],
       ["GET", `/ratings/${id}/events`],
       ["GET", `/ratings/${id}/document`],
+      ["GET", `/ratings/${id}/passages/15.6/8`],
       ["DELETE", `/ratings/${id}`],
     ] as const) {
       const response = await api(t.app, stranger.cookie, method, url);
@@ -570,6 +655,30 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
     expect(audit.map((event) => event.action).sort()).toEqual(["download", "upload"]);
   });
 
+  it("opens the PDF inline for the contract viewer and audits that separately", async () => {
+    const id = await newRating(owner);
+    const response = await api(
+      t.app,
+      owner.cookie,
+      "GET",
+      `/ratings/${id}/document?disposition=inline`,
+    );
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["content-type"]).toBe("application/pdf");
+    expect(response.headers["content-disposition"]).toBe(
+      `inline; filename="contract-${id}.pdf"`,
+    );
+    expect(response.headers["cache-control"]).toBe("private, no-store");
+    const audit = await t.db
+      .select()
+      .from(auditEvents)
+      .where(eq(auditEvents.targetId, id));
+    expect(audit.map((event) => event.action).sort()).toEqual([
+      "upload",
+      "view_document",
+    ]);
+  });
+
   it("answers 404 for the PDF once retention has removed it", async () => {
     const id = await newRating(owner);
     const [rating] = await t.db.select().from(ratings).where(eq(ratings.id, id));
@@ -582,6 +691,25 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
     const response = await api(t.app, owner.cookie, "GET", `/ratings/${id}/document`);
     expect(response.statusCode).toBe(404);
     expect(Problem.parse(response.json()).code).toBe("not_found");
+
+    // The passages go with it; the report says so instead of offering them.
+    await storeResults(t, id);
+    const passage = await api(
+      t.app,
+      owner.cookie,
+      "GET",
+      `/ratings/${id}/passages/15.6/8`,
+    );
+    expect(passage.statusCode).toBe(404);
+    await t.db
+      .update(documents)
+      .set({ deletedAt: t.clock.now })
+      .where(eq(documents.id, document?.id ?? ""));
+    expect((await report(id)).document).toEqual({
+      pages: 10,
+      available: false,
+      deletedAt: t.clock.now.toISOString(),
+    });
   });
 
   it("deletes the rating, its rows and the stored PDF", async () => {
@@ -663,6 +791,21 @@ async function storeResults(t: TestContext, ratingId: string): Promise<void> {
       source: "clause",
     },
     {
+      ruleId: "TYPE-CONFLICT-01",
+      clause: "15.1",
+      relatedClause: "1",
+      verdict: "conflict",
+      severity: "high",
+      confidence: "high",
+      categories: ["legal", "clarity"],
+      articles: ["Art. 55"],
+      impact: null,
+      explanation: "Section 15 calls the contract unlimited; Section 1 says fixed-term.",
+      employeeMsg: "Employee: the contract type contradicts itself.",
+      hrMsg: "HR: clause 15.1 contradicts Section 1.",
+      source: "cross_check",
+    },
+    {
       ruleId: "TRANSFER-KSA-01",
       clause: "15.3",
       verdict: "worse_than_default",
@@ -739,6 +882,7 @@ async function storeResults(t: TestContext, ratingId: string): Promise<void> {
       ratingId,
       ruleId: finding.ruleId,
       clauseRef: finding.clause,
+      relatedClause: finding.relatedClause ?? null,
       verdict: finding.verdict,
       severity: finding.severity,
       confidence: finding.confidence,
@@ -754,6 +898,28 @@ async function storeResults(t: TestContext, ratingId: string): Promise<void> {
       position,
     })),
   );
+  await t.db.insert(clauses).values([
+    {
+      id: newId("cl"),
+      ratingId,
+      section: 15,
+      number: "15.6",
+      textEn: "End of service is calculated on the basic wage.",
+      textAr: "تحتسب مكافأة نهاية الخدمة على الأجر الأساسي",
+      textHash: "a".repeat(64),
+    },
+  ]);
+  // Boxes on the synthetic contract's A4 pages (the worker would get them from the extractor).
+  const a4 = { pageWidth: 595.92, pageHeight: 842.04, xMin: 45.4, xMax: 574.2 };
+  await t.db.insert(clauseLocations).values([
+    { ratingId, clause: "1", page: 1, ...a4, yMin: 100, yMax: 160 },
+    { ratingId, clause: "8.1", page: 2, ...a4, yMin: 300, yMax: 330 },
+    { ratingId, clause: "15", page: 8, ...a4, yMin: 360, yMax: 700 },
+    { ratingId, clause: "15.1", page: 8, ...a4, yMin: 400, yMax: 440 },
+    { ratingId, clause: "15.3", page: 8, ...a4, yMin: 480, yMax: 510 },
+    { ratingId, clause: "15.4", page: 8, ...a4, yMin: 520, yMax: 560 },
+    { ratingId, clause: "15.6", page: 8, ...a4, yMin: 600, yMax: 640 },
+  ]);
   await t.db.insert(contractFields).values([
     { ratingId, field: "contractType", value: "fixed_term", page: 1, confidence: "high" },
     { ratingId, field: "probationDays", value: 90, page: 2, confidence: "high" },

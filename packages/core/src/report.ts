@@ -1,11 +1,15 @@
 import { DISCLAIMER_AR, DISCLAIMER_EN } from "@rater/contracts";
 import type {
+  Clause,
+  ClauseLocation,
   ContractFields,
   Deadline,
   Finding,
   Impact,
+  Passage,
   RatingReport,
   RatingStatus,
+  ReportDocument,
   Rule,
   Score,
   Versions,
@@ -21,6 +25,7 @@ import {
   REVIEW_RULE_ID,
   SEVERITY_RANK,
 } from "./engine/verdicts";
+import { passagesFor } from "./passages";
 import { fieldPlaceholderValues } from "./rules";
 import { scoreFindings } from "./score";
 
@@ -44,7 +49,16 @@ export interface RenderReportInput {
   locale?: "en" | "ar";
   /** Reasons stored with a needs_review rating (extraction issues). */
   reviewReasons?: string[];
+  /** Where each clause is printed; findings get their passages from these. None: no passages. */
+  clauseLocations?: ClauseLocation[];
+  /** The stored (redacted) Section 15 clauses, for the text of a passage. */
+  clauses?: Pick<Clause, "number" | "textEn" | "textAr">[];
+  /** The uploaded PDF's state. Omitted when the caller has no document to offer. */
+  document?: ReportDocument;
 }
+
+/** What a report says about its PDF when none is on offer (tests, previews). */
+const NO_DOCUMENT: ReportDocument = { pages: null, available: false, deletedAt: null };
 
 /** Statuses whose findings are final enough to score. */
 const SCORED_STATUSES: ReadonlySet<RatingStatus> = new Set(["done", "needs_review"]);
@@ -64,6 +78,11 @@ export function renderReport(input: RenderReportInput): RatingReport {
       rule: rulesById.get(finding.ruleId),
       values,
       withAction,
+      passages: passagesFor(
+        [finding.clause, finding.relatedClause],
+        input.clauseLocations ?? [],
+        input.clauses ?? [],
+      ),
     });
   };
 
@@ -90,6 +109,7 @@ export function renderReport(input: RenderReportInput): RatingReport {
     fields,
     versions: input.versions,
     reviewReasons: input.reviewReasons ?? [],
+    document: input.document ?? NO_DOCUMENT,
     disclaimer: input.locale === "ar" ? DISCLAIMER_AR : DISCLAIMER_EN,
   };
 }
@@ -153,6 +173,7 @@ function toViewFinding(
     rule: Rule | undefined;
     values: PlaceholderValues;
     withAction: boolean;
+    passages: Passage[];
   },
 ): ViewFinding {
   const employee = opts.view === "employee";
@@ -177,6 +198,7 @@ function toViewFinding(
     impactKind: finding.impact?.kind ?? null,
     action: opts.withAction && action ? fillPlaceholders(action, opts.values) : null,
     needsReview: finding.needsReview,
+    passages: opts.passages,
   };
 }
 

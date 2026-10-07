@@ -43,6 +43,7 @@ question here once it is answered.
 | 2026-10-07 | In the viewer, findings are numbered in contract order (the same number on the pin and in the list) while the Issues list is sorted by severity, then by place; a finding placed only as a whole section gets no number. What's good is a second tab, and its green marks show only while it is open.                    |
 | 2026-10-07 | Finding cards no longer show a cropped image of their passage; "Open in contract" opens the viewer at it instead. The passage image route (`/ratings/{id}/passages/{clause}/{page}`) and the `crop` field of a passage are gone.                                                                                         |
 | 2026-10-07 | The eval set is the 14 committed contracts in `evals/cases`, checked by one plain test in the normal test run. The eval runner and its report are gone, new synthetic contracts can no longer be generated (the PDF generator is gone), and so is the private-contract eval (`pnpm eval --private`).                     |
+| 2026-10-07 | Single-user app: no organisations, workspaces, members, roles or invitations (replaces the 2026-10-03 organizations row and the 2026-10-04 workspace, invitation and `x-org-id` rows). Only the uploader can see or delete a rating; PDFs are kept 30 days.                                                              |
 
 ## Open questions
 

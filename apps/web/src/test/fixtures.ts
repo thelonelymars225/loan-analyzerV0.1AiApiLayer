@@ -32,6 +32,7 @@ const base = (
   impactSar: null,
   impactKind: null,
   needsReview: false,
+  passages: [],
   employeeMsg: "",
   hrMsg: "",
   askFor: null,
@@ -190,6 +191,7 @@ export function syntheticReport(view: View): RatingReport {
       prompt: "s15-v1",
       model: "heuristic-v1",
     },
+    document: { pages: 10, available: true, deletedAt: null },
     disclaimer: "Rating aid, not legal advice.",
   };
 }

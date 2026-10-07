@@ -115,6 +115,41 @@ describe("renderReport", () => {
     });
   });
 
+  it("has no passages and no document unless the caller provides them", async () => {
+    const report = await test1Report();
+    expect(report.findings.every((f) => f.passages.length === 0)).toBe(true);
+    expect(report.document).toEqual({ pages: null, available: false, deletedAt: null });
+  });
+
+  it("attaches the passages behind each finding from the clause locations", async () => {
+    const page = { page: 8, pageWidth: 595.92, pageHeight: 842.04 };
+    const report = await test1Report({
+      clauseLocations: [
+        { clause: "15.6", ...page, xMin: 45.4, yMin: 600, xMax: 574.2, yMax: 640 },
+        { clause: "1", ...page, page: 1, xMin: 45.4, yMin: 100, xMax: 574.2, yMax: 160 },
+      ],
+      clauses: [{ number: "15.6", textEn: "Basic wage only.", textAr: "الأجر الأساسي" }],
+      document: { pages: 10, available: true, deletedAt: null },
+    });
+    const eos = report.findings.find((f) => f.ruleId === "EOS-BASE-01");
+    expect(eos?.passages).toEqual([
+      {
+        clause: "15.6",
+        ...page,
+        box: { xMin: 45.4, yMin: 600, xMax: 574.2, yMax: 640 },
+        crop: { xMin: 0, yMin: 582, xMax: 595.92, yMax: 658 },
+        textEn: "Basic wage only.",
+        textAr: "الأجر الأساسي",
+        approximate: false,
+      },
+    ]);
+    // A cross-check conflict also points at the template clause it contradicts.
+    const conflict = report.findings.find((f) => f.ruleId === "TYPE-CONFLICT-01");
+    expect(conflict?.passages.map((p) => p.clause)).toEqual(["1"]);
+    expect(report.document).toEqual({ pages: 10, available: true, deletedAt: null });
+    expect(RatingReport.safeParse(report).success).toBe(true);
+  });
+
   it("gives good and info findings no action", async () => {
     const report = await test1Report();
     expect([...report.good, ...report.info].every((f) => f.action === null)).toBe(true);

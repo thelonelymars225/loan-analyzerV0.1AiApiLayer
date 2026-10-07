@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { PdfToolError, canRun, runTool, withTempDir, writePdf } from "./run";
 
 /** A rectangle on a page in PDF points from the top-left corner. Same shape as core's PageRegion. */
-export interface OcrRegion {
+export interface PageRegion {
   page: number;
   xMin: number;
   yMin: number;
@@ -21,7 +21,13 @@ export interface OcrOptions {
   /** Per-command timeout. */
   timeoutMs?: number;
   /** Called when one region fails; that region is skipped. OCR is best effort. */
-  onError?: (error: Error, region: OcrRegion) => void;
+  onError?: (error: Error, region: PageRegion) => void;
+}
+
+export interface CropOptions {
+  /** Render resolution. 144 dpi is twice the CSS pixel density, crisp on most screens. */
+  dpi?: number;
+  timeoutMs?: number;
 }
 
 export interface ToolsAvailable {
@@ -33,7 +39,10 @@ export interface ToolsAvailable {
 
 const TEXT_TIMEOUT_MS = 30_000;
 const OCR_TIMEOUT_MS = 60_000;
+/** A crop of one page renders in well under a second; a document that needs longer is odd. */
+const CROP_TIMEOUT_MS = 15_000;
 const POINTS_PER_INCH = 72;
+const DEFAULT_CROP_DPI = 144;
 
 /** Runs `pdftotext -bbox-layout` and returns its XHTML (word boxes per page). */
 export async function pdftotextBbox(pdf: Buffer): Promise<string> {
@@ -90,7 +99,7 @@ async function hasTesseractLanguage(lang: string): Promise<boolean> {
  */
 export async function ocrArabicRegions(
   pdf: Buffer,
-  regions: OcrRegion[],
+  regions: PageRegion[],
   options: OcrOptions = {},
 ): Promise<string> {
   if (regions.length === 0) return "";
@@ -104,12 +113,11 @@ export async function ocrArabicRegions(
     const texts: string[] = [];
     for (const [index, region] of regions.entries()) {
       try {
-        const image = await renderRegion(
-          input,
-          region,
-          join(dir, `region-${index}`),
-          options,
-        );
+        const image = await renderRegion(input, region, join(dir, `region-${index}`), {
+          dpi: options.dpi ?? 300,
+          gray: true,
+          timeoutMs: options.timeoutMs ?? OCR_TIMEOUT_MS,
+        });
         const text = await recognise(image, lang, options);
         if (text) texts.push(text);
       } catch (error) {
@@ -123,8 +131,29 @@ export async function ocrArabicRegions(
   });
 }
 
+/**
+ * Renders one region of one page as a colour PNG, for showing the passage behind a finding.
+ * The PDF and the image only ever exist in a private temporary folder that is removed before
+ * this returns; the caller decides what to do with the bytes (the API sends them uncached).
+ */
+export async function renderPageCrop(
+  pdf: Buffer,
+  region: PageRegion,
+  options: CropOptions = {},
+): Promise<Buffer> {
+  return withTempDir(async (dir) => {
+    const input = await writePdf(dir, pdf);
+    const image = await renderRegion(input, region, join(dir, "crop"), {
+      dpi: options.dpi ?? DEFAULT_CROP_DPI,
+      gray: false,
+      timeoutMs: options.timeoutMs ?? CROP_TIMEOUT_MS,
+    });
+    return readFile(image);
+  });
+}
+
 /** pdftoppm arguments that crop one region of one page, converting points to pixels. */
-export function cropArgs(region: OcrRegion, dpi: number): string[] {
+export function cropArgs(region: PageRegion, dpi: number): string[] {
   const scale = dpi / POINTS_PER_INCH;
   const x = Math.max(0, Math.floor(region.xMin * scale));
   const y = Math.max(0, Math.floor(region.yMin * scale));
@@ -149,24 +178,29 @@ export function cropArgs(region: OcrRegion, dpi: number): string[] {
   ];
 }
 
+/** Renders one region to `${outPrefix}.png` with pdftoppm and returns that path. */
 async function renderRegion(
   input: string,
-  region: OcrRegion,
+  region: PageRegion,
   outPrefix: string,
-  options: OcrOptions,
+  options: { dpi: number; gray: boolean; timeoutMs: number },
 ): Promise<string> {
-  const dpi = options.dpi ?? 300;
   const args = [
-    ...cropArgs(region, dpi),
+    ...cropArgs(region, options.dpi),
     "-q",
-    "-gray",
+    ...(options.gray ? ["-gray"] : []),
     "-png",
     "-singlefile",
     input,
     outPrefix,
   ];
-  await runTool("pdftoppm", args, { timeoutMs: options.timeoutMs ?? OCR_TIMEOUT_MS });
-  return `${outPrefix}.png`;
+  await runTool("pdftoppm", args, { timeoutMs: options.timeoutMs });
+  const image = `${outPrefix}.png`;
+  // pdftoppm exits 0 but writes nothing for a page out of range; fail here with a clear error.
+  await readFile(image).catch(() => {
+    throw new PdfToolError("pdftoppm", `no image for page ${region.page}`);
+  });
+  return image;
 }
 
 async function recognise(
@@ -174,8 +208,6 @@ async function recognise(
   lang: string,
   options: OcrOptions,
 ): Promise<string> {
-  // Fail early with a clear error if pdftoppm wrote nothing (e.g. page out of range).
-  await readFile(image);
   const psm = String(options.psm ?? 6);
   const { stdout } = await runTool(
     "tesseract",

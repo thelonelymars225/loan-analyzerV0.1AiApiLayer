@@ -13,19 +13,29 @@ import { ConnectionSlots } from "../limiter";
 import { errorForLog } from "../logger";
 import { loadReport, preferredLocale } from "../report";
 import { decodeCursor } from "../ratings/cursor";
+import { readStoredPdf } from "../ratings/document";
 import { FINAL_STATUSES, streamRatingStatus } from "../ratings/events";
+import { renderPassage } from "../ratings/passages";
 import {
   checkDailyLimit,
   createRating,
   deleteRating,
   findVisibleRating,
   listRatings,
-  readStoredPdf,
   readVisibleStatus,
 } from "../ratings/store";
 import { checkQiwaPdf, readUpload } from "../ratings/upload";
 
 const RatingParams = z.object({ id: z.string().min(1).max(64) });
+/** A clause ("15.4", "9.1.1") or section ("7") number, as the report's passages give it. */
+const PassageParams = RatingParams.extend({
+  clause: z.string().regex(/^\d{1,2}(\.\d{1,2}){0,3}$/),
+  page: z.coerce.number().int().positive().max(999),
+});
+/** How the browser should treat the PDF: open it in the viewer, or save it as a file. */
+const DocumentQuery = z.object({
+  disposition: z.enum(["inline", "attachment"]).default("attachment"),
+});
 
 /**
  * Each open event stream re-reads Postgres every poll, so their number is capped per user
@@ -154,26 +164,56 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id/document",
     {
       schema: {
-        summary: "Download the uploaded PDF (until the retention period deletes it)",
+        summary: "The uploaded PDF (until the retention period deletes it)",
+        description:
+          "disposition=attachment (default) downloads it; disposition=inline opens it in the " +
+          "contract viewer. Each is audited as its own action. 404 once the PDF is deleted.",
         params: RatingParams,
+        querystring: DocumentQuery,
       },
     },
     async (request, reply) => {
       const { ctx } = request;
+      const { disposition } = request.query;
       const rating = await findVisibleRating(db, ctx, request.params.id);
       const { documentId, pdf } = await readStoredPdf({ db, storage }, rating);
       await recordAudit(db, {
         orgId: ctx.orgId,
         userId: ctx.user.id,
-        action: "download",
+        action: disposition === "inline" ? "view_document" : "download",
         targetId: rating.id,
         meta: { documentId },
       });
       return reply
         .type("application/pdf")
-        .header("content-disposition", `attachment; filename="contract-${rating.id}.pdf"`)
+        .header(
+          "content-disposition",
+          `${disposition}; filename="contract-${rating.id}.pdf"`,
+        )
         .header("cache-control", "private, no-store")
         .send(pdf);
+    },
+  );
+
+  app.get(
+    "/ratings/:id/passages/:clause/:page",
+    {
+      schema: {
+        summary: "The passage behind a finding, as a PNG cut from the PDF on request",
+        description:
+          "Renders the `crop` the report gives for that clause and page. Nothing is stored: " +
+          "the image is made from the PDF each time and goes once the PDF is deleted (404).",
+        params: PassageParams,
+      },
+    },
+    async (request, reply) => {
+      const { id, clause, page } = request.params;
+      const rating = await findVisibleRating(db, request.ctx, id);
+      const png = await renderPassage({ db, storage }, rating, clause, page);
+      return reply
+        .type("image/png")
+        .header("cache-control", "private, no-store")
+        .send(png);
     },
   );
 

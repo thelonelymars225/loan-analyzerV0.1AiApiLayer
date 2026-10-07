@@ -4,8 +4,10 @@ export {
   ocrArabicRegions,
   pdfPageCount,
   pdftotextBbox,
+  renderPageCrop,
   toolsAvailable,
+  type CropOptions,
   type OcrOptions,
-  type OcrRegion,
+  type PageRegion,
   type ToolsAvailable,
 } from "./pdf";

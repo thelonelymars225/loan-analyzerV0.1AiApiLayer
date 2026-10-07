@@ -33,6 +33,8 @@ worker adds the I/O and saves the results.
    (Tesseract), because the Arabic prevails. If the wage parts do not add up, a required
    field is missing, or a Section 15 item has Arabic text but no English (or the Section 15
    heading is missing between sections that were found), the rating ends as `needs_review`.
+   The extractor also records where every numbered clause and section is printed (one box
+   per page, no text), so the report can point each finding at its passage.
 3. **Redact.** National IDs, IBANs, phone numbers, e-mail addresses and the names of both
    parties become placeholders such as `[ID]` and `[EMPLOYEE]`. Only redacted text goes further.
 4. **Check.**
@@ -61,6 +63,14 @@ The status moves `queued` → `extracting` → `analysing` → `done`, or ends a
 A `needs_review` report still shows its findings, and lists in plain English why a person
 should check it: each extraction problem (such as a missing field, or wage parts that do not
 add up), plus one line when a Section 15 clause could not be analysed automatically.
+
+Each finding in a report carries its passages: the clause's box on the page, the crop to
+show, and the clause text as it was rated. The image itself is cut from the stored PDF when
+asked for (`GET /api/v1/ratings/{id}/passages/{clause}/{page}`) and sent with `no-store`; it
+is never written anywhere, so once the PDF is deleted the previews are gone too and the
+report shows the clause text only. The PDF can be opened in the browser with
+`GET /api/v1/ratings/{id}/document?disposition=inline`, which is audited as `view_document`,
+separately from a download.
 
 A rating whose job was lost (the worker was killed mid-job, or the queue gave up on it) would
 show "in progress" forever. An hourly sweep in the worker marks it `failed` with the error
@@ -254,8 +264,9 @@ in:
   deleting a rating does not give one back, while a rejected upload does not count. The
   count and the new upload happen under a per-user lock, so parallel uploads cannot slip past
   the limit. Over it, the API answers `429` with `Retry-After`.
-- **Audit.** Uploads, report views, downloads and deletes (manual and automatic) are written
-  to `audit_events`.
+- **Audit.** Uploads, report views, PDF opens and downloads, and deletes (manual and
+  automatic) are written to `audit_events`. Passage images are not audited one by one: they
+  are part of viewing the report, which is.
 - **Logs.** Logs carry IDs, never request bodies, file names or contract text. Cookies and
   authorization headers are redacted.
 - **Consent and disclaimer.** The upload form asks for consent. Every report carries the "not

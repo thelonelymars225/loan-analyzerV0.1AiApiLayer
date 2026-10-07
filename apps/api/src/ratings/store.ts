@@ -5,7 +5,6 @@ import type { OrgKind, RatingStatus, RatingSummary, View } from "@rater/contract
 import { bandFor } from "@rater/core";
 import { auditEvents, documents, memberships, newId, orgs, ratings } from "@rater/db";
 import type { Db, DbTransaction } from "@rater/db";
-import { ObjectNotFoundError } from "@rater/storage";
 import type { ObjectStorage } from "@rater/storage";
 import { recordAudit } from "../audit";
 import { notFound, rateLimited } from "../errors";
@@ -16,6 +15,7 @@ import type { RequestContext } from "../plugins/session";
 import type { RatingQueue } from "../queue";
 import type { RatingRow } from "../report";
 import { encodeCursor, type Cursor } from "./cursor";
+import { findDocument } from "./document";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const PAGE_SIZE = 20;
@@ -316,33 +316,6 @@ export async function deleteWorkspaceData(
     }
   });
   return ratingRows.length;
-}
-
-/** The uploaded PDF, or 404 once retention (or anything else) has removed it. */
-export async function readStoredPdf(
-  deps: { db: Db; storage: ObjectStorage },
-  rating: RatingRow,
-): Promise<{ documentId: string; pdf: Buffer }> {
-  const gone = () =>
-    notFound("The PDF is no longer stored (deleted after the retention period).");
-  const document = rating.documentId
-    ? await findDocument(deps.db, rating.documentId)
-    : null;
-  if (!document || document.deletedAt) throw gone();
-  try {
-    return { documentId: document.id, pdf: await deps.storage.get(document.storageKey) };
-  } catch (error) {
-    if (error instanceof ObjectNotFoundError) throw gone();
-    throw error;
-  }
-}
-
-async function findDocument(db: Db, documentId: string) {
-  const [document] = await db
-    .select()
-    .from(documents)
-    .where(eq(documents.id, documentId));
-  return document ?? null;
 }
 
 async function removeRatingRows(

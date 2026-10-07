@@ -13,7 +13,6 @@
     "typecheck": "pnpm -r --parallel typecheck",
     "test": "vitest run",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
-    "eval": "pnpm --filter @rater/evals eval",
     "dev:api": "pnpm --filter @rater/api dev",
     "dev:worker": "pnpm --filter @rater/worker dev",
     "dev:web": "pnpm --filter @rater/web dev",

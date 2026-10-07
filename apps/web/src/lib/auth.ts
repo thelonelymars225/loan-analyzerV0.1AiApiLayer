@@ -4,9 +4,8 @@ import { createAuthClient } from "better-auth/react";
  * Better Auth lives at /api/auth on the API. In development Vite proxies /api to the API,
  * so the client always talks to the page's own origin and the session cookie is first-party.
  *
- * Only sign-up, sign-in and sign-out go through Better Auth. Its organization endpoints are
- * closed on the API (they apply Better Auth's role rules, not ours); workspaces are switched
- * and joined through /api/v1 (see api.ts).
+ * Only sign-up, sign-in and sign-out go through Better Auth; everything else is /api/v1
+ * (see api.ts).
  */
 export const authClient = createAuthClient({
   baseURL: typeof window === "undefined" ? undefined : window.location.origin,

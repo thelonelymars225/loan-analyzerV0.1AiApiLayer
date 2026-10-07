@@ -98,7 +98,7 @@ web app.
 
 | Path                 | What it is                                                                     |
 | -------------------- | ------------------------------------------------------------------------------ |
-| `apps/api`           | Fastify REST API under `/api/v1`: accounts, workspaces, uploads, reports, SSE  |
+| `apps/api`           | Fastify REST API under `/api/v1`: accounts, uploads, reports, SSE              |
 | `apps/worker`        | pg-boss consumer: runs the pipeline, deletes expired PDFs, fails stuck ratings |
 | `apps/web`           | React + Vite app, both views, the contract viewer, English and Arabic (RTL)    |
 | `packages/contracts` | Shared Zod schemas: API types, Finding, Rule, Rating, constants                |
@@ -108,7 +108,7 @@ web app.
 | `packages/law`       | The rules table, the law corpus, article lookup, the ingest script             |
 | `packages/db`        | Drizzle schema and migrations (Postgres 16 + pgvector)                         |
 | `packages/storage`   | Encrypted file storage: S3 bucket or local disk                                |
-| `evals`              | Synthetic contracts, the Qiwa template, the eval runner                        |
+| `evals/cases`        | 14 synthetic Qiwa contracts, each with the rating it must get                  |
 | `infra`              | Docker Compose stack, Dockerfiles, nginx config                                |
 
 Request flow: the web app uploads a PDF. The API checks it, stores it in the bucket, creates
@@ -118,23 +118,11 @@ fields, clauses and findings to Postgres. The web app renders the report in eith
 Postgres holds the app data, the job queue (pg-boss) and the law vectors (pgvector). The PDFs
 live only in the bucket.
 
-## Accounts and workspaces
+## Accounts
 
-- **Workspaces.** Every account gets a personal workspace of one. An HR team creates a company
-  workspace, whose members are owners, admins or members. Ratings belong to a workspace.
-- **Switching.** The header menu switches the active workspace (`PUT /api/v1/me/active-org`).
-  The active workspace is kept in the session, so it changes in every open tab. Each tab sends
-  the workspace it shows in the `x-org-id` header with every change. If another tab has
-  switched in the meantime, the API refuses the change (`409`) and nothing is saved; the tab
-  then moves to the new workspace and says why.
-- **Invitations by link.** No email is sent in v1. An owner or admin of a company workspace
-  invites an email address and gets a link (`/invite/<id>`) to share however they like. Only
-  someone signed in with that email address (in any letter case) can open the link and
-  accept; anyone else gets "not found". Accepting adds them with the invited role and switches them to the workspace.
-  A link expires after 48 hours, and owners and admins can list and cancel pending ones.
-- **One place for workspace rules.** Over HTTP, Better Auth only serves sign-up, sign-in,
-  sign-out and the session. Its own organization endpoints answer `404`, so every workspace
-  change goes through `/api/v1`, where the role checks live.
+- **Your own ratings only.** Each account sees and manages only the ratings it uploaded.
+  There are no workspaces, members or invitations.
+- Over HTTP, Better Auth only serves sign-up, sign-in, sign-out and the session.
 
 ## Quick start with Docker
 
@@ -203,7 +191,7 @@ variables only. To use a file: `cp .env.example .env`, edit it, then run
 
 Without `ANTHROPIC_API_KEY`, the worker uses the offline analyser (`heuristic-v2`). It
 matches Section 15 clauses against known patterns in English and Arabic. It needs no network,
-gives the same answer every time, and covers the clause library in the eval set. Unusual
+gives the same answer every time, and covers the Section 15 clauses in the eval set. Unusual
 wording can slip past it.
 
 With `ANTHROPIC_API_KEY` set, the worker sends each redacted Section 15 clause to Claude
@@ -221,26 +209,16 @@ never reused for another contract's terms.
 ```sh
 pnpm check            # lint, typecheck and unit tests
 pnpm format:check     # prettier
-pnpm eval             # rate every synthetic case and compare with expected.json
 ```
 
 - Tests that need Postgres read `DATABASE_URL`. Each one creates its own temporary database
   and drops it at the end. Without `DATABASE_URL` they are skipped.
-- `pnpm eval` rates the cases in `evals/cases` (synthetic Qiwa PDFs with made-up people and
-  companies). It checks the Build Plan's pass bars: required fields, high-severity recall,
-  precision, `mustNot` rules, score within ±5, and the same findings on 3 runs. Results go to
-  `evals/results/`. Options: `--llm heuristic|claude`, `--case <id>`, `--runs <n>`,
-  `--no-ocr`, `--json`.
-- `pnpm eval --private <dir>` also rates real contracts kept in `<dir>/<id>/contract.pdf`
-  with an `expected.json` next to each. **Real contracts never go in git.** Keep them outside
-  the repository (or in `private/`, which git ignores). The runner does not print or save
-  their field values.
-- The case PDFs are generated from `case.json` with Playwright Chromium:
-  `pnpm --filter @rater/evals generate`. They are committed, so evals need no browser.
+- `apps/worker/test/eval-cases.test.ts` rates the cases in `evals/cases` (synthetic Qiwa PDFs
+  with made-up people and companies) with the offline analyser and checks each against its
+  `expected.json`: status, fields, findings, deadlines and score range.
 
 CI (`.github/workflows/ci.yml`) runs the same checks and the web build on pull requests and
 on pushes to `main` (a push to a pull request's branch runs once, as the pull request). It
-runs the eval set when `packages/core`, `packages/law`, `packages/llm` or `evals` change, and
 fails if a PDF other than the synthetic ones is committed.
 
 ## Privacy and PDPL
@@ -255,18 +233,17 @@ in:
   turns on default encryption for the bucket.
 - **Little personal data in Postgres.** The database keeps the extracted fields (no names, IDs
   or IBANs), the redacted clauses, the findings and a storage key. PDFs stay in the bucket.
-- **Retention.** Each PDF gets a delete date: upload time plus the workspace's retention days
-  (default 30, between 1 and 365). The worker deletes expired PDFs every hour.
+- **Retention.** Each PDF gets a delete date: upload time plus 30 days. The worker deletes
+  expired PDFs every hour.
 - **Delete at any time.** `DELETE /api/v1/ratings/{id}` removes the rating, its findings and
   its PDF.
 - **Delete my data.** The account page's "Delete my data" (`DELETE /api/v1/me/data`) removes
-  every rating, finding, document record and stored PDF in the user's personal workspace,
-  whichever workspace is active, and then signs them out. Ratings in a company workspace
-  belong to that company and stay. Each deletion is audited.
-- **Workspace scoping and roles.** Every query is scoped by the session's active workspace.
-  Role checks live in one place (`apps/api/src/plugins/access.ts`).
+  every rating, finding, document record and stored PDF the user uploaded, and then signs
+  them out. Each deletion is audited.
+- **Owner only.** Every query is scoped by the signed-in user: only the uploader can see,
+  download, view or delete a rating.
 - **Daily upload limit.** Each user can upload `RATE_LIMIT_PER_DAY` contracts (default 20)
-  in any 24 hours, across all their workspaces. Uploads are counted from the audit log, so
+  in any 24 hours. Uploads are counted from the audit log, so
   deleting a rating does not give one back, while a rejected upload does not count. The
   count and the new upload happen under a per-user lock, so parallel uploads cannot slip past
   the limit. Over it, the API answers `429` with `Retry-After`.

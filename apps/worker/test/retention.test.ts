@@ -6,7 +6,7 @@ import type { Db } from "@rater/db";
 import { ObjectNotFoundError } from "@rater/storage";
 import type { LocalStorage, ObjectStorage } from "@rater/storage";
 import { sweepExpiredDocuments } from "../src/retention";
-import { createTempStorage, seedDocument, seedOrg } from "./helpers/seed";
+import { createTempStorage, seedDocument, seedUser } from "./helpers/seed";
 import { createTestDatabase, DATABASE_URL } from "./helpers/test-db";
 import type { TestDatabase } from "./helpers/test-db";
 
@@ -49,14 +49,14 @@ describe.skipIf(!DATABASE_URL)("sweepExpiredDocuments", () => {
 
   it("deletes expired files only, records deleted_at and audits each deletion", async () => {
     const now = new Date();
-    const org = await seedOrg(db);
+    const owner = await seedUser(db);
     const expired = await seedDocument(db, storage, {
-      ...org,
+      ...owner,
       pdf,
       deleteAfter: new Date(now.getTime() - HOUR),
     });
     const kept = await seedDocument(db, storage, {
-      ...org,
+      ...owner,
       pdf,
       deleteAfter: new Date(now.getTime() + HOUR),
     });
@@ -77,8 +77,7 @@ describe.skipIf(!DATABASE_URL)("sweepExpiredDocuments", () => {
       .where(eq(auditEvents.targetId, expired.documentId));
     expect(audit).toEqual([
       expect.objectContaining({
-        orgId: org.orgId,
-        userId: null,
+        userId: owner.userId,
         action: "auto_delete",
         targetId: expired.documentId,
       }),
@@ -87,9 +86,9 @@ describe.skipIf(!DATABASE_URL)("sweepExpiredDocuments", () => {
 
   it("is idempotent: a second sweep deletes and audits nothing more", async () => {
     const now = new Date();
-    const org = await seedOrg(db);
+    const owner = await seedUser(db);
     const expired = await seedDocument(db, storage, {
-      ...org,
+      ...owner,
       pdf,
       deleteAfter: new Date(now.getTime() - HOUR),
     });
@@ -108,9 +107,9 @@ describe.skipIf(!DATABASE_URL)("sweepExpiredDocuments", () => {
 
   it("marks a document deleted even when its file is already gone", async () => {
     const now = new Date();
-    const org = await seedOrg(db);
+    const owner = await seedUser(db);
     const missing = await seedDocument(db, storage, {
-      ...org,
+      ...owner,
       pdf: null,
       deleteAfter: new Date(now.getTime() - HOUR),
     });
@@ -121,9 +120,9 @@ describe.skipIf(!DATABASE_URL)("sweepExpiredDocuments", () => {
 
   it("leaves a document for the next sweep when storage fails", async () => {
     const now = new Date();
-    const org = await seedOrg(db);
+    const owner = await seedUser(db);
     const stuck = await seedDocument(db, storage, {
-      ...org,
+      ...owner,
       pdf,
       deleteAfter: new Date(now.getTime() - HOUR),
     });

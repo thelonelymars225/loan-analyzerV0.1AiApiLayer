@@ -17,7 +17,7 @@ import {
 
 const FIXTURES = fileURLToPath(new URL("../fixtures/", import.meta.url));
 
-/** Synthetic Qiwa contracts rendered from evals/template (made-up parties and values). */
+/** Synthetic Qiwa contracts (made-up parties and values). */
 function pages(id: string): PageLayout[] {
   return parseBboxXhtml(readFileSync(`${FIXTURES}${id}.bbox.html`, "utf8"));
 }

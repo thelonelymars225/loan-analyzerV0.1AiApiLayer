@@ -57,16 +57,7 @@ describe.skipIf(!DATABASE_URL)("public routes", () => {
         "/api/v1/ratings/{id}/events",
         "/api/v1/ratings/{id}/document",
         "/api/v1/me",
-        "/api/v1/me/active-org",
         "/api/v1/me/data",
-        "/api/v1/invites/{id}",
-        "/api/v1/invites/{id}/accept",
-        "/api/v1/orgs",
-        "/api/v1/orgs/{id}",
-        "/api/v1/orgs/{id}/members",
-        "/api/v1/orgs/{id}/invites",
-        "/api/v1/orgs/{id}/invites/{inviteId}",
-        "/api/v1/orgs/{id}/members/{userId}",
         "/api/v1/rules",
         "/api/v1/healthz",
       ]),
@@ -78,22 +69,6 @@ describe.skipIf(!DATABASE_URL)("public routes", () => {
     const ui = await t.app.inject({ method: "GET", url: "/api/docs/" });
     expect(ui.statusCode).toBe(200);
     expect(ui.headers["content-type"]).toMatch(/^text\/html/);
-  });
-
-  it("lets the web app send PUT and x-org-id across origins", async () => {
-    const response = await t.app.inject({
-      method: "OPTIONS",
-      url: "/api/v1/me/active-org",
-      headers: {
-        origin: "http://localhost:5173",
-        "access-control-request-method": "PUT",
-        "access-control-request-headers": "content-type,x-org-id",
-      },
-    });
-    expect(response.statusCode).toBe(204);
-    expect(response.headers["access-control-allow-methods"]).toContain("PUT");
-    expect(response.headers["access-control-allow-headers"]).toContain("x-org-id");
-    expect(response.headers["access-control-allow-credentials"]).toBe("true");
   });
 
   it("answers unknown routes with a problem+json not_found", async () => {

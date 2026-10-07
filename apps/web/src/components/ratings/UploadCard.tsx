@@ -24,9 +24,9 @@ import { Select } from "../ui/select";
 import { useToast } from "../ui/toast-context";
 
 interface UploadCardProps {
-  /** Pre-selected report view: employee for personal workspaces, HR for company ones. */
+  /** Pre-selected report view. */
   defaultView: View;
-  /** Days before the uploaded PDF is deleted (the workspace's retention setting). */
+  /** Days before the uploaded PDF is deleted. */
   retentionDays: number;
 }
 

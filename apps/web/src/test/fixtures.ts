@@ -1,6 +1,5 @@
 import type {
   MeResponse,
-  OrgRole,
   Passage,
   RatingReport,
   View,
@@ -232,29 +231,9 @@ export function syntheticReport(view: View): RatingReport {
   };
 }
 
-/** A signed-in user with a personal workspace and one company workspace. */
-export function syntheticMe(
-  activeOrgId: string,
-  companyRole: OrgRole = "admin",
-): MeResponse {
+/** A signed-in user. */
+export function syntheticMe(): MeResponse {
   return {
     user: { id: "u_1", email: "nour@example.com", name: "Nour Al-Harbi" },
-    activeOrgId,
-    orgs: [
-      {
-        id: "org_personal",
-        name: "Nour Al-Harbi",
-        kind: "personal",
-        role: "owner",
-        retentionDays: 30,
-      },
-      {
-        id: "org_co",
-        name: "Example Trading Co.",
-        kind: "company",
-        role: companyRole,
-        retentionDays: 60,
-      },
-    ],
   };
 }

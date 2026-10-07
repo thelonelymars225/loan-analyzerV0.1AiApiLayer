@@ -10,7 +10,6 @@ import type { Db, DbTransaction } from "@rater/db";
 export type AuditAction = "upload" | "view" | "view_document" | "download" | "delete";
 
 export interface AuditEvent {
-  orgId: string;
   userId: string;
   action: AuditAction;
   /** The rating the action was about. */
@@ -30,7 +29,6 @@ export async function recordAudit(
 ): Promise<void> {
   await db.insert(auditEvents).values({
     id: newId("aud"),
-    orgId: event.orgId,
     userId: event.userId,
     action: event.action,
     targetId: event.targetId,

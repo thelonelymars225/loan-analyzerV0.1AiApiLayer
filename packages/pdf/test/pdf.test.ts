@@ -12,7 +12,7 @@ import {
   type PageRegion,
 } from "../src/index";
 
-// Synthetic contract rendered by evals/template (no personal data).
+// Synthetic contract (no personal data).
 const FIXTURE = fileURLToPath(
   new URL("../../core/test/fixtures/fixed-term-bad-s15.pdf", import.meta.url),
 );

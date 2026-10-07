@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { i18n } from "../i18n";
-import { fakeFile, jsonResponse } from "../test/render";
-import { ApiError, api, setShownOrg } from "./api";
+import { jsonResponse } from "../test/render";
+import { ApiError, api } from "./api";
 import { errorMessage, ratingErrorMessage } from "./errors";
 
 function stubFetch(response: Response | Error) {
@@ -141,61 +141,5 @@ describe("api", () => {
     expect(ratingErrorMessage(t, { code: "something_new", message: "" })).toBe(
       t("errors.rating_failed"),
     );
-  });
-});
-
-describe("the x-org-id header", () => {
-  afterEach(() => setShownOrg(null));
-
-  function headersOf(fetchMock: ReturnType<typeof stubFetch>, call = 0): Headers {
-    return new Headers(fetchMock.mock.calls[call]![1]?.headers);
-  }
-
-  it("names the shown workspace on changes, not on reads", async () => {
-    const fetchMock = stubFetch(new Response(null, { status: 204 }));
-    setShownOrg("org_personal");
-
-    await api.deleteRating("rt_1");
-    await api.cancelInvite("org_personal", "inv_1");
-    expect(headersOf(fetchMock, 0).get("x-org-id")).toBe("org_personal");
-    expect(headersOf(fetchMock, 1).get("x-org-id")).toBe("org_personal");
-
-    // An upload lands in the workspace the user is looking at, or is refused.
-    fetchMock.mockResolvedValue(jsonResponse({ id: "rt_2", status: "queued" }, 202));
-    await api.createRating(fakeFile("contract.pdf", "application/pdf", 1000), "employee");
-    expect(headersOf(fetchMock, 2).get("x-org-id")).toBe("org_personal");
-
-    fetchMock.mockResolvedValue(jsonResponse({ items: [], nextCursor: null }));
-    await api.listRatings();
-    expect(headersOf(fetchMock, 3).has("x-org-id")).toBe(false);
-  });
-
-  it("is left out where the change is not about the shown workspace", async () => {
-    const me = {
-      user: { id: "u_1", email: "a@example.com", name: "A" },
-      activeOrgId: "org_co",
-      orgs: [],
-    };
-    const fetchMock = stubFetch(new Response(null, { status: 204 }));
-    fetchMock.mockImplementation(async () => jsonResponse(me));
-    setShownOrg("org_personal");
-
-    await api.setActiveOrg("org_co");
-    await api.acceptInvite("inv_1");
-    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
-    await api.deleteMyData();
-
-    expect(
-      fetchMock.mock.calls.map(([url, init]) => `${init?.method} ${String(url)}`),
-    ).toEqual([
-      "PUT /api/v1/me/active-org",
-      "POST /api/v1/invites/inv_1/accept",
-      "DELETE /api/v1/me/data",
-    ]);
-    for (const call of [0, 1, 2])
-      expect(headersOf(fetchMock, call).has("x-org-id")).toBe(false);
-    expect(JSON.parse(String(fetchMock.mock.calls[0]![1]?.body))).toEqual({
-      orgId: "org_co",
-    });
   });
 });

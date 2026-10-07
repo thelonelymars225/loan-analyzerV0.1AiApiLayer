@@ -86,7 +86,7 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings",
     {
       schema: {
-        summary: "List the workspace's ratings, newest first",
+        summary: "List your ratings, newest first",
         querystring: z.object({ cursor: z.string().max(200).optional() }),
         response: { 200: ListRatingsResponse },
       },
@@ -116,7 +116,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
       // Only finished reports count as a "view"; the web app polls while a rating runs.
       if (FINAL_STATUSES.has(rating.status)) {
         await recordAudit(db, {
-          orgId: ctx.orgId,
           userId: ctx.user.id,
           action: "view",
           targetId: rating.id,
@@ -176,7 +175,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
       const rating = await findVisibleRating(db, ctx, request.params.id);
       const { document, pdf } = await readStoredPdf({ db, storage }, rating);
       await recordAudit(db, {
-        orgId: ctx.orgId,
         userId: ctx.user.id,
         action: disposition === "inline" ? "view_document" : "download",
         targetId: rating.id,

@@ -1,21 +1,11 @@
-import {
-  boolean,
-  index,
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
-import { DEFAULT_RETENTION_DAYS } from "@rater/contracts";
-import type { OrgKind } from "@rater/contracts";
+import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 /**
- * Tables owned by Better Auth (core + organization plugin), matching better-auth 1.7.7.
+ * Tables owned by Better Auth, matching better-auth 1.7.7.
  *
  * The Drizzle adapter addresses columns by their TypeScript property name, so every
  * property below is spelled exactly like the Better Auth field (`emailVerified`,
- * `activeOrganizationId`, ...). The SQL names are plural and snake_case like the rest of
+ * `expiresAt`, ...). The SQL names are plural and snake_case like the rest of
  * our schema. Pass `authTables` (below) to `drizzleAdapter(db, { schema: authTables })`.
  *
  * Better Auth checks this schema at start-up: every field it writes must exist, and any
@@ -54,8 +44,6 @@ export const sessions = pgTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    /** Organization plugin. Not a foreign key: Better Auth manages it and clears it itself. */
-    activeOrganizationId: text("active_organization_id"),
   },
   (t) => [index("sessions_user_id_idx").on(t.userId)],
 );
@@ -97,71 +85,6 @@ export const verifications = pgTable(
 );
 
 /**
- * Better Auth's "organization". A personal account is an org of one (kind "personal");
- * an HR team is kind "company". `kind` and `retentionDays` are Better Auth
- * `additionalFields` on the organization model.
- */
-export const orgs = pgTable("orgs", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  slug: text("slug").notNull().unique(),
-  logo: text("logo"),
-  createdAt: createdAt(),
-  /** JSON string, as Better Auth stores it. */
-  metadata: text("metadata"),
-  kind: text("kind").$type<OrgKind>().notNull().default("personal"),
-  /** Raw PDFs are deleted from the bucket this many days after upload. */
-  retentionDays: integer("retention_days").notNull().default(DEFAULT_RETENTION_DAYS),
-});
-
-/** Better Auth's "member". `role` may hold several roles, comma separated. */
-export const memberships = pgTable(
-  "memberships",
-  {
-    id: text("id").primaryKey(),
-    organizationId: text("organization_id")
-      .notNull()
-      .references(() => orgs.id, { onDelete: "cascade" }),
-    userId: text("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    role: text("role").notNull().default("member"),
-    createdAt: createdAt(),
-  },
-  (t) => [
-    // One membership per user and org; also serves lookups by organization_id.
-    uniqueIndex("memberships_org_user_idx").on(t.organizationId, t.userId),
-    index("memberships_user_id_idx").on(t.userId),
-  ],
-);
-
-export type InvitationStatus = "pending" | "accepted" | "rejected" | "canceled";
-
-/** Better Auth's "invitation". */
-export const invitations = pgTable(
-  "invitations",
-  {
-    id: text("id").primaryKey(),
-    organizationId: text("organization_id")
-      .notNull()
-      .references(() => orgs.id, { onDelete: "cascade" }),
-    email: text("email").notNull(),
-    role: text("role"),
-    status: text("status").$type<InvitationStatus>().notNull().default("pending"),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    createdAt: createdAt(),
-    inviterId: text("inviter_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-  },
-  (t) => [
-    index("invitations_organization_id_idx").on(t.organizationId),
-    index("invitations_email_idx").on(t.email),
-    index("invitations_inviter_id_idx").on(t.inviterId),
-  ],
-);
-
-/**
  * The auth tables keyed by Better Auth model name, for
  * `drizzleAdapter(db, { provider: "pg", schema: authTables })`.
  * Do not set `usePlural` or custom `modelName`s in the Better Auth config.
@@ -171,7 +94,4 @@ export const authTables = {
   session: sessions,
   account: accounts,
   verification: verifications,
-  organization: orgs,
-  member: memberships,
-  invitation: invitations,
 };

@@ -36,7 +36,7 @@ export async function sweepExpiredDocuments(deps: RetentionDeps): Promise<SweepR
   const expired = await deps.db
     .select({
       id: documents.id,
-      orgId: documents.orgId,
+      userId: documents.userId,
       storageKey: documents.storageKey,
     })
     .from(documents)
@@ -68,7 +68,7 @@ export async function sweepExpiredDocuments(deps: RetentionDeps): Promise<SweepR
 /** Marks the document deleted and audits it. False when another sweep got there first. */
 async function recordDeletion(
   db: Db,
-  document: { id: string; orgId: string },
+  document: { id: string; userId: string },
   now: Date,
 ): Promise<boolean> {
   return db.transaction(async (tx) => {
@@ -81,9 +81,8 @@ async function recordDeletion(
 
     await tx.insert(auditEvents).values({
       id: newId("ae"),
-      orgId: document.orgId,
-      // No user: the system deleted it under the org's retention setting.
-      userId: null,
+      // The owner's data; the system deleted it under the retention period.
+      userId: document.userId,
       action: "auto_delete",
       targetId: document.id,
       meta: { reason: "retention" },

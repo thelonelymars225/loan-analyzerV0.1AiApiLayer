@@ -16,11 +16,11 @@ import { Button } from "../ui/button";
 import { DeleteRatingDialog } from "./DeleteRatingDialog";
 import { StatusChip } from "./StatusChip";
 
-export function RatingsList({ orgId }: { orgId: string }) {
+export function RatingsList() {
   const { t } = useTranslation();
 
   const ratings = useInfiniteQuery({
-    queryKey: queryKeys.ratingsList(orgId),
+    queryKey: queryKeys.ratingsList,
     queryFn: ({ pageParam }) => api.listRatings(pageParam),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,

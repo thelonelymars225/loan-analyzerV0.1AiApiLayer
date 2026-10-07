@@ -1,27 +1,12 @@
 import {
   API_BASE,
   CreateRatingResponse,
-  InvitePreview,
-  InviteResponse,
-  ListInvitesResponse,
-  ListMembersResponse,
   ListRatingsResponse,
   MeResponse,
-  ORG_HEADER,
-  OrgSummary,
   Problem,
   RatingReport,
 } from "@rater/contracts";
-import type {
-  CreateOrgBody,
-  ErrorCode,
-  InviteBody,
-  OrgRole,
-  SetActiveOrgBody,
-  UpdateMemberBody,
-  UpdateOrgBody,
-  View,
-} from "@rater/contracts";
+import type { ErrorCode, View } from "@rater/contracts";
 
 /** Error codes the UI knows how to explain: the API's own codes plus client-side failures. */
 export type ApiErrorCode = ErrorCode | "network" | "invalid_response";
@@ -58,14 +43,9 @@ interface Schema<T> {
 }
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "DELETE";
   json?: unknown;
   form?: FormData;
-  /**
-   * Leave out the x-org-id header: for the few changes that do not act on the shown
-   * workspace (switching it, accepting an invitation, deleting personal data).
-   */
-  withoutOrgHeader?: boolean;
 }
 
 /** Sent with every request so the API can render messages in the reader's language. */
@@ -74,26 +54,12 @@ export function setApiLanguage(language: string): void {
   currentLanguage = language;
 }
 
-/**
- * The workspace this tab shows (set by <RequireAuth> from /me). The active workspace lives in
- * the session cookie that every tab shares, so another tab may have switched it. Changes carry
- * this id in x-org-id and the API refuses them with 409 when it no longer matches, instead of
- * acting on a workspace the user is not looking at.
- */
-let shownOrgId: string | null = null;
-export function setShownOrg(orgId: string | null): void {
-  shownOrgId = orgId;
-}
-
 async function send(path: string, options: RequestOptions = {}): Promise<Response> {
   const method = options.method ?? "GET";
   const headers: Record<string, string> = {
     Accept: "application/json",
     "Accept-Language": currentLanguage,
   };
-  if (method !== "GET" && !options.withoutOrgHeader && shownOrgId) {
-    headers[ORG_HEADER] = shownOrgId;
-  }
   let body: BodyInit | undefined;
   if (options.json !== undefined) {
     headers["Content-Type"] = "application/json";
@@ -194,23 +160,11 @@ function codeForStatus(status: number): ErrorCode {
 
 const enc = encodeURIComponent;
 
-/** POST /orgs answers 201 with an OrgSummary; the UI only needs the new id. */
-const CreatedOrg = OrgSummary.pick({ id: true });
-
 export const api = {
   me: () => requestJson("/me", MeResponse),
 
-  /** Makes another workspace the session's active one (in every tab). */
-  setActiveOrg: (orgId: string) =>
-    requestJson("/me/active-org", MeResponse, {
-      method: "PUT",
-      json: { orgId } satisfies SetActiveOrgBody,
-      withoutOrgHeader: true,
-    }),
-
-  /** Deletes every rating and PDF in the caller's personal workspace, whichever is active. */
-  deleteMyData: () =>
-    requestEmpty("/me/data", { method: "DELETE", withoutOrgHeader: true }),
+  /** Deletes every rating and PDF the caller uploaded. */
+  deleteMyData: () => requestEmpty("/me/data", { method: "DELETE" }),
 
   listRatings: (cursor?: string | null) =>
     requestJson(
@@ -234,49 +188,6 @@ export const api = {
   },
 
   deleteRating: (id: string) => requestEmpty(`/ratings/${enc(id)}`, { method: "DELETE" }),
-
-  createOrg: (body: CreateOrgBody) =>
-    requestJson("/orgs", CreatedOrg, { method: "POST", json: body }),
-
-  // The PATCH and DELETE endpoints below may answer 200 or 204; the UI refetches afterwards,
-  // so their bodies are not read.
-  updateOrg: (orgId: string, body: UpdateOrgBody) =>
-    requestEmpty(`/orgs/${enc(orgId)}`, { method: "PATCH", json: body }),
-
-  listMembers: (orgId: string) =>
-    requestJson(`/orgs/${enc(orgId)}/members`, ListMembersResponse),
-
-  invite: (orgId: string, body: InviteBody) =>
-    requestJson(`/orgs/${enc(orgId)}/invites`, InviteResponse, {
-      method: "POST",
-      json: body,
-    }),
-
-  listInvites: (orgId: string) =>
-    requestJson(`/orgs/${enc(orgId)}/invites`, ListInvitesResponse),
-
-  cancelInvite: (orgId: string, inviteId: string) =>
-    requestEmpty(`/orgs/${enc(orgId)}/invites/${enc(inviteId)}`, { method: "DELETE" }),
-
-  /** The invitee's view of an invitation; 404 unless it is addressed to the signed-in user. */
-  getInvite: (inviteId: string) =>
-    requestJson(`/invites/${enc(inviteId)}`, InvitePreview),
-
-  /** Joins the workspace and makes it the active one, so the answer is the new /me. */
-  acceptInvite: (inviteId: string) =>
-    requestJson(`/invites/${enc(inviteId)}/accept`, MeResponse, {
-      method: "POST",
-      withoutOrgHeader: true,
-    }),
-
-  updateMember: (orgId: string, userId: string, role: OrgRole) =>
-    requestEmpty(`/orgs/${enc(orgId)}/members/${enc(userId)}`, {
-      method: "PATCH",
-      json: { role } satisfies UpdateMemberBody,
-    }),
-
-  removeMember: (orgId: string, userId: string) =>
-    requestEmpty(`/orgs/${enc(orgId)}/members/${enc(userId)}`, { method: "DELETE" }),
 };
 
 export type Api = typeof api;

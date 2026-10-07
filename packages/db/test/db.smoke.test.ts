@@ -8,10 +8,8 @@ import {
   documents,
   findings,
   lawArticles,
-  memberships,
   migrate,
   newId,
-  orgs,
   ratings,
   users,
 } from "../src";
@@ -70,10 +68,7 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
       "contract_fields",
       "documents",
       "findings",
-      "invitations",
       "law_articles",
-      "memberships",
-      "orgs",
       "ratings",
       "sessions",
       "users",
@@ -95,8 +90,7 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
     await expect(migrate(testUrl)).resolves.toBeUndefined();
   });
 
-  it("stores an org, user, document, rating and finding, and cascades on org delete", async () => {
-    const orgId = newId("org");
+  it("stores a user, document, rating and finding, and cascades on user delete", async () => {
     const userId = newId("usr");
     const documentId = newId("doc");
     const ratingId = newId("rt");
@@ -104,29 +98,18 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
     await db
       .insert(users)
       .values({ id: userId, name: "Nour Al-Harbi", email: "nour@example.com" });
-    await db
-      .insert(orgs)
-      .values({ id: orgId, name: "Example Trading Co.", slug: "example-trading" });
-    await db.insert(memberships).values({
-      id: newId("mem"),
-      organizationId: orgId,
-      userId,
-      role: "owner",
-    });
     await db.insert(documents).values({
       id: documentId,
-      orgId,
-      uploadedBy: userId,
-      storageKey: `orgs/${orgId}/documents/${documentId}.pdf`,
+      userId,
+      storageKey: `users/${userId}/documents/${documentId}.pdf`,
       sha256: "0".repeat(64),
       sizeBytes: 1234,
       deleteAfter: new Date(Date.now() + 30 * 86_400_000),
     });
     await db.insert(ratings).values({
       id: ratingId,
-      orgId,
+      userId,
       documentId,
-      createdBy: userId,
       defaultView: "employee",
     });
     await db.insert(findings).values({
@@ -146,11 +129,8 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
       source: "clause",
     });
 
-    const [org] = await db.select().from(orgs).where(eq(orgs.id, orgId));
-    expect(org).toMatchObject({ kind: "personal", retentionDays: 30 });
-
     const rating = await db.query.ratings.findFirst({ where: eq(ratings.id, ratingId) });
-    expect(rating).toMatchObject({ status: "queued", orgId, documentId });
+    expect(rating).toMatchObject({ status: "queued", userId, documentId });
 
     const [finding] = await db
       .select()
@@ -162,12 +142,11 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
       position: 0,
     });
 
-    await db.delete(orgs).where(eq(orgs.id, orgId));
-    expect(await db.select().from(ratings).where(eq(ratings.orgId, orgId))).toEqual([]);
+    await db.delete(users).where(eq(users.id, userId));
+    expect(await db.select().from(ratings).where(eq(ratings.userId, userId))).toEqual([]);
     expect(
       await db.select().from(findings).where(eq(findings.ratingId, ratingId)),
     ).toEqual([]);
-    expect(await db.select().from(users).where(eq(users.id, userId))).toHaveLength(1);
   });
 
   it("orders law articles by cosine distance to a query embedding", async () => {

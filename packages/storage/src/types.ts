@@ -1,6 +1,6 @@
 /**
  * Where uploaded PDFs live. Postgres only keeps the key.
- * Keys are app-generated paths such as "orgs/<orgId>/documents/<documentId>.pdf"
+ * Keys are app-generated paths such as "users/<userId>/documents/<documentId>.pdf"
  * (see `assertValidKey` for the exact rules).
  */
 export interface ObjectStorage {

@@ -14,9 +14,9 @@ vi.mock("../lib/auth", () => ({
 }));
 
 describe("AccountPage", () => {
-  it("'Delete my data' is one server call, even while a company workspace is shown", async () => {
+  it("'Delete my data' is one server call", async () => {
     const fetchMock = routeFetch({
-      "GET /api/v1/me": () => jsonResponse(syntheticMe("org_co")),
+      "GET /api/v1/me": () => jsonResponse(syntheticMe()),
       "DELETE /api/v1/me/data": () => new Response(null, { status: 204 }),
     });
     const user = userEvent.setup();
@@ -30,8 +30,7 @@ describe("AccountPage", () => {
       await screen.findByText("Your data was deleted and you have been signed out."),
     ).toBeInTheDocument();
     expect(auth.signOut).toHaveBeenCalledTimes(1);
-    // No listing, no per-rating deletes, no workspace switch: the API resolves the
-    // personal workspace itself, so a company's ratings can never be hit.
+    // No listing and no per-rating deletes: the API deletes the user's data itself.
     const changes = fetchMock.mock.calls
       .filter(([, init]) => (init?.method ?? "GET") !== "GET")
       .map(([url, init]) => `${init?.method} ${String(url)}`);

@@ -6,7 +6,7 @@ import { clauseLocations, clauses, contractFields, findings } from "@rater/db";
 import type { Db, ratings } from "@rater/db";
 import { loadRules } from "@rater/law";
 import { describeDocument, findRatingDocument } from "./ratings/document";
-import { clauseLocationColumns } from "./ratings/passages";
+import { clauseLocationColumns } from "./ratings/images";
 
 export type RatingRow = typeof ratings.$inferSelect;
 export type Locale = "en" | "ar";

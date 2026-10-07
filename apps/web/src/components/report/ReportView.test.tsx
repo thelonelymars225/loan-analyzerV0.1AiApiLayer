@@ -1,8 +1,9 @@
 import { RatingReport } from "@rater/contracts";
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { syntheticReport } from "../../test/fixtures";
+import { renderWithProviders } from "../../test/render";
 import { ReportView } from "./ReportView";
 
 function findingTitles(): string[] {
@@ -27,7 +28,9 @@ describe("ReportView", () => {
   });
 
   it("employee view: deadlines first, findings by SAR impact, employee wording and 'what to ask for'", () => {
-    render(<ReportView report={syntheticReport("employee")} onViewChange={() => {}} />);
+    renderWithProviders(
+      <ReportView report={syntheticReport("employee")} onViewChange={() => {}} />,
+    );
 
     const headings = sectionHeadings();
     expect(headings.indexOf("Deadlines")).toBeLessThan(
@@ -54,7 +57,9 @@ describe("ReportView", () => {
   });
 
   it("HR view: likely-void block first, findings by severity, HR wording and 'suggested wording'", () => {
-    render(<ReportView report={syntheticReport("hr")} onViewChange={() => {}} />);
+    renderWithProviders(
+      <ReportView report={syntheticReport("hr")} onViewChange={() => {}} />,
+    );
 
     const headings = sectionHeadings();
     expect(headings[1]).toBe("Likely void clauses");
@@ -87,7 +92,9 @@ describe("ReportView", () => {
   });
 
   it("shows the score, the sub-scores and the low-confidence tag on market fairness", () => {
-    render(<ReportView report={syntheticReport("employee")} onViewChange={() => {}} />);
+    renderWithProviders(
+      <ReportView report={syntheticReport("employee")} onViewChange={() => {}} />,
+    );
 
     expect(
       screen.getByRole("img", { name: "Overall score 64 out of 100, rated Fair" }),
@@ -101,7 +108,9 @@ describe("ReportView", () => {
   });
 
   it("renders the SAR impact table, needs-review marker and the versions footer", () => {
-    render(<ReportView report={syntheticReport("employee")} onViewChange={() => {}} />);
+    renderWithProviders(
+      <ReportView report={syntheticReport("employee")} onViewChange={() => {}} />,
+    );
 
     const eosCard = document.getElementById("finding-EOS-BASE-01-15-6")!;
     const table = within(eosCard).getByRole("table");
@@ -126,7 +135,7 @@ describe("ReportView", () => {
       "Wage parts do not add up to the total wage.",
       "One Section 15 clause could not be analysed reliably.",
     ];
-    render(
+    renderWithProviders(
       <ReportView
         report={{
           ...syntheticReport("employee"),
@@ -148,13 +157,15 @@ describe("ReportView", () => {
   });
 
   it("shows no review note on a finished rating", () => {
-    render(<ReportView report={syntheticReport("employee")} onViewChange={() => {}} />);
+    renderWithProviders(
+      <ReportView report={syntheticReport("employee")} onViewChange={() => {}} />,
+    );
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 
   it("asks for the other view when a tab is chosen", async () => {
     const onViewChange = vi.fn();
-    render(
+    renderWithProviders(
       <ReportView report={syntheticReport("employee")} onViewChange={onViewChange} />,
     );
 

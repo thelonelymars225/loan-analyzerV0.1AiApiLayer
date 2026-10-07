@@ -630,6 +630,7 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
       ["GET", `/ratings/${id}/events`],
       ["GET", `/ratings/${id}/document`],
       ["GET", `/ratings/${id}/passages/15.6/8`],
+      ["GET", `/ratings/${id}/pages/1`],
       ["DELETE", `/ratings/${id}`],
     ] as const) {
       const response = await api(t.app, stranger.cookie, method, url);
@@ -653,6 +654,23 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
       .from(auditEvents)
       .where(eq(auditEvents.targetId, id));
     expect(audit.map((event) => event.action).sort()).toEqual(["download", "upload"]);
+  });
+
+  it("renders a whole page for the contract viewer, and 404 past the last page", async () => {
+    const id = await newRating(owner);
+    const response = await api(t.app, owner.cookie, "GET", `/ratings/${id}/pages/8`);
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["content-type"]).toBe("image/png");
+    expect(response.headers["cache-control"]).toBe("private, no-store");
+    // A4 at 144 dpi (PNG IHDR).
+    expect(response.rawPayload.readUInt32BE(16)).toBe(1192);
+    expect(response.rawPayload.readUInt32BE(20)).toBe(1684);
+
+    const past = await api(t.app, owner.cookie, "GET", `/ratings/${id}/pages/11`);
+    expect(past.statusCode).toBe(404);
+    expect(Problem.parse(past.json()).code).toBe("not_found");
+    const zero = await api(t.app, owner.cookie, "GET", `/ratings/${id}/pages/0`);
+    expect(zero.statusCode).toBe(400);
   });
 
   it("opens the PDF inline for the contract viewer and audits that separately", async () => {
@@ -701,6 +719,8 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
       `/ratings/${id}/passages/15.6/8`,
     );
     expect(passage.statusCode).toBe(404);
+    const page = await api(t.app, owner.cookie, "GET", `/ratings/${id}/pages/1`);
+    expect(page.statusCode).toBe(404);
     await t.db
       .update(documents)
       .set({ deletedAt: t.clock.now })

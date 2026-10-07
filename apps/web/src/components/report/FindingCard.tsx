@@ -67,6 +67,8 @@ export function FindingCard({ finding, view, ratingId, document }: FindingCardPr
 
       <PassagePreview
         ratingId={ratingId}
+        itemId={anchor}
+        view={view}
         passages={finding.passages}
         document={document}
         tone={SEVERITY_TONE[finding.severity]}

@@ -1,32 +1,27 @@
-import type { Passage, ReportDocument } from "@rater/contracts";
+import type { Passage, ReportDocument, View } from "@rater/contracts";
 import type { TFunction } from "i18next";
 import { FileText } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import { apiUrls } from "../../lib/api";
 import { cn } from "../../lib/cn";
 import { formatDate } from "../../lib/format";
 import { cropAspectRatio, highlightInset, isSectionNumber } from "../../lib/passages";
-import type { Tone } from "../../lib/report";
+import { HIGHLIGHT_CLASSES, type Tone } from "../../lib/report";
+import { PassageText } from "./PassageText";
 
 interface PassagePreviewProps {
   ratingId: string;
+  /** The finding's card anchor; the viewer opens focused on it. */
+  itemId: string;
+  view: View;
   /** The finding's passages: its own clause first, then any related clause. */
   passages: Passage[];
   document: ReportDocument;
   /** Colour of the highlight: the finding's severity, or "good" on a positive finding. */
   tone: Tone;
 }
-
-/** Highlight colours: a translucent fill so the words stay readable, and a ring for contrast. */
-const HIGHLIGHT_CLASSES: Record<Tone, string> = {
-  neutral: "bg-primary/15 ring-primary",
-  info: "bg-primary/15 ring-primary",
-  good: "bg-good/15 ring-good",
-  warning: "bg-warning/25 ring-warning",
-  serious: "bg-serious/20 ring-serious",
-  critical: "bg-critical/15 ring-critical",
-};
 
 /**
  * The place in the contract a finding is about: a crop of the page with the clause marked, so
@@ -35,6 +30,8 @@ const HIGHLIGHT_CLASSES: Record<Tone, string> = {
  */
 export function PassagePreview({
   ratingId,
+  itemId,
+  view,
   passages,
   document,
   tone,
@@ -59,6 +56,15 @@ export function PassagePreview({
         <span className="ms-auto tabular-nums">
           {t("report.passage.page", { page: passage.page })}
         </span>
+        <Link
+          to={{
+            pathname: `/ratings/${ratingId}/contract`,
+            search: viewerSearch(view, itemId, passage),
+          }}
+          className="font-medium text-primary hover:underline"
+        >
+          {t("report.passage.open")}
+        </Link>
       </figcaption>
 
       {document.available ? (
@@ -160,43 +166,6 @@ function PassageImage({
   );
 }
 
-/** The clause as it was rated, Arabic first because it prevails (clause 14.7). */
-function PassageText({ passage, note }: { passage: Passage; note: string }) {
-  const { t } = useTranslation();
-  const hasText = passage.textAr || passage.textEn;
-  return (
-    <div className="rounded-lg border border-dashed border-border bg-muted/40 px-4 py-3 text-sm">
-      {hasText ? (
-        <dl className="space-y-2">
-          {passage.textAr && (
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground">
-                {t("report.passage.arabic")}
-              </dt>
-              <dd dir="rtl" lang="ar" className="mt-0.5 leading-relaxed">
-                {passage.textAr}
-              </dd>
-            </div>
-          )}
-          {passage.textEn && (
-            <div>
-              <dt className="text-xs font-medium text-muted-foreground">
-                {t("report.passage.english")}
-              </dt>
-              <dd dir="ltr" lang="en" className="mt-0.5 leading-relaxed">
-                {passage.textEn}
-              </dd>
-            </div>
-          )}
-        </dl>
-      ) : (
-        <p className="text-muted-foreground">{t("report.passage.noText")}</p>
-      )}
-      <p className="mt-2 text-xs text-muted-foreground">{note}</p>
-    </div>
-  );
-}
-
 /** "Clause 15.4" or "Section 1". */
 function passageLabel(passage: Passage, t: TFunction): string {
   return isSectionNumber(passage.clause)
@@ -209,4 +178,14 @@ function deletedNote(document: ReportDocument, t: TFunction, language: string): 
   return document.deletedAt
     ? t("report.passage.deletedOn", { date: formatDate(document.deletedAt, language) })
     : t("report.passage.deleted");
+}
+
+/** `?view=…&focus=…&clause=…&page=…`: the viewer opens on this passage, in the same view. */
+function viewerSearch(view: View, itemId: string, passage: Passage): string {
+  return `?${new URLSearchParams({
+    view,
+    focus: itemId,
+    clause: passage.clause,
+    page: String(passage.page),
+  })}`;
 }

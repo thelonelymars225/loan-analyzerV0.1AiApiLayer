@@ -17,6 +17,11 @@ const RatingsPage = lazy(() =>
 const ReportPage = lazy(() =>
   import("./pages/ReportPage").then((module) => ({ default: module.ReportPage })),
 );
+const ContractViewerPage = lazy(() =>
+  import("./pages/ContractViewerPage").then((module) => ({
+    default: module.ContractViewerPage,
+  })),
+);
 const OrgSettingsPage = lazy(() =>
   import("./pages/OrgSettingsPage").then((module) => ({
     default: module.OrgSettingsPage,
@@ -49,6 +54,7 @@ export function AppRoutes() {
         <Route element={<RequireAuth />}>
           <Route index element={<RatingsPage />} />
           <Route path="ratings/:id" element={<ReportPage />} />
+          <Route path="ratings/:id/contract" element={<ContractViewerPage />} />
           <Route path="workspace" element={<OrgSettingsPage />} />
           <Route path="account" element={<AccountPage />} />
           {/* The link from an invitation; signed-out visitors sign in first and come back. */}

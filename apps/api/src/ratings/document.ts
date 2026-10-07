@@ -43,17 +43,17 @@ export function describeDocument(document: DocumentRow | null): ReportDocument {
   };
 }
 
-/** The uploaded PDF, or 404 once retention (or anything else) has removed it. */
+/** The uploaded PDF and its row, or 404 once retention (or anything else) has removed it. */
 export async function readStoredPdf(
   deps: { db: Db; storage: ObjectStorage },
   rating: RatingRow,
-): Promise<{ documentId: string; pdf: Buffer }> {
+): Promise<{ document: DocumentRow; pdf: Buffer }> {
   const gone = () =>
     notFound("The PDF is no longer stored (deleted after the retention period).");
   const document = await findRatingDocument(deps.db, rating);
   if (!document || document.deletedAt) throw gone();
   try {
-    return { documentId: document.id, pdf: await deps.storage.get(document.storageKey) };
+    return { document, pdf: await deps.storage.get(document.storageKey) };
   } catch (error) {
     if (error instanceof ObjectNotFoundError) throw gone();
     throw error;

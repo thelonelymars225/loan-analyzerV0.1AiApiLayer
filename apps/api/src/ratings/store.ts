@@ -1,15 +1,14 @@
 import { createHash } from "node:crypto";
 import { and, asc, count, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import type { OrgKind, RatingStatus, RatingSummary, View } from "@rater/contracts";
+import type { OrgKind, RatingSummary, View } from "@rater/contracts";
 import { bandFor } from "@rater/core";
-import { auditEvents, documents, memberships, newId, orgs, ratings } from "@rater/db";
+import { auditEvents, documents, newId, orgs, ratings } from "@rater/db";
 import type { Db, DbTransaction } from "@rater/db";
 import type { ObjectStorage } from "@rater/storage";
 import { recordAudit } from "../audit";
 import { notFound, rateLimited } from "../errors";
 import { LOCKS, lockUser } from "../locks";
-import { parseRole } from "../orgs";
 import { seesAllRatings } from "../plugins/access";
 import type { RequestContext } from "../plugins/session";
 import type { RatingQueue } from "../queue";
@@ -177,36 +176,6 @@ export async function findVisibleRating(
     .where(and(eq(ratings.id, ratingId), visibleTo(ctx)));
   if (!rating) throw notFound("No such rating.");
   return rating;
-}
-
-/**
- * The rating's current status, or null once it is deleted or the caller may no longer see
- * it (removed from the workspace, or now a member who did not upload it). The event stream
- * reads this on every poll, so access is checked again while it runs.
- */
-export async function readVisibleStatus(
-  db: Db,
-  ctx: RequestContext,
-  ratingId: string,
-): Promise<RatingStatus | null> {
-  const [row] = await db
-    .select({
-      status: ratings.status,
-      createdBy: ratings.createdBy,
-      role: memberships.role,
-    })
-    .from(ratings)
-    .innerJoin(
-      memberships,
-      and(
-        eq(memberships.organizationId, ratings.orgId),
-        eq(memberships.userId, ctx.user.id),
-      ),
-    )
-    .where(eq(ratings.id, ratingId));
-  if (!row) return null;
-  const roleNow = { ...ctx, role: parseRole(row.role) };
-  return seesAllRatings(roleNow) || row.createdBy === ctx.user.id ? row.status : null;
 }
 
 /** One page of the caller's ratings, newest first. */

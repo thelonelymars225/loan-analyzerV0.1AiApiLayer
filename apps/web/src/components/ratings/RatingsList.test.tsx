@@ -1,7 +1,7 @@
 import type { RatingSummary } from "@rater/contracts";
 import { act, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { POLL_MS_WITHOUT_EVENTS } from "../../lib/ratings";
+import { POLL_MS } from "../../lib/ratings";
 import { jsonResponse, renderWithProviders, routeFetch } from "../../test/render";
 import { RatingsList } from "./RatingsList";
 
@@ -18,11 +18,9 @@ const queued = (id: string): RatingSummary => ({
 afterEach(() => vi.useRealTimers());
 
 describe("RatingsList", () => {
-  it("polls while ratings run instead of opening a live stream per row", async () => {
+  it("polls the list while ratings run", async () => {
     // Only the interval is faked, so React Query and Testing Library keep real time.
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
-    const EventSourceSpy = vi.fn();
-    vi.stubGlobal("EventSource", EventSourceSpy);
     // An HR workspace with more running ratings than the browser has connections per host.
     const running = ["rt_1", "rt_2", "rt_3", "rt_4", "rt_5", "rt_6", "rt_7"].map(queued);
     const fetchMock = routeFetch({
@@ -31,10 +29,9 @@ describe("RatingsList", () => {
     renderWithProviders(<RatingsList orgId="org_co" />);
 
     expect(await screen.findAllByText("Queued")).toHaveLength(7);
-    expect(EventSourceSpy).not.toHaveBeenCalled();
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
-    act(() => vi.advanceTimersByTime(POLL_MS_WITHOUT_EVENTS));
+    act(() => vi.advanceTimersByTime(POLL_MS));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
   });
 
@@ -50,7 +47,7 @@ describe("RatingsList", () => {
     renderWithProviders(<RatingsList orgId="org_co" />);
 
     expect(await screen.findByText("Done")).toBeInTheDocument();
-    act(() => vi.advanceTimersByTime(POLL_MS_WITHOUT_EVENTS * 3));
+    act(() => vi.advanceTimersByTime(POLL_MS * 3));
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

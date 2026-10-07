@@ -49,12 +49,6 @@ export const rateLimited = (limit: number, retryAfterSeconds: number) =>
     { "retry-after": String(retryAfterSeconds) },
   );
 
-/** Too many open event streams for this user or this server; the client polls instead. */
-export const tooManyStreams = () =>
-  new ApiError(429, "rate_limited", "Too many open live updates. Try again later.", {
-    "retry-after": "30",
-  });
-
 /** The browser tab acts on a different workspace than the session's active one. */
 export const workspaceChanged = () =>
   conflict(

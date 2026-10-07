@@ -8,7 +8,7 @@ import { api } from "../../lib/api";
 import { formatDateTime } from "../../lib/format";
 import { usePolling } from "../../lib/live";
 import { queryKeys } from "../../lib/queries";
-import { isInProgress, POLL_MS_WITHOUT_EVENTS } from "../../lib/ratings";
+import { isInProgress, POLL_MS } from "../../lib/ratings";
 import { BAND_TONE } from "../../lib/report";
 import { EmptyState, ErrorState, LoadingState } from "../states/states";
 import { Badge } from "../ui/badge";
@@ -27,11 +27,9 @@ export function RatingsList({ orgId }: { orgId: string }) {
   });
 
   const items = ratings.data?.pages.flatMap((page) => page.items) ?? [];
-  // While any row is still running, poll the list: one request covers every row. A live
-  // stream per row would hold one browser connection each (only six per host) and stall
-  // uploads; live updates are kept for the report page, which follows a single rating.
+  // While any row is still running, poll the list: one request covers every row.
   const anyRunning = items.some((item) => isInProgress(item.status));
-  usePolling(ratings.refetch, anyRunning ? POLL_MS_WITHOUT_EVENTS : false);
+  usePolling(ratings.refetch, anyRunning ? POLL_MS : false);
 
   if (ratings.isPending) return <LoadingState />;
   if (ratings.isError) {

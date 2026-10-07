@@ -211,8 +211,6 @@
       "analysing": "Checking clauses against the law",
       "done": "Report ready"
     },
-    "liveUpdates": "This page updates by itself.",
-    "polling": "Checking for updates every few seconds.",
     "failedTitle": "We couldn't rate this contract",
     "tryAnother": "Upload another contract",
     "loadError": "Couldn't load this report.",

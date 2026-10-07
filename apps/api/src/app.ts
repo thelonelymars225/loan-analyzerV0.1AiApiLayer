@@ -35,8 +35,6 @@ export interface BuildAppOptions {
   logger?: Logger;
   /** Defaults to the system clock. */
   now?: () => Date;
-  /** Defaults to 1 second. */
-  eventsPollMs?: number;
 }
 
 /**
@@ -55,7 +53,6 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
     queue: options.queue,
     auth: options.auth ?? createAuth({ config, db }),
     now: options.now ?? (() => new Date()),
-    eventsPollMs: options.eventsPollMs ?? 1000,
   };
 
   const logger: FastifyBaseLogger = options.logger ?? createLogger(config.LOG_LEVEL);

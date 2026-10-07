@@ -67,10 +67,6 @@ curl localhost:3000/api/v1/healthz
 - **Reports** render from the stored findings for every status (score `null` until the rating
   is `done` or `needs_review`, `error` when `failed`), in `?view=` or the rating's default view,
   with the disclaimer in the `Accept-Language` language.
-- **Events.** `GET /ratings/{id}/events` re-reads the status every second and sends
-  `event: status` / `data: {"id","status"}` on each change; it ends after a final status, when
-  the client leaves, or when the caller can no longer see the rating. At most 3 open streams
-  per user and 200 per process; beyond that 429 `rate_limited`, and the web app polls.
 - **Review reasons.** A `needs_review` report carries `reviewReasons` (stored by the worker).
 - **Audit.** Uploads, report views (finished ratings only), PDF downloads and deletes go to
   `audit_events`. Logs never contain bodies, file names or contract text.

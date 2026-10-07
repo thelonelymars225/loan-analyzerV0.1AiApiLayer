@@ -58,7 +58,7 @@ worker adds the I/O and saves the results.
    or more cap it at 59 ("Weak" at best).
 
 The status moves `queued` → `extracting` → `analysing` → `done`, or ends as `needs_review` or
-`failed`. The web app follows it over server-sent events.
+`failed`. The web app re-reads it every 3 seconds while it runs.
 
 A `needs_review` report still shows its findings, and lists in plain English why a person
 should check it: each extraction problem (such as a missing field, or wage parts that do not
@@ -101,7 +101,7 @@ web app.
 
 | Path                 | What it is                                                                     |
 | -------------------- | ------------------------------------------------------------------------------ |
-| `apps/api`           | Fastify REST API under `/api/v1`: accounts, workspaces, uploads, reports, SSE  |
+| `apps/api`           | Fastify REST API under `/api/v1`: accounts, workspaces, uploads, reports       |
 | `apps/worker`        | pg-boss consumer: runs the pipeline, deletes expired PDFs, fails stuck ratings |
 | `apps/web`           | React + Vite app, both views, the contract viewer, English and Arabic (RTL)    |
 | `packages/contracts` | Shared Zod schemas: API types, Finding, Rule, Rating, constants                |

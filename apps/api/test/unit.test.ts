@@ -4,7 +4,7 @@ import type { OrgSummary } from "@rater/contracts";
 import { loadConfig, trustedOrigins } from "../src/config";
 import { ApiError, rateLimited } from "../src/errors";
 import { acceptPath, toInviteResponse } from "../src/invites";
-import { ConcurrencyLimit, ConnectionSlots } from "../src/limiter";
+import { ConcurrencyLimit } from "../src/limiter";
 import { errorForLog } from "../src/logger";
 import { parseRole, personalOrgName, slugify } from "../src/orgs";
 import { isAllowed } from "../src/plugins/auth-routes";
@@ -316,20 +316,5 @@ describe("limits", () => {
     const limit = new ConcurrencyLimit(1);
     await expect(limit.run(() => Promise.reject(new Error("bad pdf")))).rejects.toThrow();
     await expect(limit.run(async () => "next")).resolves.toBe("next");
-  });
-
-  it("caps open connections per user and in total", () => {
-    const slots = new ConnectionSlots({ perUser: 2, total: 3 });
-    expect(slots.tryTake("user_a")).toBe(true);
-    expect(slots.tryTake("user_a")).toBe(true);
-    expect(slots.tryTake("user_a")).toBe(false); // per-user cap
-    expect(slots.tryTake("user_b")).toBe(true);
-    expect(slots.tryTake("user_c")).toBe(false); // total cap
-    expect(slots.open).toBe(3);
-
-    slots.release("user_a");
-    expect(slots.tryTake("user_c")).toBe(true);
-    slots.release("user_nobody"); // nothing to give back
-    expect(slots.open).toBe(3);
   });
 });

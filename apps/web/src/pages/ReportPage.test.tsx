@@ -45,10 +45,6 @@ describe("ReportPage", () => {
 
     expect(await screen.findByText("Rating in progress")).toBeInTheDocument();
     expect(screen.getByText("Status: Reading")).toHaveAttribute("aria-live", "polite");
-    // jsdom has no EventSource, so the page says it polls instead.
-    expect(
-      screen.getByText("Checking for updates every few seconds."),
-    ).toBeInTheDocument();
   });
 
   it("explains why a rating failed", async () => {

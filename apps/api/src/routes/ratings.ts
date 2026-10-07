@@ -5,16 +5,13 @@ import {
   ListRatingsResponse,
   RatingReport,
   View,
+  type RatingStatus,
 } from "@rater/contracts";
 import { recordAudit } from "../audit";
 import type { AppDeps } from "../deps";
-import { tooManyStreams } from "../errors";
-import { ConnectionSlots } from "../limiter";
-import { errorForLog } from "../logger";
 import { loadReport, preferredLocale } from "../report";
 import { decodeCursor } from "../ratings/cursor";
 import { readStoredPdf } from "../ratings/document";
-import { FINAL_STATUSES, streamRatingStatus } from "../ratings/events";
 import { renderDocumentPage, renderPassage } from "../ratings/images";
 import {
   checkDailyLimit,
@@ -22,7 +19,6 @@ import {
   deleteRating,
   findVisibleRating,
   listRatings,
-  readVisibleStatus,
 } from "../ratings/store";
 import { checkQiwaPdf, readUpload } from "../ratings/upload";
 
@@ -40,23 +36,15 @@ const DocumentQuery = z.object({
   disposition: z.enum(["inline", "attachment"]).default("attachment"),
 });
 
-/**
- * Each open event stream re-reads Postgres every poll, so their number is capped per user
- * and per API process. Over a cap the stream answers 429 and the web app polls instead.
- */
-const MAX_STREAMS_PER_USER = 3;
-const MAX_STREAMS = 200;
+/** The worker is done with a rating in these statuses. */
+const FINAL_STATUSES: ReadonlySet<RatingStatus> = new Set([
+  "done",
+  "failed",
+  "needs_review",
+]);
 
 export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
   const { db, storage, queue, config, now } = deps;
-
-  // Open event streams end when the server shuts down, so app.close() does not hang.
-  const shutdown = new AbortController();
-  app.addHook("preClose", async () => shutdown.abort());
-  const streams = new ConnectionSlots({
-    perUser: MAX_STREAMS_PER_USER,
-    total: MAX_STREAMS,
-  });
 
   app.post(
     "/ratings",
@@ -129,37 +117,6 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
         });
       }
       return report;
-    },
-  );
-
-  app.get(
-    "/ratings/:id/events",
-    {
-      schema: {
-        summary: "Server-sent events: the rating's status until it is final",
-        description:
-          'text/event-stream. Each event is `event: status` with data {"id","status"}. ' +
-          `429 rate_limited when the user already has ${MAX_STREAMS_PER_USER} streams open ` +
-          "(or the server is at its limit); poll GET /ratings/{id} instead.",
-        params: RatingParams,
-      },
-    },
-    async (request, reply) => {
-      const { ctx } = request;
-      const rating = await findVisibleRating(db, ctx, request.params.id);
-      if (!streams.tryTake(ctx.user.id)) throw tooManyStreams();
-      try {
-        await streamRatingStatus(reply, {
-          ratingId: rating.id,
-          readStatus: () => readVisibleStatus(db, ctx, rating.id),
-          pollMs: deps.eventsPollMs,
-          shutdown: shutdown.signal,
-          onError: (error) =>
-            request.log.warn({ err: errorForLog(error) }, "rating event stream failed"),
-        });
-      } finally {
-        streams.release(ctx.user.id);
-      }
     },
   );
 

@@ -9,12 +9,10 @@ import { Spinner } from "../ui/spinner";
 
 interface RatingProgressProps {
   status: RatingStatus;
-  /** True while server-sent events are connected; otherwise the page polls. */
-  live: boolean;
 }
 
 /** Shown while the pipeline runs. The status line is a live region for screen readers. */
-export function RatingProgress({ status, live }: RatingProgressProps) {
+export function RatingProgress({ status }: RatingProgressProps) {
   const { t } = useTranslation();
   const currentIndex = PIPELINE_STEPS.indexOf(status as (typeof PIPELINE_STEPS)[number]);
 
@@ -60,9 +58,6 @@ export function RatingProgress({ status, live }: RatingProgressProps) {
             );
           })}
         </ol>
-        <p className="text-xs text-muted-foreground">
-          {live ? t("report.liveUpdates") : t("report.polling")}
-        </p>
       </CardContent>
     </Card>
   );

@@ -61,7 +61,6 @@ export interface TestContext {
 
 export interface TestOptions {
   env?: Record<string, string>;
-  eventsPollMs?: number;
 }
 
 export async function createTestContext(options: TestOptions = {}): Promise<TestContext> {
@@ -94,7 +93,6 @@ export async function createTestContext(options: TestOptions = {}): Promise<Test
     queue,
     logger: pino({ level: "silent" }),
     now: () => clock.now,
-    eventsPollMs: options.eventsPollMs ?? 20,
   });
   await app.ready();
 

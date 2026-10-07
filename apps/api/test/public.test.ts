@@ -1,14 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { HealthResponse, Problem, RulesResponse } from "@rater/contracts";
 import { LAW_VERSION, RULESET_VERSION } from "@rater/law";
-import {
-  DATABASE_URL,
-  createTestContext,
-  fixture,
-  signUp,
-  upload,
-  type TestContext,
-} from "./helpers";
+import { DATABASE_URL, createTestContext, type TestContext } from "./helpers";
 
 describe.skipIf(!DATABASE_URL)("public routes", () => {
   let t: TestContext;
@@ -54,7 +47,6 @@ describe.skipIf(!DATABASE_URL)("public routes", () => {
       expect.arrayContaining([
         "/api/v1/ratings",
         "/api/v1/ratings/{id}",
-        "/api/v1/ratings/{id}/events",
         "/api/v1/ratings/{id}/document",
         "/api/v1/me",
         "/api/v1/me/active-org",
@@ -107,32 +99,5 @@ describe.skipIf(!DATABASE_URL)("public routes", () => {
       code: "not_found",
       detail: "No route for GET /api/nothing-here.",
     });
-  });
-});
-
-describe.skipIf(!DATABASE_URL)("shutdown", () => {
-  it("ends open event streams so the server can close", async () => {
-    const t = await createTestContext();
-    try {
-      const user = await signUp(t.app);
-      const uploaded = await upload(
-        t.app,
-        user.cookie,
-        await fixture("indefinite-clean.pdf"),
-      );
-      const { id } = uploaded.json<{ id: string }>();
-      const address = await t.app.listen({ port: 0, host: "127.0.0.1" });
-
-      // The rating stays queued (no worker), so the stream would run for minutes.
-      const stream = await fetch(`${address}/api/v1/ratings/${id}/events`, {
-        headers: { cookie: user.cookie },
-      });
-      const started = Date.now();
-      await t.app.close();
-      expect(Date.now() - started).toBeLessThan(2_000);
-      expect(await stream.text()).toContain('"status":"queued"');
-    } finally {
-      await t.close();
-    }
   });
 });

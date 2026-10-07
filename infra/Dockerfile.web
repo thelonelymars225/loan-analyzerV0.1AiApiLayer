@@ -1,5 +1,5 @@
 # The web app: built with Vite, served as static files by nginx, which also proxies /api to
-# the API so the browser talks to one origin (session cookie and server-sent events just work).
+# the API so the browser talks to one origin (the session cookie just works).
 #
 #   docker build -f infra/Dockerfile.web -t contract-rater-web .
 #

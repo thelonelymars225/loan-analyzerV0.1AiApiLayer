@@ -174,13 +174,6 @@ export const ListRatingsResponse = z.object({
 });
 export type ListRatingsResponse = z.infer<typeof ListRatingsResponse>;
 
-/** Server-sent event payload on GET /ratings/{id}/events. */
-export const RatingEvent = z.object({
-  id: z.string(),
-  status: RatingStatus,
-});
-export type RatingEvent = z.infer<typeof RatingEvent>;
-
 export const OrgSummary = z.object({
   id: z.string(),
   name: z.string(),

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { syntheticReport } from "../test/fixtures";
 import { findingAnchor, impactColumns, likelyVoidFindings } from "./report";
-import { bandForScore, defaultViewFor, pollInterval, progressPercent } from "./ratings";
+import { bandForScore, defaultViewFor, progressPercent } from "./ratings";
 
 describe("report helpers", () => {
   it("orders impact columns per kind and keeps unknown kinds", () => {
@@ -44,12 +44,6 @@ describe("rating helpers", () => {
       "Weak",
       "Poor",
     ]);
-  });
-
-  it("polls fast without server-sent events, slowly with them, and not at all when finished", () => {
-    expect(pollInterval(true, false)).toBe(3000);
-    expect(pollInterval(true, true)).toBe(15000);
-    expect(pollInterval(false, false)).toBe(false);
   });
 
   it("maps statuses to progress and workspaces to default views", () => {

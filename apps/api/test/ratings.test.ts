@@ -6,7 +6,6 @@ import {
   DISCLAIMER_EN,
   ListRatingsResponse,
   Problem,
-  RatingEvent,
   RatingReport,
 } from "@rater/contracts";
 import type { FindingInput } from "@rater/contracts";
@@ -166,7 +165,7 @@ describe.skipIf(!DATABASE_URL)("POST /ratings", () => {
     expect(response.statusCode).toBe(401);
   });
 
-  it("works over a real socket: upload, oversized upload and event stream", async () => {
+  it("works over a real socket: upload and oversized upload", async () => {
     const address = await t.app.listen({ port: 0, host: "127.0.0.1" });
     const headers = { cookie: user.cookie, origin: ORIGIN };
     const send = (content: Buffer) => {
@@ -178,19 +177,10 @@ describe.skipIf(!DATABASE_URL)("POST /ratings", () => {
 
     const created = await send(qiwaPdf);
     expect(created.status).toBe(202);
-    const { id } = (await created.json()) as { id: string };
 
     const tooBig = await send(Buffer.concat([qiwaPdf, Buffer.alloc(1024 * 1024)]));
     expect(tooBig.status).toBe(413);
     expect(((await tooBig.json()) as Problem).code).toBe("file_too_large");
-
-    await t.db.update(ratings).set({ status: "failed" }).where(eq(ratings.id, id));
-    const events = await fetch(`${address}/api/v1/ratings/${id}/events`, { headers });
-    expect(events.headers.get("content-type")).toMatch(/^text\/event-stream/);
-    expect(events.headers.get("access-control-allow-origin")).toBe(ORIGIN);
-    expect(await events.text()).toBe(
-      `event: status\ndata: ${JSON.stringify({ id, status: "failed" })}\n\n`,
-    );
   });
 });
 
@@ -260,57 +250,7 @@ describe.skipIf(!DATABASE_URL)("daily limit", () => {
   });
 });
 
-describe.skipIf(!DATABASE_URL)("event stream limits", () => {
-  let t: TestContext;
-  let user: TestUser;
-  let ratingId: string;
-  let address: string;
-
-  beforeAll(async () => {
-    t = await createTestContext();
-    user = await signUp(t.app);
-    // The fake queue never runs it, so the rating stays queued and its streams stay open.
-    const uploaded = await upload(t.app, user.cookie, qiwaPdf);
-    ratingId = uploaded.json<{ id: string }>().id;
-    address = await t.app.listen({ port: 0, host: "127.0.0.1" });
-  });
-  afterAll(async () => {
-    await t?.close();
-  });
-
-  function openStream(signal?: AbortSignal): Promise<Response> {
-    return fetch(`${address}/api/v1/ratings/${ratingId}/events`, {
-      headers: { cookie: user.cookie, origin: ORIGIN },
-      signal,
-    });
-  }
-
-  it("answers 429 over the per-user cap and frees a slot when a client leaves", async () => {
-    const clients = [new AbortController(), new AbortController(), new AbortController()];
-    for (const client of clients) {
-      expect((await openStream(client.signal)).status).toBe(200);
-    }
-
-    const refused = await openStream();
-    expect(refused.status).toBe(429);
-    expect(refused.headers.get("content-type")).toMatch(/^application\/problem\+json/);
-    expect(((await refused.json()) as Problem).code).toBe("rate_limited");
-
-    // Closing one stream stops its polling and gives its slot back.
-    clients[0]?.abort();
-    const replacement = new AbortController();
-    const reopened = await retryUntil(async () => {
-      const response = await openStream(replacement.signal);
-      if (response.status === 200) return response;
-      await response.body?.cancel();
-      return null;
-    });
-    expect(reopened.status).toBe(200);
-    for (const client of [...clients, replacement]) client.abort();
-  });
-});
-
-describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => {
+describe.skipIf(!DATABASE_URL)("reading and deleting ratings", () => {
   let t: TestContext;
   let owner: TestUser;
   let stranger: TestUser;
@@ -601,33 +541,10 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
     expect(failed.score).toBeNull();
   });
 
-  it("streams status changes as server-sent events until the rating is final", async () => {
-    const id = await newRating(owner);
-    const stream = api(t.app, owner.cookie, "GET", `/ratings/${id}/events`);
-    await delay(150);
-    await t.db.update(ratings).set({ status: "extracting" }).where(eq(ratings.id, id));
-    await delay(150);
-    await t.db.update(ratings).set({ status: "done" }).where(eq(ratings.id, id));
-
-    const response = await stream;
-    expect(response.statusCode).toBe(200);
-    expect(response.headers["content-type"]).toMatch(/^text\/event-stream/);
-    const events = response.body
-      .split("\n\n")
-      .filter((block) => block.startsWith("event: status"))
-      .map((block) => RatingEvent.parse(JSON.parse(block.split("data: ")[1] ?? "")));
-    expect(events).toEqual([
-      { id, status: "queued" },
-      { id, status: "extracting" },
-      { id, status: "done" },
-    ]);
-  });
-
   it("answers 404 for another user's rating on every route", async () => {
     const id = await newRating(owner);
     for (const [method, url] of [
       ["GET", `/ratings/${id}`],
-      ["GET", `/ratings/${id}/events`],
       ["GET", `/ratings/${id}/document`],
       ["GET", `/ratings/${id}/passages/15.6/8`],
       ["GET", `/ratings/${id}/pages/1`],
@@ -767,21 +684,6 @@ describe.skipIf(!DATABASE_URL)("reading, streaming and deleting ratings", () => 
     expect(again.statusCode).toBe(404);
   });
 });
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/** Calls `attempt` every 50 ms until it returns a value (at most 2 seconds). */
-async function retryUntil<T>(attempt: () => Promise<T | null>): Promise<T> {
-  const deadline = Date.now() + 2_000;
-  for (;;) {
-    const result = await attempt();
-    if (result !== null) return result;
-    if (Date.now() > deadline) throw new Error("gave up waiting");
-    await delay(50);
-  }
-}
 
 /** The user's "upload" audit events (what the daily limit counts). */
 function uploadEvents(t: TestContext, userId: string) {

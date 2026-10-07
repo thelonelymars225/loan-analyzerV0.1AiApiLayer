@@ -14,9 +14,9 @@ import { buttonVariants } from "../components/ui/variants";
 import { ApiError, api } from "../lib/api";
 import { ratingErrorMessage } from "../lib/errors";
 import { formatDateTime } from "../lib/format";
-import { usePolling, useRatingEvents } from "../lib/live";
+import { usePolling } from "../lib/live";
 import { queryKeys } from "../lib/queries";
-import { isInProgress, pollInterval } from "../lib/ratings";
+import { isInProgress, POLL_MS } from "../lib/ratings";
 
 export function ReportPage() {
   const { id = "" } = useParams();
@@ -35,9 +35,8 @@ export function ReportPage() {
     placeholderData: keepPreviousData, // keep the old view on screen while the other one loads
   });
 
-  const running = isInProgress(rating.data?.status);
-  const { live } = useRatingEvents(running ? id : null);
-  usePolling(rating.refetch, pollInterval(running, live));
+  // Re-read the rating while it runs; polling stops once it is done, needs review or failed.
+  usePolling(rating.refetch, isInProgress(rating.data?.status) ? POLL_MS : false);
 
   function changeView(view: View) {
     setSearchParams({ view }, { replace: true });
@@ -84,7 +83,7 @@ export function ReportPage() {
         )}
       </header>
 
-      <ReportBody rating={rating} live={live} onViewChange={changeView} />
+      <ReportBody rating={rating} onViewChange={changeView} />
 
       <DeleteRatingDialog
         ratingId={id}
@@ -98,12 +97,11 @@ export function ReportPage() {
 
 interface ReportBodyProps {
   rating: UseQueryResult<RatingReport>;
-  live: boolean;
   onViewChange: (view: View) => void;
 }
 
 /** Loading, error, in-progress, failed, or the finished report. */
-function ReportBody({ rating, live, onViewChange }: ReportBodyProps) {
+function ReportBody({ rating, onViewChange }: ReportBodyProps) {
   const { t } = useTranslation();
 
   if (rating.isPending) return <LoadingState />;
@@ -120,8 +118,7 @@ function ReportBody({ rating, live, onViewChange }: ReportBodyProps) {
   }
 
   const report = rating.data;
-  if (isInProgress(report.status))
-    return <RatingProgress status={report.status} live={live} />;
+  if (isInProgress(report.status)) return <RatingProgress status={report.status} />;
   if (report.status === "failed") {
     return (
       <ErrorState

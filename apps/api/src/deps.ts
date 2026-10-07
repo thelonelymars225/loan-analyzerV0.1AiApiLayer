@@ -13,6 +13,4 @@ export interface AppDeps {
   auth: Auth;
   /** The clock. Tests pass a fixed one. */
   now: () => Date;
-  /** How often the SSE stream re-reads a rating's status. */
-  eventsPollMs: number;
 }

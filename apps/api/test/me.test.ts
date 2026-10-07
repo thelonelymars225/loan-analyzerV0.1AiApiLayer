@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { InviteResponse, MeResponse, OrgSummary, Problem } from "@rater/contracts";
+import { MeResponse, OrgSummary, Problem } from "@rater/contracts";
 import { auditEvents, documents, findings, newId, ratings } from "@rater/db";
 import {
   DATABASE_URL,
@@ -183,58 +183,4 @@ describe.skipIf(!DATABASE_URL)("active workspace, x-org-id and deleting my data"
     expect(response.statusCode).toBe(202);
     return response.json<{ id: string }>().id;
   }
-});
-
-describe.skipIf(!DATABASE_URL)("event streams after losing access", () => {
-  let t: TestContext;
-
-  beforeAll(async () => {
-    t = await createTestContext();
-  });
-  afterAll(async () => {
-    await t?.close();
-  });
-
-  it("ends a member's stream once they are removed from the workspace", async () => {
-    const owner = await signUp(t.app, "Reem Al-Dosari");
-    const member = await signUp(t.app, "Omar Al-Harbi");
-    const created = await api(t.app, owner.cookie, "POST", "/orgs", {
-      name: "Example Trading Co.",
-    });
-    const company = OrgSummary.parse(created.json());
-    await api(t.app, owner.cookie, "PUT", "/me/active-org", { orgId: company.id });
-    const invite = InviteResponse.parse(
-      (
-        await api(t.app, owner.cookie, "POST", `/orgs/${company.id}/invites`, {
-          email: member.email,
-          role: "member",
-        })
-      ).json(),
-    );
-    await api(t.app, member.cookie, "POST", `/invites/${invite.id}/accept`);
-
-    const uploaded = await upload(
-      t.app,
-      member.cookie,
-      await fixture("fixed-term-bad-s15.pdf"),
-    );
-    const { id } = uploaded.json<{ id: string }>();
-
-    // The rating stays queued (no worker), so only losing access ends this stream.
-    const stream = api(t.app, member.cookie, "GET", `/ratings/${id}/events`);
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    const removed = await api(
-      t.app,
-      owner.cookie,
-      "DELETE",
-      `/orgs/${company.id}/members/${member.id}`,
-    );
-    expect(removed.statusCode).toBe(204);
-
-    const response = await stream;
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toBe(
-      `event: status\ndata: ${JSON.stringify({ id, status: "queued" })}\n\n`,
-    );
-  });
 });

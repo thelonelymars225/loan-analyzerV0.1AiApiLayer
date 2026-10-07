@@ -15,7 +15,7 @@ import { loadReport, preferredLocale } from "../report";
 import { decodeCursor } from "../ratings/cursor";
 import { readStoredPdf } from "../ratings/document";
 import { FINAL_STATUSES, streamRatingStatus } from "../ratings/events";
-import { renderPassage } from "../ratings/passages";
+import { renderDocumentPage, renderPassage } from "../ratings/images";
 import {
   checkDailyLimit,
   createRating,
@@ -30,6 +30,9 @@ const RatingParams = z.object({ id: z.string().min(1).max(64) });
 /** A clause ("15.4", "9.1.1") or section ("7") number, as the report's passages give it. */
 const PassageParams = RatingParams.extend({
   clause: z.string().regex(/^\d{1,2}(\.\d{1,2}){0,3}$/),
+  page: z.coerce.number().int().positive().max(999),
+});
+const PageParams = RatingParams.extend({
   page: z.coerce.number().int().positive().max(999),
 });
 /** How the browser should treat the PDF: open it in the viewer, or save it as a file. */
@@ -176,13 +179,13 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
       const { ctx } = request;
       const { disposition } = request.query;
       const rating = await findVisibleRating(db, ctx, request.params.id);
-      const { documentId, pdf } = await readStoredPdf({ db, storage }, rating);
+      const { document, pdf } = await readStoredPdf({ db, storage }, rating);
       await recordAudit(db, {
         orgId: ctx.orgId,
         userId: ctx.user.id,
         action: disposition === "inline" ? "view_document" : "download",
         targetId: rating.id,
-        meta: { documentId },
+        meta: { documentId: document.id },
       });
       return reply
         .type("application/pdf")
@@ -210,6 +213,28 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
       const { id, clause, page } = request.params;
       const rating = await findVisibleRating(db, request.ctx, id);
       const png = await renderPassage({ db, storage }, rating, clause, page);
+      return reply
+        .type("image/png")
+        .header("cache-control", "private, no-store")
+        .send(png);
+    },
+  );
+
+  app.get(
+    "/ratings/:id/pages/:page",
+    {
+      schema: {
+        summary: "One page of the PDF as a PNG, cut on request for the contract viewer",
+        description:
+          "Rendered from the PDF each time and never stored, like the passage images; " +
+          "404 for a page the contract does not have, or once the PDF is deleted.",
+        params: PageParams,
+      },
+    },
+    async (request, reply) => {
+      const { id, page } = request.params;
+      const rating = await findVisibleRating(db, request.ctx, id);
+      const png = await renderDocumentPage({ db, storage }, rating, page);
       return reply
         .type("image/png")
         .header("cache-control", "private, no-store")

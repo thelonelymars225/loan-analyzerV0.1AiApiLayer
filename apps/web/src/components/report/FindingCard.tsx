@@ -1,17 +1,21 @@
-import type { View, ViewFinding } from "@rater/contracts";
+import type { ReportDocument, View, ViewFinding } from "@rater/contracts";
 import { Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { SEVERITY_TONE, VERDICT_TONE, findingAnchor } from "../../lib/report";
 import { Badge, ToneDot } from "../ui/badge";
 import { ImpactTable } from "./ImpactTable";
+import { PassagePreview } from "./PassagePreview";
 
 interface FindingCardProps {
   finding: ViewFinding;
   view: View;
+  /** The rating the finding belongs to and its PDF, for the passage preview. */
+  ratingId: string;
+  document: ReportDocument;
 }
 
 /** One problem finding. The API already picked the view's message and action. */
-export function FindingCard({ finding, view }: FindingCardProps) {
+export function FindingCard({ finding, view, ratingId, document }: FindingCardProps) {
   const { t } = useTranslation();
   const anchor = findingAnchor(finding);
   const titleId = `${anchor}-title`;
@@ -60,6 +64,15 @@ export function FindingCard({ finding, view }: FindingCardProps) {
       <p dir="auto" className="mt-3 leading-relaxed">
         {finding.message}
       </p>
+
+      <PassagePreview
+        ratingId={ratingId}
+        itemId={anchor}
+        view={view}
+        passages={finding.passages}
+        document={document}
+        tone={SEVERITY_TONE[finding.severity]}
+      />
 
       {finding.impactSar && (
         <ImpactTable kind={finding.impactKind} sar={finding.impactSar} />

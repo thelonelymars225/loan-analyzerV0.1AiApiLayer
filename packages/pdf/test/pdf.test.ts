@@ -7,6 +7,7 @@ import {
   ocrArabicRegions,
   pdfPageCount,
   pdftotextBbox,
+  renderPage,
   renderPageCrop,
   toolsAvailable,
   type PageRegion,
@@ -129,6 +130,13 @@ describe.skipIf(!tools.pdftoppm)("renderPageCrop", () => {
     await expect(
       renderPageCrop(pdf, { ...SECTION_15_ARABIC, page: 99 }),
     ).rejects.toBeInstanceOf(PdfToolError);
+    await expect(renderPage(pdf, 99)).rejects.toBeInstanceOf(PdfToolError);
+  });
+
+  it("renders a whole A4 page at 144 dpi", async () => {
+    const png = await renderPage(pdf, 1);
+    // 595.92 x 842.04 pt at 2 px per pt; pdftoppm rounds the page size to whole pixels.
+    expect(pngSize(png)).toEqual({ width: 1192, height: 1684 });
   });
 });
 

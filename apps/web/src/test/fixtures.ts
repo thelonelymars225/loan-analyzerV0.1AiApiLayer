@@ -1,6 +1,7 @@
 import type {
   MeResponse,
   OrgRole,
+  Passage,
   RatingReport,
   View,
   ViewDeadline,
@@ -40,6 +41,30 @@ const base = (
   ...overrides,
 });
 
+/** Where a clause sits on the synthetic contract's A4 pages; the API cuts `crop` as the image. */
+export function syntheticPassage(
+  clause: string,
+  page: number,
+  yMin: number,
+  overrides: Partial<Passage> = {},
+): Passage {
+  const pageWidth = 595.92;
+  const pageHeight = 842.04;
+  const yMax = yMin + 40;
+  return {
+    clause,
+    page,
+    pageWidth,
+    pageHeight,
+    box: { xMin: 45.4, yMin, xMax: 574.2, yMax },
+    crop: { xMin: 0, yMin: yMin - 18, xMax: pageWidth, yMax: yMax + 18 },
+    textEn: null,
+    textAr: null,
+    approximate: false,
+    ...overrides,
+  };
+}
+
 const PROBLEMS = {
   eos: base({
     ruleId: "EOS-BASE-01",
@@ -50,6 +75,12 @@ const PROBLEMS = {
     articles: ["Art. 2", "Art. 84", "Art. 8"],
     impactKind: "eos_gap",
     impactSar: { "1y": 1750, "5y": 8750, "10y": 26250 },
+    passages: [
+      syntheticPassage("15.6", 8, 600, {
+        textEn: "The end-of-service award is calculated on the basic wage.",
+        textAr: "تُحتسب مكافأة نهاية الخدمة على الأجر الأساسي.",
+      }),
+    ],
     employeeMsg:
       "Likely void: end-of-service is calculated on your full actual wage, not basic only.",
     hrMsg: "Likely void and unenforceable. Base the award on the last actual wage.",
@@ -64,6 +95,8 @@ const PROBLEMS = {
     severity: "high",
     categories: ["legal", "clarity"],
     articles: ["Art. 55"],
+    // A conflict points at its clause and at the template clause it contradicts.
+    passages: [syntheticPassage("15.1", 8, 400), syntheticPassage("1", 1, 120)],
     employeeMsg:
       "Section 15 calls this contract unlimited, but Section 1 says fixed-term.",
     hrMsg: "Clause 15.1 contradicts the contract type in Section 1. Align them.",
@@ -80,6 +113,7 @@ const PROBLEMS = {
     articles: ["Art. 77"],
     impactKind: "art77_gap",
     impactSar: { contract: 20000, default: 150000, gap: 130000 },
+    passages: [syntheticPassage("15.4", 8, 520)],
     employeeMsg:
       "If the employer ends the contract early you get two months' basic wage instead of the rest of the term.",
     hrMsg: "Legal, but well below the Art. 77 default. Expect pushback from candidates.",
@@ -94,6 +128,7 @@ const PROBLEMS = {
     severity: "medium",
     categories: ["market"],
     articles: ["Exec. Reg. Art. 20"],
+    passages: [syntheticPassage("15.3", 8, 480)],
     employeeMsg: "You pre-agree to relocate anywhere in the Kingdom.",
     hrMsg: "Enforceable. Keep it only if you need mobility.",
     askFor: "Ask for a city limit.",
@@ -104,6 +139,8 @@ const PROBLEMS = {
     clause: "15.8",
     confidence: "low",
     needsReview: true,
+    // The clause itself was not located, so the whole section is shown.
+    passages: [syntheticPassage("15", 8, 360, { approximate: true })],
     employeeMsg: "We could not analyse this clause reliably.",
     hrMsg: "Automatic analysis failed for this clause.",
   }),

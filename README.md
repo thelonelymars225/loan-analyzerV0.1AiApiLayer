@@ -111,7 +111,7 @@ web app.
 | `packages/law`       | The rules table, the law corpus, article lookup, the ingest script             |
 | `packages/db`        | Drizzle schema and migrations (Postgres 16 + pgvector)                         |
 | `packages/storage`   | Encrypted file storage: S3 bucket or local disk                                |
-| `evals`              | Synthetic contracts, the Qiwa template, the eval runner                        |
+| `evals/cases`        | 14 synthetic Qiwa contracts, each with the rating it must get                  |
 | `infra`              | Docker Compose stack, Dockerfiles, nginx config                                |
 
 Request flow: the web app uploads a PDF. The API checks it, stores it in the bucket, creates
@@ -194,7 +194,7 @@ variables only. To use a file: `cp .env.example .env`, edit it, then run
 
 Without `ANTHROPIC_API_KEY`, the worker uses the offline analyser (`heuristic-v2`). It
 matches Section 15 clauses against known patterns in English and Arabic. It needs no network,
-gives the same answer every time, and covers the clause library in the eval set. Unusual
+gives the same answer every time, and covers the Section 15 clauses in the eval set. Unusual
 wording can slip past it.
 
 With `ANTHROPIC_API_KEY` set, the worker sends each redacted Section 15 clause to Claude
@@ -212,26 +212,16 @@ never reused for another contract's terms.
 ```sh
 pnpm check            # lint, typecheck and unit tests
 pnpm format:check     # prettier
-pnpm eval             # rate every synthetic case and compare with expected.json
 ```
 
 - Tests that need Postgres read `DATABASE_URL`. Each one creates its own temporary database
   and drops it at the end. Without `DATABASE_URL` they are skipped.
-- `pnpm eval` rates the cases in `evals/cases` (synthetic Qiwa PDFs with made-up people and
-  companies). It checks the Build Plan's pass bars: required fields, high-severity recall,
-  precision, `mustNot` rules, score within ±5, and the same findings on 3 runs. Results go to
-  `evals/results/`. Options: `--llm heuristic|claude`, `--case <id>`, `--runs <n>`,
-  `--no-ocr`, `--json`.
-- `pnpm eval --private <dir>` also rates real contracts kept in `<dir>/<id>/contract.pdf`
-  with an `expected.json` next to each. **Real contracts never go in git.** Keep them outside
-  the repository (or in `private/`, which git ignores). The runner does not print or save
-  their field values.
-- The case PDFs are generated from `case.json` with Playwright Chromium:
-  `pnpm --filter @rater/evals generate`. They are committed, so evals need no browser.
+- `apps/worker/test/eval-cases.test.ts` rates the cases in `evals/cases` (synthetic Qiwa PDFs
+  with made-up people and companies) with the offline analyser and checks each against its
+  `expected.json`: status, fields, findings, deadlines and score range.
 
 CI (`.github/workflows/ci.yml`) runs the same checks and the web build on pull requests and
 on pushes to `main` (a push to a pull request's branch runs once, as the pull request). It
-runs the eval set when `packages/core`, `packages/law`, `packages/llm` or `evals` change, and
 fails if a PDF other than the synthetic ones is committed.
 
 ## Privacy and PDPL

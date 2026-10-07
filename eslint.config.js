@@ -10,7 +10,6 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/dist/**",
       "**/coverage/**",
-      "evals/results/**",
       "packages/db/migrations/**",
       "**/*.d.ts",
     ],

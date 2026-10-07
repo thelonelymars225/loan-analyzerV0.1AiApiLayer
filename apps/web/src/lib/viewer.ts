@@ -74,23 +74,6 @@ function bySeverityThenNumber(a: ViewerItem, b: ViewerItem): number {
   );
 }
 
-export type SeverityFilter = "all" | Severity;
-export const SEVERITY_FILTERS: readonly SeverityFilter[] = [
-  "all",
-  "high",
-  "medium",
-  "low",
-];
-
-export function filterBySeverity(
-  items: ViewerItem[],
-  filter: SeverityFilter,
-): ViewerItem[] {
-  return filter === "all"
-    ? items
-    : items.filter((item) => item.finding.severity === filter);
-}
-
 /** One highlight on a page: a passage of an item, in the item's colour. */
 export interface PageMark {
   itemId: string;

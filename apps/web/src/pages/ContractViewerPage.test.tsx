@@ -62,7 +62,7 @@ describe("ContractViewerPage", () => {
     ).toHaveLength(2);
   });
 
-  it("opens on the passage a report card links to, and steps through the findings", async () => {
+  it("opens on the passage a report card links to", async () => {
     serveReport();
     renderWithProviders(<ContractViewerPage />, {
       route:
@@ -74,7 +74,6 @@ describe("ContractViewerPage", () => {
     const selected = within(panel()).getByRole("button", { expanded: true });
     expect(selected).toHaveTextContent("End-of-service on basic wage only");
     expect(screen.getByText(/calculated on your full actual wage/)).toBeInTheDocument();
-    expect(screen.getByText("3 of 5")).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
         name: "Finding 4: End-of-service on basic wage only",
@@ -84,27 +83,15 @@ describe("ContractViewerPage", () => {
       "href",
       "/ratings/rt_test_0001?view=employee#finding-EOS-BASE-01-15-6",
     );
-
-    await userEvent.click(screen.getByRole("button", { name: "Next finding" }));
-    expect(within(panel()).getByRole("button", { expanded: true })).toHaveTextContent(
-      "Transfer anywhere in the Kingdom",
-    );
-    expect(screen.getByText("4 of 5")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Previous finding" })).toBeEnabled();
   });
 
-  it("filters issues by severity and switches to what's good", async () => {
+  it("switches to what's good", async () => {
     serveReport();
     renderWithProviders(<ContractViewerPage />, {
       route: "/ratings/rt_test_0001/contract",
       path: PATH,
     });
     await screen.findByRole("heading", { name: "Contract" });
-
-    await userEvent.click(screen.getByRole("button", { name: "Medium severity" }));
-    expect(listedTitles()).toEqual([
-      "2Transfer anywhere in the KingdomMedium severityClause 15.3 · Page 8",
-    ]);
 
     await userEvent.click(screen.getByRole("tab", { name: "What's good (1)" }));
     expect(listedTitles()).toEqual([

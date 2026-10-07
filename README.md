@@ -77,9 +77,9 @@ every page of the PDF, as images the API cuts on request
 (`GET /api/v1/ratings/{id}/pages/{page}`, same no-store rule as the passages), with each
 finding marked where it is and numbered in contract order. Its side panel is the table of
 contents for the findings: an Issues tab sorted by severity, a What's good tab (whose green
-marks only show while it is open), a severity filter and a previous/next stepper. The URL
-carries the view, the tab and the focused passage, so a link lands on the right lines. Once
-the PDF is deleted the viewer shows the clause text as it was rated instead.
+marks only show while it is open). The URL carries the view, the tab and the focused
+passage, so a link lands on the right lines. Once the PDF is deleted the viewer shows the
+clause text as it was rated instead.
 
 A rating whose job was lost (the worker was killed mid-job, or the queue gave up on it) would
 show "in progress" forever. An hourly sweep in the worker marks it `failed` with the error

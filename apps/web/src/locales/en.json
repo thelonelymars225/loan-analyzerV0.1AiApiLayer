@@ -225,9 +225,6 @@
     "pages_other": "{{count}} pages",
     "pageLabel": "Page {{page}} of {{pages}}",
     "pageAlt": "Page {{page}} of the contract",
-    "zoomLabel": "Zoom",
-    "zoomIn": "Zoom in",
-    "zoomOut": "Zoom out",
     "openPdf": "Open PDF",
     "download": "Download",
     "panelLabel": "Findings in this contract",
@@ -235,13 +232,6 @@
       "issues": "Issues",
       "good": "What's good"
     },
-    "filter": {
-      "label": "Severity",
-      "all": "All"
-    },
-    "step": "{{index}} of {{total}}",
-    "previous": "Previous finding",
-    "next": "Next finding",
     "empty": {
       "issues": "No issues to show.",
       "good": "Nothing stood out as better than the law."

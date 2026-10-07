@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { syntheticPassage, syntheticReport } from "../test/fixtures";
 import {
   DEFAULT_PAGE_SIZE,
-  filterBySeverity,
   focusFromParams,
   focusParams,
   pageMarks,
@@ -50,15 +49,6 @@ describe("viewerItems", () => {
       ["PROB-MAX-01", 1],
       ["LEAVE-MIN-01", 2],
     ]);
-  });
-});
-
-describe("filterBySeverity", () => {
-  it("keeps one severity, or all", () => {
-    expect(filterBySeverity(items.issues, "all")).toHaveLength(5);
-    expect(filterBySeverity(items.issues, "medium").map((i) => i.finding.ruleId)).toEqual(
-      ["TRANSFER-KSA-01"],
-    );
   });
 });
 

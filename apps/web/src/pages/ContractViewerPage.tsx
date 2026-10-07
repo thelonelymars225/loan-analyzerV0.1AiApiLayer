@@ -5,13 +5,12 @@ import {
   type ReportDocument,
 } from "@rater/contracts";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Download, ExternalLink, ZoomIn, ZoomOut } from "lucide-react";
-import { useMemo, useState } from "react";
+import { ArrowLeft, Download, ExternalLink } from "lucide-react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams, useSearchParams } from "react-router";
 import { PassageText } from "../components/report/PassageText";
 import { ErrorState, LoadingState } from "../components/states/states";
-import { Button } from "../components/ui/button";
 import { buttonVariants } from "../components/ui/variants";
 import { ContractPages } from "../components/viewer/ContractPages";
 import { IssuesPanel } from "../components/viewer/IssuesPanel";
@@ -21,7 +20,6 @@ import { queryKeys } from "../lib/queries";
 import { isInProgress } from "../lib/ratings";
 import {
   DEFAULT_PAGE_SIZE,
-  filterBySeverity,
   focusFromParams,
   focusParams,
   pageMarks,
@@ -29,12 +27,9 @@ import {
   tabFromParams,
   viewerItems,
   type PageMark,
-  type SeverityFilter,
   type ViewerItem,
   type ViewerTab,
 } from "../lib/viewer";
-
-const ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
 /**
  * The contract as the rater saw it: every page, with each finding marked where it is, and a
@@ -99,8 +94,6 @@ function ViewerBody({ rating }: { rating: ReturnType<typeof useQuery<RatingRepor
 function Viewer({ report }: { report: RatingReport }) {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
-  const [zoom, setZoom] = useState<number>(1);
-  const [filter, setFilter] = useState<SeverityFilter>("all");
 
   const items = useMemo(() => viewerItems(report), [report]);
   const everyItem = useMemo(() => [...items.issues, ...items.good], [items]);
@@ -108,7 +101,6 @@ function Viewer({ report }: { report: RatingReport }) {
   // A focused item decides the tab, so a link to a positive finding opens "What's good".
   const tab: ViewerTab =
     everyItem.find((item) => item.id === focus?.itemId)?.tab ?? tabFromParams(params);
-  const visible = tab === "issues" ? filterBySeverity(items.issues, filter) : items.good;
   const marks = pageMarks(items[tab], focus);
   const pages = report.document.pages ?? 0;
   const sizes = useMemo(() => pageSizes(everyItem, pages), [everyItem, pages]);
@@ -137,10 +129,6 @@ function Viewer({ report }: { report: RatingReport }) {
   function changeTab(next: ViewerTab) {
     update({ tab: next, focus: null, clause: null, page: null });
   }
-  function changeZoom(direction: 1 | -1) {
-    const index = ZOOM_STEPS.indexOf(zoom as (typeof ZOOM_STEPS)[number]);
-    setZoom(ZOOM_STEPS[index + direction] ?? zoom);
-  }
 
   return (
     <>
@@ -155,36 +143,6 @@ function Viewer({ report }: { report: RatingReport }) {
         </div>
         {report.document.available && (
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              role="group"
-              aria-label={t("viewer.zoomLabel")}
-              className="flex items-center rounded-lg border border-border bg-card"
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t("viewer.zoomOut")}
-                disabled={zoom === ZOOM_STEPS[0]}
-                onClick={() => changeZoom(-1)}
-              >
-                <ZoomOut aria-hidden="true" />
-              </Button>
-              <span
-                className="min-w-12 text-center text-sm tabular-nums"
-                aria-live="polite"
-              >
-                {Math.round(zoom * 100)}%
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={t("viewer.zoomIn")}
-                disabled={zoom === ZOOM_STEPS[ZOOM_STEPS.length - 1]}
-                onClick={() => changeZoom(1)}
-              >
-                <ZoomIn aria-hidden="true" />
-              </Button>
-            </span>
             <a
               href={apiUrls.document(report.id, "inline")}
               target="_blank"
@@ -214,9 +172,6 @@ function Viewer({ report }: { report: RatingReport }) {
             items={items}
             tab={tab}
             onTabChange={changeTab}
-            filter={filter}
-            onFilterChange={setFilter}
-            visible={visible}
             selectedId={focus?.itemId ?? null}
             onSelect={select}
           />
@@ -227,7 +182,6 @@ function Viewer({ report }: { report: RatingReport }) {
               ratingId={report.id}
               sizes={sizes.length > 0 ? sizes : [DEFAULT_PAGE_SIZE]}
               marks={marks}
-              zoom={zoom}
               onSelect={selectMark}
             />
           ) : (

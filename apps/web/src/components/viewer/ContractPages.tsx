@@ -10,8 +10,6 @@ interface ContractPagesProps {
   /** One entry per page, in order. */
   sizes: PageSize[];
   marks: PageMark[];
-  /** 1 is the full width of the column; larger values scroll sideways. */
-  zoom: number;
   onSelect: (mark: PageMark) => void;
 }
 
@@ -20,17 +18,11 @@ interface ContractPagesProps {
  * findings drawn over them. The paper never mirrors: the stack is always left-to-right, even
  * when the app is in Arabic, because the PDF itself is laid out that way.
  */
-export function ContractPages({
-  ratingId,
-  sizes,
-  marks,
-  zoom,
-  onSelect,
-}: ContractPagesProps) {
+export function ContractPages({ ratingId, sizes, marks, onSelect }: ContractPagesProps) {
   const { t } = useTranslation();
   return (
-    <div dir="ltr" className="overflow-x-auto rounded-xl bg-muted/60 p-3 sm:p-4">
-      <ol className="mx-auto space-y-4" style={{ width: `${zoom * 100}%` }}>
+    <div dir="ltr" className="rounded-xl bg-muted/60 p-3 sm:p-4">
+      <ol className="mx-auto space-y-4">
         {sizes.map((size, index) => {
           const page = index + 1;
           return (

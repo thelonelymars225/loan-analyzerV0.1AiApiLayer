@@ -1,20 +1,12 @@
 import type { Passage, View } from "@rater/contracts";
 import type { TFunction } from "i18next";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { cn } from "../../lib/cn";
 import { isSectionNumber } from "../../lib/passages";
 import { PIN_CLASSES, SEVERITY_TONE } from "../../lib/report";
-import {
-  SEVERITY_FILTERS,
-  VIEWER_TABS,
-  type SeverityFilter,
-  type ViewerItem,
-  type ViewerTab,
-} from "../../lib/viewer";
+import { VIEWER_TABS, type ViewerItem, type ViewerTab } from "../../lib/viewer";
 import { Badge, ToneDot } from "../ui/badge";
-import { Button } from "../ui/button";
 import { Tabs } from "../ui/tabs";
 
 interface IssuesPanelProps {
@@ -23,10 +15,6 @@ interface IssuesPanelProps {
   items: Record<ViewerTab, ViewerItem[]>;
   tab: ViewerTab;
   onTabChange: (tab: ViewerTab) => void;
-  filter: SeverityFilter;
-  onFilterChange: (filter: SeverityFilter) => void;
-  /** The items of the current tab after the filter, in the order shown. */
-  visible: ViewerItem[];
   selectedId: string | null;
   onSelect: (item: ViewerItem, passage?: Passage) => void;
 }
@@ -34,8 +22,8 @@ interface IssuesPanelProps {
 const LIST_ID = "viewer-items";
 
 /**
- * The table of contents for the comments: Issues (by severity) and What's good, with a
- * filter and a previous/next stepper. Choosing an item marks it on the page and scrolls to it.
+ * The table of contents for the comments: Issues (by severity) and What's good.
+ * Choosing an item marks it on the page and scrolls to it.
  */
 export function IssuesPanel({
   ratingId,
@@ -43,19 +31,10 @@ export function IssuesPanel({
   items,
   tab,
   onTabChange,
-  filter,
-  onFilterChange,
-  visible,
   selectedId,
   onSelect,
 }: IssuesPanelProps) {
   const { t } = useTranslation();
-  const index = visible.findIndex((item) => item.id === selectedId);
-  const step = (offset: number) => {
-    const next =
-      visible[index < 0 ? (offset > 0 ? 0 : visible.length - 1) : index + offset];
-    if (next) onSelect(next);
-  };
 
   return (
     <aside
@@ -74,70 +53,16 @@ export function IssuesPanel({
           controls={LIST_ID}
           className="w-full [&>button]:flex-1"
         />
-        {tab === "issues" && (
-          <div
-            role="group"
-            aria-label={t("viewer.filter.label")}
-            className="flex flex-wrap gap-1 text-xs"
-          >
-            {SEVERITY_FILTERS.map((value) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={filter === value}
-                onClick={() => onFilterChange(value)}
-                className={cn(
-                  "flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium transition-colors",
-                  filter === value
-                    ? "border-primary bg-primary-soft text-primary"
-                    : "border-border text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {value !== "all" && <ToneDot tone={SEVERITY_TONE[value]} />}
-                {value === "all" ? t("viewer.filter.all") : t(`severity.${value}`)}
-              </button>
-            ))}
-          </div>
+        {items[tab].length === 0 && (
+          <p className="text-xs text-muted-foreground">{t(`viewer.empty.${tab}`)}</p>
         )}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span aria-live="polite">
-            {visible.length === 0
-              ? t(`viewer.empty.${tab}`)
-              : t("viewer.step", {
-                  index: index < 0 ? "–" : index + 1,
-                  total: visible.length,
-                })}
-          </span>
-          <span className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              aria-label={t("viewer.previous")}
-              disabled={visible.length === 0 || index <= 0}
-              onClick={() => step(-1)}
-            >
-              <ChevronLeft aria-hidden="true" className="rtl:rotate-180" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              aria-label={t("viewer.next")}
-              disabled={visible.length === 0 || index >= visible.length - 1}
-              onClick={() => step(1)}
-            >
-              <ChevronRight aria-hidden="true" className="rtl:rotate-180" />
-            </Button>
-          </span>
-        </div>
       </div>
 
       <ol
         id={LIST_ID}
         className="max-h-[45dvh] divide-y divide-border overflow-y-auto lg:max-h-none"
       >
-        {visible.map((item) => (
+        {items[tab].map((item) => (
           <li key={item.id}>
             <PanelItem
               item={item}

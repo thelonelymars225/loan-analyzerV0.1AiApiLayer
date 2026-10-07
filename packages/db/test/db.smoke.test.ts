@@ -1,13 +1,11 @@
 import { randomBytes } from "node:crypto";
-import { cosineDistance, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { EMBEDDING_DIM } from "@rater/contracts";
 import {
   createDb,
   documents,
   findings,
-  lawArticles,
   memberships,
   migrate,
   newId,
@@ -18,20 +16,10 @@ import {
 import type { Db } from "../src";
 
 /**
- * Migrates a throwaway database (rater_test_<random>) on the server in DATABASE_URL,
- * writes one row into each core table and runs a vector search. Skipped without
- * DATABASE_URL. All data is synthetic.
+ * Migrates a throwaway database (rater_test_<random>) on the server in DATABASE_URL and
+ * writes one row into each core table. Skipped without DATABASE_URL. All data is synthetic.
  */
 const DATABASE_URL = process.env.DATABASE_URL;
-
-/** A unit vector of EMBEDDING_DIM dimensions, mostly along `axis`. */
-function embedding(axis: number, lean = 0): number[] {
-  const vector = new Array<number>(EMBEDDING_DIM).fill(0);
-  vector[axis] = 1;
-  vector[axis + 1] = lean;
-  const length = Math.hypot(...vector);
-  return vector.map((value) => value / length);
-}
 
 describe.skipIf(!DATABASE_URL)("database smoke test", () => {
   const databaseName = `rater_test_${randomBytes(4).toString("hex")}`;
@@ -57,7 +45,7 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
     await admin.end();
   }, 60_000);
 
-  it("creates every table, the vector extension and the HNSW index", async () => {
+  it("creates every table", async () => {
     const tables = await pool.query<{ tablename: string }>(
       "select tablename from pg_tables where schemaname = 'public' order by tablename",
     );
@@ -71,7 +59,6 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
       "documents",
       "findings",
       "invitations",
-      "law_articles",
       "memberships",
       "orgs",
       "ratings",
@@ -79,16 +66,6 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
       "users",
       "verifications",
     ]);
-
-    const extension = await pool.query(
-      "select 1 from pg_extension where extname = 'vector'",
-    );
-    expect(extension.rowCount).toBe(1);
-
-    const index = await pool.query<{ indexdef: string }>(
-      "select indexdef from pg_indexes where indexname = 'law_articles_embedding_idx'",
-    );
-    expect(index.rows[0]?.indexdef).toMatch(/USING hnsw \(embedding vector_cosine_ops\)/);
   });
 
   it("is safe to run migrate again", async () => {
@@ -168,32 +145,5 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
       await db.select().from(findings).where(eq(findings.ratingId, ratingId)),
     ).toEqual([]);
     expect(await db.select().from(users).where(eq(users.id, userId))).toHaveLength(1);
-  });
-
-  it("orders law articles by cosine distance to a query embedding", async () => {
-    await db.insert(lawArticles).values(
-      [
-        { id: "test:art-77", article: "77", embedding: embedding(0) },
-        { id: "test:art-84", article: "84", embedding: embedding(10) },
-        { id: "test:art-109", article: "109", embedding: embedding(10, 0.5) },
-      ].map((row) => ({ ...row, lawVersion: "2025-11", sourceDoc: "labor_law" })),
-    );
-
-    const query = embedding(10, 0.1);
-    const distance = cosineDistance(lawArticles.embedding, query);
-    const nearest = await db
-      .select({ article: lawArticles.article, distance })
-      .from(lawArticles)
-      .orderBy(distance)
-      .limit(3);
-
-    expect(nearest.map((row) => row.article)).toEqual(["84", "109", "77"]);
-    expect(Number(nearest[0]?.distance)).toBeLessThan(0.01);
-
-    const [stored] = await db
-      .select()
-      .from(lawArticles)
-      .where(eq(lawArticles.id, "test:art-84"));
-    expect(stored?.embedding).toHaveLength(EMBEDDING_DIM);
   });
 });

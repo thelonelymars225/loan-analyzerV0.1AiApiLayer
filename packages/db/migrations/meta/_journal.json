@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1791070547262,
-      "tag": "0000_enable_vector",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1791072799880,
-      "tag": "0001_init",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1791076799888,
-      "tag": "0002_review_reasons",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1791082143612,
-      "tag": "0003_audit_user_index",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1791362604184,
-      "tag": "0004_clause_locations",
+      "when": 1791378554111,
+      "tag": "0000_init",
       "breakpoints": true
     }
   ]

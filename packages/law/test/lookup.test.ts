@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LawArticle } from "@rater/contracts";
-import {
-  embedArticle,
-  HashEmbedder,
-  loadCorpus,
-  matchesRef,
-  MemoryArticleLookup,
-  toLawArticleRow,
-} from "../src";
+import { matchesRef, MemoryArticleLookup } from "../src";
 
 /**
  * Which corpus entry an article is, e.g. "labor_law 83(1)". Deliberately not the citation
@@ -104,83 +97,5 @@ describe("MemoryArticleLookup.byRefs", () => {
   it("returns nothing for unknown references", async () => {
     expect(await lookup.byRefs([{ source: "labor_law", article: "999" }])).toEqual([]);
     expect(await lookup.byRefs([])).toEqual([]);
-  });
-});
-
-describe("MemoryArticleLookup.search", () => {
-  const lookup = new MemoryArticleLookup();
-  const top = async (text: string, k: number) =>
-    (await lookup.search(text, k)).map(entry);
-
-  it.each([
-    [
-      "The end-of-service award shall be calculated on the basis of the basic salary only.",
-      "labor_law 84",
-    ],
-    ["Overtime shall be compensated at 25% of the basic hourly wage.", "labor_law 107"],
-    ["The Arabic text prevails over the English text.", "qiwa_template 14.7"],
-    ["Any term that contradicts the Labor Law is void.", "qiwa_template 14.5"],
-  ])("English: %s → %s first", async (query, expected) => {
-    expect((await top(query, 3))[0]).toBe(expected);
-  });
-
-  it("English: a transfer clause finds the relocation rules", async () => {
-    const hits = await top(
-      "The employer may transfer the employee to any of its branches or projects anywhere in the Kingdom.",
-      3,
-    );
-    expect(hits).toContain("implementing_regulations 20");
-  });
-
-  it.each([
-    ["الإجازة السنوية واحد وعشرون يوما", "labor_law 109(1)"],
-    ["التعويض عن إنهاء العقد لسبب غير مشروع", "labor_law 77"],
-    ["لا يجوز تشغيل العامل أكثر من ثماني ساعات في اليوم", "labor_law 98"],
-    ["ينتهي العقد بإنجاز العمل المتفق عليه", "labor_law 57"],
-    ["يحق لصاحب العمل نقل الموظف إلى أي مدينة في المملكة", "labor_law 58(1)"],
-  ])("Arabic: %s → %s first", async (query, expected) => {
-    expect((await top(query, 3))[0]).toBe(expected);
-  });
-
-  it("Arabic: probation with Arabic-Indic digits finds Art. 53 and Exec. Reg. Art. 19", async () => {
-    const hits = await top("فترة التجربة ٢٧٠ يوماً", 3);
-    expect(hits).toContain("labor_law 53");
-    expect(hits).toContain("implementing_regulations 19");
-  });
-
-  it("finds an article a clause cites by number", async () => {
-    const hits = await top("ends upon completion of the project under Article 57", 3);
-    expect(hits).toContain("labor_law 57");
-  });
-
-  it("returns at most k results, and none for k = 0 or empty text", async () => {
-    expect(await lookup.search("annual leave", 2)).toHaveLength(2);
-    expect(await lookup.search("annual leave", 0)).toEqual([]);
-    expect(await lookup.search("", 5)).toEqual([]);
-  });
-
-  it("is deterministic", async () => {
-    const query = "non-compete after the contract ends";
-    expect(await top(query, 5)).toEqual(await top(query, 5));
-  });
-});
-
-describe("toLawArticleRow", () => {
-  it("maps a corpus article to a law_articles row with its embedding", () => {
-    const embedder = new HashEmbedder();
-    const source = loadCorpus().find((a) => a.article === "84")!;
-    const row = toLawArticleRow(source, embedder);
-    expect(row).toMatchObject({
-      id: "law_2025-11_labor_law_84",
-      lawVersion: "2025-11",
-      sourceDoc: "labor_law",
-      article: "84",
-      paragraph: null,
-      textAr: source.textAr,
-      textEnUnofficial: source.textEnUnofficial,
-      sourceUrl: source.sourceUrl,
-    });
-    expect(row.embedding).toEqual(embedArticle(source, embedder));
-    expect(row.embedding).toHaveLength(embedder.dim);
   });
 });

@@ -1,8 +1,7 @@
 import { randomBytes } from "node:crypto";
 import pg from "pg";
-import { createDb, lawArticles, migrate } from "@rater/db";
+import { createDb, migrate } from "@rater/db";
 import type { Db } from "@rater/db";
-import { HashEmbedder, loadCorpus, toLawArticleRow } from "@rater/law";
 
 /** Tests that need Postgres run only when DATABASE_URL is set (they skip otherwise). */
 export const DATABASE_URL = process.env.DATABASE_URL;
@@ -48,12 +47,4 @@ async function adminQuery(sql: string): Promise<void> {
   } finally {
     await admin.end();
   }
-}
-
-/** Loads the bundled law corpus into law_articles, as `pnpm law:ingest` does. */
-export async function ingestCorpus(db: Db): Promise<number> {
-  const embedder = new HashEmbedder();
-  const rows = loadCorpus().map((article) => toLawArticleRow(article, embedder));
-  await db.insert(lawArticles).values(rows);
-  return rows.length;
 }

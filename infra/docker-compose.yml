@@ -1,4 +1,4 @@
-# The whole product on one machine: Postgres + pgvector, MinIO (an S3 stand-in), the API,
+# The whole product on one machine: Postgres, MinIO (an S3 stand-in), the API,
 # the worker and the web app.
 #
 #   docker compose -f infra/docker-compose.yml up --build     (or: pnpm docker:up)
@@ -36,7 +36,7 @@ x-minio-image: &minio-image ${MINIO_IMAGE:-pgsty/minio:RELEASE.2026-08-04T00-00-
 
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: postgres:16
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -94,14 +94,14 @@ services:
         mc encrypt set sse-s3 "rater/$$S3_BUCKET"
     restart: "no"
 
-  # One-shot: applies the database migrations and loads the law corpus, then exits.
+  # One-shot: applies the database migrations, then exits.
   migrate:
     build:
       context: ..
       dockerfile: infra/Dockerfile
       target: worker
     working_dir: /app
-    command: ["sh", "-c", "pnpm db:migrate && pnpm law:ingest"]
+    command: ["pnpm", "db:migrate"]
     environment:
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/rater
     depends_on:

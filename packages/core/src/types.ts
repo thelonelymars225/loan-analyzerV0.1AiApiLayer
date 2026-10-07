@@ -83,10 +83,9 @@ export interface RedactionContext {
   names: { text: string; placeholder: NamePlaceholder }[];
 }
 
-/** Rule-first law lookup with vector search as backstop. */
+/** Rule-first law lookup: the articles a rule cites. */
 export interface ArticleLookup {
   byRefs(refs: ArticleRef[]): Promise<LawArticle[]>;
-  search(text: string, k: number): Promise<LawArticle[]>;
 }
 
 /** Cache of validated ClauseAnalysis results, keyed by clauseCacheKey(). */

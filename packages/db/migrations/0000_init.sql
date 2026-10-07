@@ -19,6 +19,19 @@ CREATE TABLE "clause_cache" (
 	CONSTRAINT "clause_cache_pk" PRIMARY KEY("text_hash","law_version","ruleset_version","prompt_version","model")
 );
 --> statement-breakpoint
+CREATE TABLE "clause_locations" (
+	"rating_id" text NOT NULL,
+	"clause" text NOT NULL,
+	"page" integer NOT NULL,
+	"page_width" double precision NOT NULL,
+	"page_height" double precision NOT NULL,
+	"x_min" double precision NOT NULL,
+	"y_min" double precision NOT NULL,
+	"x_max" double precision NOT NULL,
+	"y_max" double precision NOT NULL,
+	CONSTRAINT "clause_locations_rating_id_clause_page_pk" PRIMARY KEY("rating_id","clause","page")
+);
+--> statement-breakpoint
 CREATE TABLE "clauses" (
 	"id" text PRIMARY KEY NOT NULL,
 	"rating_id" text NOT NULL,
@@ -56,6 +69,7 @@ CREATE TABLE "findings" (
 	"rating_id" text NOT NULL,
 	"rule_id" text NOT NULL,
 	"clause_ref" text,
+	"related_clause" text,
 	"verdict" text NOT NULL,
 	"severity" text NOT NULL,
 	"confidence" text NOT NULL,
@@ -70,20 +84,6 @@ CREATE TABLE "findings" (
 	"source" text NOT NULL,
 	"needs_review" boolean DEFAULT false NOT NULL,
 	"position" integer DEFAULT 0 NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "law_articles" (
-	"id" text PRIMARY KEY NOT NULL,
-	"law_version" text NOT NULL,
-	"source_doc" text NOT NULL,
-	"article" text NOT NULL,
-	"paragraph" text,
-	"text_ar" text,
-	"text_en_unofficial" text,
-	"source_url" text,
-	"effective_from" date,
-	"effective_to" date,
-	"embedding" vector(256)
 );
 --> statement-breakpoint
 CREATE TABLE "ratings" (
@@ -103,6 +103,7 @@ CREATE TABLE "ratings" (
 	"score_market" integer,
 	"score_clarity" integer,
 	"deadlines" jsonb,
+	"review_reasons" jsonb,
 	"usage" jsonb,
 	"error_code" text,
 	"error" text,
@@ -191,6 +192,7 @@ CREATE TABLE "verifications" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "clause_locations" ADD CONSTRAINT "clause_locations_rating_id_ratings_id_fk" FOREIGN KEY ("rating_id") REFERENCES "public"."ratings"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "clauses" ADD CONSTRAINT "clauses_rating_id_ratings_id_fk" FOREIGN KEY ("rating_id") REFERENCES "public"."ratings"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contract_fields" ADD CONSTRAINT "contract_fields_rating_id_ratings_id_fk" FOREIGN KEY ("rating_id") REFERENCES "public"."ratings"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "documents" ADD CONSTRAINT "documents_org_id_orgs_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."orgs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -206,14 +208,12 @@ ALTER TABLE "memberships" ADD CONSTRAINT "memberships_organization_id_orgs_id_fk
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "audit_events_org_at_idx" ON "audit_events" USING btree ("org_id","at");--> statement-breakpoint
+CREATE INDEX "audit_events_user_action_at_idx" ON "audit_events" USING btree ("user_id","action","at");--> statement-breakpoint
 CREATE INDEX "clauses_rating_idx" ON "clauses" USING btree ("rating_id");--> statement-breakpoint
 CREATE INDEX "documents_org_idx" ON "documents" USING btree ("org_id");--> statement-breakpoint
 CREATE INDEX "documents_uploaded_by_idx" ON "documents" USING btree ("uploaded_by");--> statement-breakpoint
 CREATE INDEX "documents_delete_after_idx" ON "documents" USING btree ("delete_after");--> statement-breakpoint
 CREATE INDEX "findings_rating_idx" ON "findings" USING btree ("rating_id");--> statement-breakpoint
-CREATE INDEX "law_articles_version_article_idx" ON "law_articles" USING btree ("law_version","article");--> statement-breakpoint
-CREATE INDEX "law_articles_embedding_idx" ON "law_articles" USING hnsw ("embedding" vector_cosine_ops);--> statement-breakpoint
-CREATE UNIQUE INDEX "law_articles_unique_idx" ON "law_articles" USING btree ("law_version","source_doc","article",coalesce("paragraph", ''));--> statement-breakpoint
 CREATE INDEX "ratings_org_created_idx" ON "ratings" USING btree ("org_id","created_at");--> statement-breakpoint
 CREATE INDEX "ratings_created_by_idx" ON "ratings" USING btree ("created_by","created_at");--> statement-breakpoint
 CREATE INDEX "ratings_document_idx" ON "ratings" USING btree ("document_id");--> statement-breakpoint

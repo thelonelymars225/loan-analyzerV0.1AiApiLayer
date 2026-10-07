@@ -42,7 +42,7 @@ worker adds the I/O and saves the results.
      years), at most 48 hours a week, overtime premium at least 50%, allowance ratios, and the
      renewal deadline.
    - Section 15: each clause is matched to rules from the rules table. The rule's articles
-     are fetched by reference, with vector search as a backstop. The analyser returns a
+     are fetched by reference from the bundled law corpus. The analyser returns a
      verdict. Its citations must come from the articles it was given, or it retries once. A
      second bad reply becomes a low-confidence finding flagged for review.
    - Cross-check: Section 15 statements that contradict sections 1-14, such as a "project"
@@ -108,8 +108,8 @@ web app.
 | `packages/core`      | The pipeline as pure functions: detect, extract, redact, rules, impact, score  |
 | `packages/pdf`       | Wrappers for `pdftotext`, `pdftoppm` and `tesseract`                           |
 | `packages/llm`       | `LlmClient`: the Claude adapter, the offline analyser, versioned prompts       |
-| `packages/law`       | The rules table, the law corpus, article lookup, the ingest script             |
-| `packages/db`        | Drizzle schema and migrations (Postgres 16 + pgvector)                         |
+| `packages/law`       | The rules table, the law corpus, article lookup                                |
+| `packages/db`        | Drizzle schema and migrations (Postgres 16)                                    |
 | `packages/storage`   | Encrypted file storage: S3 bucket or local disk                                |
 | `evals`              | Synthetic contracts, the Qiwa template, the eval runner                        |
 | `infra`              | Docker Compose stack, Dockerfiles, nginx config                                |
@@ -118,8 +118,8 @@ Request flow: the web app uploads a PDF. The API checks it, stores it in the buc
 a `queued` rating and sends a job. The worker fetches the PDF, runs the pipeline and writes
 fields, clauses and findings to Postgres. The web app renders the report in either view.
 
-Postgres holds the app data, the job queue (pg-boss) and the law vectors (pgvector). The PDFs
-live only in the bucket.
+Postgres holds the app data and the job queue (pg-boss). The law corpus ships with the code
+and is read into memory. The PDFs live only in the bucket.
 
 ## Accounts and workspaces
 
@@ -150,9 +150,8 @@ pnpm docker:up        # or: docker compose -f infra/docker-compose.yml up --buil
 Then open http://localhost:8080, create an account and upload a contract. The synthetic
 contracts in `evals/cases/*/contract.pdf` work well for a first try.
 
-The stack runs Postgres + pgvector, MinIO (an S3 stand-in, encrypted at rest), a one-shot job
-that migrates the database and loads the law corpus, the API, the worker, and nginx serving
-the web app. Because that job migrates, the API and the worker start with
+The stack runs Postgres, MinIO (an S3 stand-in, encrypted at rest), a one-shot job that
+migrates the database, the API, the worker, and nginx serving the web app. Because that job migrates, the API and the worker start with
 `DB_MIGRATE_ON_START=false`. Everything is published on localhost only. If a port is taken,
 set `WEB_PORT`, `API_PORT`, `POSTGRES_PORT`, `MINIO_PORT` or `MINIO_CONSOLE_PORT`.
 
@@ -175,18 +174,17 @@ Compose section of [.env.example](.env.example)). Stop with `pnpm docker:down`; 
 
 ## Local development
 
-You need Node 22.12+, pnpm 10 (`corepack enable`), Postgres 16 with pgvector, and
+You need Node 22.12+, pnpm 10 (`corepack enable`), Postgres 16, and
 `poppler-utils`. Install `tesseract-ocr` and `tesseract-ocr-ara` too for the Arabic OCR; the
 worker runs without them and skips OCR.
 
 ```sh
 pnpm install
-pnpm dev:db           # Postgres + pgvector in Docker (or use your own)
+pnpm dev:db           # Postgres in Docker (or use your own)
 
 export DATABASE_URL=postgres://postgres:postgres@localhost:5432/rater
 
 pnpm db:migrate       # create the tables (the API and the worker also do it when they start)
-pnpm law:ingest       # load the law corpus into law_articles
 
 pnpm dev:api          # http://localhost:3000
 pnpm dev:worker
@@ -299,14 +297,11 @@ Every rating records the four versions that produced it, and the report footer s
 
 The clause cache is keyed by a hash of the redacted clause text (English and Arabic, since the
 Arabic prevails) and the field summary the analyser is given, plus all four versions. A change
-to any of them re-analyses the clause. Old ratings stay explainable: law rows of older
-versions stay in `law_articles`.
+to any of them re-analyses the clause. Old ratings stay explainable: each finding stores the
+citations.
 
 ## Open questions
 
-- **Embedding model.** The corpus is embedded with an offline hashing embedder (256
-  dimensions). A real multilingual model is still open: self-hosted (data stays on our
-  servers) or a hosted API (less to run).
 - **Production region.** A KSA region for production: Google Cloud Dammam, Oracle Riyadh or
   Jeddah, or a local provider.
 - **Pricing.** Free employee checks with paid HR seats, or pay per rating.

@@ -1,5 +1,5 @@
 import { createDb, migrate } from "@rater/db";
-import { loadRules } from "@rater/law";
+import { loadRules, MemoryArticleLookup } from "@rater/law";
 import { createLlmClient } from "@rater/llm";
 import { ocrArabicRegions, toolsAvailable } from "@rater/pdf";
 import { createStorage } from "@rater/storage";
@@ -7,7 +7,6 @@ import { PgBoss } from "pg-boss";
 import type { Logger } from "pino";
 import type { WorkerConfig } from "./config";
 import { errorForLog } from "./logger";
-import { createArticleLookup } from "./pg-article-lookup";
 import { PgClauseCache } from "./pg-clause-cache";
 import { registerJobs } from "./queue";
 import type { ArabicOcr, RateJobDeps } from "./rate-job";
@@ -49,7 +48,7 @@ export async function startWorker(options: StartWorkerOptions): Promise<RunningW
       db,
       storage: createStorage(env),
       llm: createLlmClient(env),
-      articles: await createArticleLookup(db, logger),
+      articles: new MemoryArticleLookup(),
       cache: new PgClauseCache(db),
       rules: loadRules(),
       ocr: await checkPdfTools(config, logger),

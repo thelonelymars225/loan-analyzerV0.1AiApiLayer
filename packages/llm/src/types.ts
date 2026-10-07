@@ -13,7 +13,7 @@ export interface CandidateRule {
   articles: string[];
 }
 
-/** Article text fetched for the candidate rules (rule-first lookup, vector search as backstop). */
+/** Article text fetched for the candidate rules (rule-first lookup). */
 export interface ArticleText {
   /** Citation as the analyser must repeat it, e.g. "Art. 84". */
   citation: string;

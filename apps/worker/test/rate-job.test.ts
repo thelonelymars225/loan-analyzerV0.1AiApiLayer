@@ -13,11 +13,10 @@ import {
   ratings,
 } from "@rater/db";
 import type { Db } from "@rater/db";
-import { loadRules } from "@rater/law";
+import { loadRules, MemoryArticleLookup } from "@rater/law";
 import { HeuristicLlmClient } from "@rater/llm";
 import { ocrArabicRegions, pdftotextBbox } from "@rater/pdf";
 import type { LocalStorage } from "@rater/storage";
-import { PgArticleLookup } from "../src/pg-article-lookup";
 import { PgClauseCache } from "../src/pg-clause-cache";
 import {
   DOCUMENT_MISSING_MESSAGE,
@@ -35,7 +34,7 @@ import {
   seedOrg,
   seedRating,
 } from "./helpers/seed";
-import { createTestDatabase, DATABASE_URL, ingestCorpus } from "./helpers/test-db";
+import { createTestDatabase, DATABASE_URL } from "./helpers/test-db";
 import type { TestDatabase } from "./helpers/test-db";
 
 const TODAY = "2026-10-04";
@@ -57,7 +56,6 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
   beforeAll(async () => {
     testDb = await createTestDatabase();
     db = testDb.db;
-    await ingestCorpus(db);
     ({ storage, cleanup: cleanupStorage } = await createTempStorage());
     org = await seedOrg(db);
   }, 60_000);
@@ -67,13 +65,13 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
     await cleanupStorage?.();
   }, 60_000);
 
-  /** Real Postgres lookup and cache, the offline analyser, no OCR unless a test adds it. */
+  /** The bundled law corpus, a real Postgres cache, the offline analyser, no OCR unless a test adds it. */
   function deps(overrides: Partial<RateJobDeps> = {}): RateJobDeps {
     return {
       db,
       storage,
       llm: new HeuristicLlmClient(),
-      articles: new PgArticleLookup(db),
+      articles: new MemoryArticleLookup(),
       cache: new PgClauseCache(db),
       rules: loadRules(),
       logger: pino({ level: "silent" }),
@@ -411,7 +409,6 @@ describe.skipIf(!DATABASE_URL)("processRating against Postgres", () => {
       byRefs: async () => {
         throw new Error("connection reset");
       },
-      search: async () => [],
     };
 
     it("rethrows and leaves the rating running while pg-boss will retry", async () => {

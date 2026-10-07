@@ -1,7 +1,5 @@
-import { sql } from "drizzle-orm";
 import {
   boolean,
-  date,
   doublePrecision,
   index,
   integer,
@@ -10,10 +8,7 @@ import {
   primaryKey,
   text,
   timestamp,
-  uniqueIndex,
-  vector,
 } from "drizzle-orm/pg-core";
-import { EMBEDDING_DIM } from "@rater/contracts";
 import type {
   Deadline,
   Impact,
@@ -186,37 +181,6 @@ export const findings = pgTable(
     position: integer("position").notNull().default(0),
   },
   (t) => [index("findings_rating_idx").on(t.ratingId)],
-);
-
-/** The law corpus, one row per article (or paragraph of a long article). */
-export const lawArticles = pgTable(
-  "law_articles",
-  {
-    id: text("id").primaryKey(),
-    lawVersion: text("law_version").notNull(),
-    sourceDoc: text("source_doc").notNull(),
-    article: text("article").notNull(),
-    paragraph: text("paragraph"),
-    textAr: text("text_ar"),
-    textEnUnofficial: text("text_en_unofficial"),
-    sourceUrl: text("source_url"),
-    effectiveFrom: date("effective_from"),
-    effectiveTo: date("effective_to"),
-    embedding: vector("embedding", { dimensions: EMBEDDING_DIM }),
-  },
-  (t) => [
-    index("law_articles_version_article_idx").on(t.lawVersion, t.article),
-    index("law_articles_embedding_idx").using(
-      "hnsw",
-      t.embedding.op("vector_cosine_ops"),
-    ),
-    uniqueIndex("law_articles_unique_idx").on(
-      t.lawVersion,
-      t.sourceDoc,
-      t.article,
-      sql`coalesce(${t.paragraph}, '')`,
-    ),
-  ],
 );
 
 /** Identical clauses are analysed once per law, ruleset, prompt and model version. */

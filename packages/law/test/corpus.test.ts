@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
-import { CorpusEntry, LAW_VERSION, lawArticleRowId, loadCorpus } from "../src";
+import { CorpusEntry, LAW_VERSION, loadCorpus } from "../src";
 
 const corpus = loadCorpus();
 const ARABIC_LETTER = /[\u0621-\u064A]/;
@@ -72,12 +72,9 @@ describe("corpus/articles.json", () => {
     }
   });
 
-  it("gives every entry a unique, stable database row ID", () => {
-    const ids = corpus.map(lawArticleRowId);
+  it("has one entry per source, article and paragraph", () => {
+    const ids = corpus.map((a) => `${a.source} ${a.article} ${a.paragraph}`);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).toContain("law_2025-11_labor_law_83_1");
-    expect(ids).toContain("law_2025-11_labor_law_79-bis");
-    expect(ids).toContain("law_2025-11_qiwa_template_14.8.1");
   });
 });
 

@@ -18,7 +18,7 @@ curl localhost:3000/api/v1/healthz
 
 | Variable                      | Default                 | Notes                                                                                           |
 | ----------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
-| `DATABASE_URL`                | required                | Postgres with pgvector; pg-boss uses the same database                                          |
+| `DATABASE_URL`                | required                | Postgres 16; pg-boss uses the same database                                                     |
 | `PORT`, `HOST`                | `3000`, `0.0.0.0`       |                                                                                                 |
 | `BETTER_AUTH_SECRET`          | required in production  | 32+ characters (`openssl rand -base64 32`)                                                      |
 | `BETTER_AUTH_URL`             | `http://localhost:3000` | Public URL of the API                                                                           |

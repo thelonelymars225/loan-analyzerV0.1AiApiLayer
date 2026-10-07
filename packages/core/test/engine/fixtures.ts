@@ -469,11 +469,8 @@ export const CORPUS: LawArticle[] = [
   lawArticle("labor_law", "65", "6"),
 ];
 
-/** Rule-first lookup over CORPUS; search returns whatever the test sets. */
+/** Rule-first lookup over CORPUS. */
 export class FakeArticleLookup implements ArticleLookup {
-  searchResults: LawArticle[] = [];
-  readonly searches: string[] = [];
-
   async byRefs(refs: ArticleRef[]): Promise<LawArticle[]> {
     return CORPUS.filter((a) =>
       refs.some(
@@ -483,10 +480,5 @@ export class FakeArticleLookup implements ArticleLookup {
           (ref.paragraph === undefined || ref.paragraph === a.paragraph),
       ),
     );
-  }
-
-  async search(text: string, k: number): Promise<LawArticle[]> {
-    this.searches.push(text);
-    return this.searchResults.slice(0, k);
   }
 }

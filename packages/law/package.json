@@ -7,17 +7,10 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json",
-    "ingest": "tsx src/ingest.ts"
+    "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@rater/contracts": "workspace:*",
-    "@rater/db": "workspace:*",
-    "zod": "^4.6.5",
-    "drizzle-orm": "^0.45.3",
-    "pg": "^8.23.1"
-  },
-  "devDependencies": {
-    "@types/pg": "^8.23.1"
+    "zod": "^4.6.5"
   }
 }

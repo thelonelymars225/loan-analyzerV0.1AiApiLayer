@@ -5,10 +5,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { QUEUES } from "@rater/contracts";
 import type { ArticleLookup } from "@rater/core";
 import { ratings } from "@rater/db";
-import { loadRules } from "@rater/law";
+import { loadRules, MemoryArticleLookup } from "@rater/law";
 import { HeuristicLlmClient } from "@rater/llm";
 import { loadConfig } from "../src/config";
-import { PgArticleLookup } from "../src/pg-article-lookup";
 import { PgClauseCache } from "../src/pg-clause-cache";
 import { handleRateJob, RETENTION_CRON, runHourlySweep } from "../src/queue";
 import type { RateJobDeps } from "../src/rate-job";
@@ -21,7 +20,7 @@ import {
   seedRating,
 } from "./helpers/seed";
 import type { TempStorage } from "./helpers/seed";
-import { createTestDatabase, DATABASE_URL, ingestCorpus } from "./helpers/test-db";
+import { createTestDatabase, DATABASE_URL } from "./helpers/test-db";
 import type { TestDatabase } from "./helpers/test-db";
 
 const logger = pino({ level: "silent" });
@@ -42,7 +41,6 @@ describe.skipIf(!DATABASE_URL)("rating jobs against Postgres", () => {
 
   beforeAll(async () => {
     testDb = await createTestDatabase();
-    await ingestCorpus(testDb.db);
     temp = await createTempStorage();
     org = await seedOrg(testDb.db);
   }, 60_000);
@@ -73,7 +71,6 @@ describe.skipIf(!DATABASE_URL)("rating jobs against Postgres", () => {
       byRefs: async () => {
         throw new Error("connection reset");
       },
-      search: async () => [],
     };
     const deps: RateJobDeps = {
       db: testDb.db,
@@ -96,7 +93,7 @@ describe.skipIf(!DATABASE_URL)("rating jobs against Postgres", () => {
     expect(await status(ratingId)).toEqual({ status: "failed", errorCode: "internal" });
 
     // A healthy run of the same job afterwards still works.
-    const healthy = { ...deps, articles: new PgArticleLookup(testDb.db) };
+    const healthy = { ...deps, articles: new MemoryArticleLookup() };
     expect(
       await handleRateJob(
         { id: "job-2", data: { ratingId }, retryCount: 0, retryLimit: 2 },

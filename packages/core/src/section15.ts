@@ -28,8 +28,8 @@ export { formatCitation } from "./engine/citation";
 export { REVIEW_RULE_ID } from "./engine/verdicts";
 
 /*
- * Steps 4b and 4c: the analyser reads Section 15. Rule-first article lookup with vector
- * search as a backstop; every reply is validated, retried once, and cached when valid.
+ * Steps 4b and 4c: the analyser reads Section 15 with the candidate rules' own articles;
+ * every reply is validated, retried once, and cached when valid.
  */
 
 export interface Section15Input {
@@ -48,8 +48,6 @@ export interface Section15Output {
   usage: LlmUsage;
 }
 
-/** Articles found by similarity search, on top of the candidate rules' own articles. */
-const SEARCH_BACKSTOP_K = 3;
 /** Clauses analysed at the same time. */
 const CLAUSE_CONCURRENCY = 4;
 
@@ -135,7 +133,7 @@ async function analyseClause(
   clause: Clause,
   context: ClauseContext,
 ): Promise<Section15Output> {
-  const { llm, cache, articles, versions } = context.input;
+  const { llm, cache, versions } = context.input;
   const key = clauseCacheKey(clause, context.fieldSummary, {
     ...versions,
     prompt: llm.promptVersion,
@@ -150,8 +148,7 @@ async function analyseClause(
     };
   }
 
-  const searched = await articles.search(searchText(clause), SEARCH_BACKSTOP_K);
-  const articleTexts = toArticleTexts([...context.ruleArticles, ...searched]);
+  const articleTexts = toArticleTexts(context.ruleArticles);
   const request = {
     clause: { number: clause.number, textEn: clause.textEn, textAr: clause.textAr },
     fieldSummary: context.fieldSummary,
@@ -244,14 +241,9 @@ export async function crossCheckSection15(
     return { findings: [], usage: ZERO_USAGE };
   }
 
-  const fetched = [
-    ...(await fetchRuleArticles(candidates, input.articles)),
-    ...(await input.articles.search(
-      clauses.map(searchText).join("\n"),
-      SEARCH_BACKSTOP_K,
-    )),
-  ];
-  const articleTexts = toArticleTexts(fetched);
+  const articleTexts = toArticleTexts(
+    await fetchRuleArticles(candidates, input.articles),
+  );
   const rulesById = new Map(candidates.map((rule) => [rule.id, rule]));
   const request = {
     fieldSummary: summariseFields(input.fields),
@@ -328,10 +320,6 @@ export function clauseHasText(clause: Clause): boolean {
   return clause.textEn.trim() !== "" || (clause.textAr?.trim() ?? "") !== "";
 }
 
-function searchText(clause: Clause): string {
-  return [clause.textEn, clause.textAr].filter((text) => text).join("\n");
-}
-
 function toCandidateRule(rule: Rule): CandidateRule {
   return {
     id: rule.id,
@@ -352,7 +340,7 @@ async function fetchRuleArticles(
 
 /**
  * One ArticleText per citation. Chunks that share a citation (paragraphs of a regulation
- * article, or an article found both by rule and by search) are merged, not repeated.
+ * article) are merged, not repeated.
  */
 function toArticleTexts(articles: LawArticle[]): ArticleText[] {
   const byCitation = new Map<string, ArticleText>();

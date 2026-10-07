@@ -144,13 +144,8 @@ describe("analyseSection15", () => {
   });
 
   it("sends the redacted clause, the field summary, the candidate rules and their articles", async () => {
-    const lookup = new FakeArticleLookup();
-    lookup.searchResults = [
-      lawArticle("labor_law", "65", "6"),
-      lawArticle("labor_law", "84"),
-    ];
     const llm = new FakeLlmClient();
-    await analyseSection15(setup(llm, { articles: lookup }));
+    await analyseSection15(setup(llm));
 
     const request = llm.clauseRequests[0]!;
     expect(request.clause).toEqual({
@@ -166,9 +161,6 @@ describe("analyseSection15", () => {
     );
     const citations = request.articles.map((a) => a.citation);
     expect(citations).toContain("Art. 84");
-    expect(citations).toContain("Art. 65(6)"); // found by search only
-    expect(citations.filter((c) => c === "Art. 84")).toHaveLength(1); // by rule and by search, sent once
-    expect(lookup.searches).toEqual([EOS_CLAUSE.textEn]);
     expect(request.previousError).toBeUndefined();
   });
 
@@ -253,21 +245,6 @@ describe("analyseSection15", () => {
     const { findings } = await analyseSection15(setup(llm));
     expect(llm.clauseRequests[1]?.previousError).toContain('Citation "Art. 999"');
     expect(findings[0]?.articles).toEqual(["Art. 2", "Art. 84", "Art. 8"]);
-  });
-
-  it("accepts a citation that only came from the search backstop", async () => {
-    const lookup = new FakeArticleLookup();
-    lookup.searchResults = [lawArticle("labor_law", "65", "6")];
-    const reply = analysis(
-      "15.6",
-      match("CONFIDENTIAL-01", "unclear", "low", { articles: ["Art. 65(6)"] }),
-    );
-    const llm = new FakeLlmClient({ clauses: { "15.6": [reply] } });
-    const { findings } = await analyseSection15(setup(llm, { articles: lookup }));
-    expect(findings[0]).toMatchObject({
-      ruleId: "CONFIDENTIAL-01",
-      articles: ["Art. 65(6)"],
-    });
   });
 
   it("rejects a rule that is not a candidate for clauses", async () => {

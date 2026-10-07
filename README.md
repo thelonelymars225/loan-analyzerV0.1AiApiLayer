@@ -243,8 +243,8 @@ pnpm eval             # rate every synthetic case and compare with expected.json
 
 CI (`.github/workflows/ci.yml`) runs the same checks and the web build on pull requests and
 on pushes to `main` (a push to a pull request's branch runs once, as the pull request). It
-runs the eval set when `packages/core`, `packages/law`, `packages/llm` or `evals` change, and
-fails if a PDF other than the synthetic ones is committed.
+also runs the eval set with the offline analyser, and fails if a PDF other than the synthetic
+ones is committed.
 
 ## Privacy and PDPL
 

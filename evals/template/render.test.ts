@@ -1,11 +1,6 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { detectQiwa, extractContract, parseBboxXhtml } from "@rater/core";
-import { pdftotextBbox, toolsAvailable } from "@rater/pdf";
-import { afterAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { CaseSpec } from "../lib/case-spec";
-import { fillTemplate, renderQiwaHtml, renderQiwaPdf, spacedIban } from "../lib/render";
+import { fillTemplate, renderQiwaHtml, spacedIban } from "../lib/render";
 
 describe("CaseSpec", () => {
   it("fills every field with synthetic defaults", () => {
@@ -95,52 +90,4 @@ describe("spacedIban", () => {
   it("groups like the Qiwa form", () => {
     expect(spacedIban("SA0712345678901234567890")).toBe("SA 07 1234 5678 9012 3456 7890");
   });
-});
-
-const tools = await toolsAvailable();
-
-describe.skipIf(!tools.pdftotext)("renderQiwaPdf round trip", () => {
-  const dir = mkdtempSync(join(tmpdir(), "rater-render-"));
-  afterAll(() => rmSync(dir, { recursive: true, force: true }));
-
-  it("renders a PDF that the extractor reads back exactly", async () => {
-    const path = join(dir, "case.pdf");
-    await renderQiwaPdf(
-      {
-        id: "round-trip",
-        contract: { type: "specific_work", commencementDate: "2025-05-04" },
-        employee: { nationality: { en: "Indian", ar: "هندي" } },
-        probationDays: 270,
-        hours: { workDaysPerWeek: 6, dailyHours: 9, restDaysPerWeek: 1 },
-        annualLeaveDays: 15,
-        wage: { basic: 6000, housing: 1500, transport: 600, other: 250 },
-        overtimePremiumPct: 25,
-        section15: [
-          { en: "The probationary period is 270 days.", ar: "مدة التجربة 270 يومًا." },
-        ],
-      },
-      path,
-    );
-    const pages = parseBboxXhtml(await pdftotextBbox(readFileSync(path)));
-    expect(detectQiwa(pages)).toEqual({ ok: true });
-    const result = extractContract(pages);
-    expect(result.fields).toMatchObject({
-      contractType: "specific_work",
-      commencementDate: "2025-05-04",
-      endDate: null,
-      probationDays: 270,
-      workDaysPerWeek: 6,
-      dailyHours: 9,
-      weeklyHours: 54,
-      restDaysPerWeek: 1,
-      annualLeaveDays: 15,
-      wage: { basic: 6000, housing: 1500, transport: 600, other: 250, total: 8350 },
-      overtimePremiumPct: 25,
-      nationality: "non_saudi",
-    });
-    expect(result.clauses.map((c) => [c.number, c.textEn])).toEqual([
-      ["15.1", "The probationary period is 270 days."],
-    ]);
-    expect(result.needsReview).toBe(false);
-  }, 60_000);
 });

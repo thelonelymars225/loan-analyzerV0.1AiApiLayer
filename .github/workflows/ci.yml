@@ -1,6 +1,5 @@
-# Lint, typecheck, unit tests and the web build on pushes to main and on pull requests. The
-# eval set also runs when the rating logic changes (rules, law corpus, prompts, analyser,
-# pipeline).
+# Lint, typecheck, unit tests, the web build and the eval set on pushes to main and on pull
+# requests.
 
 name: CI
 
@@ -77,11 +76,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # The eval cases are committed PDFs, but one test renders the synthetic Qiwa template
-      # to PDF (evals/template/render.test.ts), and that needs a headless Chromium.
-      - name: Install Chromium for the template test
-        run: pnpm --filter @rater/evals exec playwright install --with-deps --only-shell chromium
-
       # The tests make their own databases; these two steps check that the scripts work.
       - name: Migrate the database
         run: pnpm db:migrate
@@ -98,62 +92,7 @@ jobs:
       - name: Build the web app
         run: pnpm --filter @rater/web build
 
-  changes:
-    name: Detect rating changes
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      rating: ${{ steps.filter.outputs.rating }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: dorny/paths-filter@v4
-        id: filter
-        with:
-          filters: |
-            rating:
-              - 'packages/core/**'
-              - 'packages/law/**'
-              - 'packages/llm/**'
-              - 'evals/**'
-
-  evals:
-    name: Eval set
-    needs: changes
-    if: needs.changes.outputs.rating == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: pnpm/action-setup@v6
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Install PDF and OCR tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            poppler-utils tesseract-ocr tesseract-ocr-ara
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       # The offline analyser keeps the run free and repeatable. To evaluate Claude, run
       # `pnpm eval --llm claude` locally with ANTHROPIC_API_KEY set.
       - name: Run the eval set
         run: pnpm eval --llm heuristic
-
-      - name: Keep the eval results
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: eval-results
-          path: evals/results/*.json
-          if-no-files-found: ignore

@@ -1,28 +1,10 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { AppRoutes } from "./App";
+import { syntheticMe } from "./test/fixtures";
 import { jsonResponse, renderWithProviders, routeFetch } from "./test/render";
 
-const me = {
-  user: { id: "u_1", email: "nour@example.com", name: "Nour Al-Harbi" },
-  activeOrgId: "org_co",
-  orgs: [
-    {
-      id: "org_personal",
-      name: "Nour Al-Harbi",
-      kind: "personal",
-      role: "owner",
-      retentionDays: 30,
-    },
-    {
-      id: "org_co",
-      name: "Example Trading Co.",
-      kind: "company",
-      role: "admin",
-      retentionDays: 60,
-    },
-  ],
-};
+const me = syntheticMe("org_co");
 
 describe("App routes", () => {
   it("sends signed-out visitors to the sign-in page", async () => {

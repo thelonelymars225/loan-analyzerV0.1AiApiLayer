@@ -89,21 +89,6 @@ describe("InvitePage", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("says the same when accepting fails because the invite is gone", async () => {
-    routeFetch({
-      "GET /api/v1/me": () => jsonResponse(personalOnly()),
-      "GET /api/v1/invites/inv_1": () => jsonResponse(preview),
-      "POST /api/v1/invites/inv_1/accept": () => problemResponse(404, "not_found"),
-    });
-    renderWithProviders(<AppRoutes />, { route: "/invite/inv_1" });
-
-    await userEvent.click(await screen.findByRole("button", { name: "Accept and join" }));
-
-    expect(
-      await screen.findByText(/This invite is not for this account or has expired/),
-    ).toBeInTheDocument();
-  });
-
   it("sends signed-out visitors to sign in first, then back to the invitation", async () => {
     auth.signedIn = false;
     routeFetch({

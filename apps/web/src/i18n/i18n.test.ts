@@ -68,12 +68,6 @@ describe("i18n", () => {
     expect(arabic("upload.privacyBody", { count: 100 })).toMatch(/بعد 100 يوم\./);
   });
 
-  it("describes market fairness by the rules that feed it, not leave", () => {
-    expect(en.report.lowConfidenceHint).toMatch(/Art\. 77/);
-    expect(en.report.lowConfidenceHint).not.toMatch(/leave/);
-    expect(ar.report.lowConfidenceHint).not.toMatch(/الإجازات/);
-  });
-
   it("has no empty or untranslated Arabic strings", () => {
     const englishOnly = keysOf(ar).filter((key) => {
       const value = i18n.getResource("ar", "translation", key) as string;

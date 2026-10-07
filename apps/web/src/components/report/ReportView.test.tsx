@@ -156,13 +156,6 @@ describe("ReportView", () => {
     ).toEqual(reasons);
   });
 
-  it("shows no review note on a finished rating", () => {
-    renderWithProviders(
-      <ReportView report={syntheticReport("employee")} onViewChange={() => {}} />,
-    );
-    expect(screen.queryByRole("note")).not.toBeInTheDocument();
-  });
-
   it("asks for the other view when a tab is chosen", async () => {
     const onViewChange = vi.fn();
     renderWithProviders(

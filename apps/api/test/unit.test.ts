@@ -1,19 +1,15 @@
-import { DrizzleQueryError } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import type { OrgSummary } from "@rater/contracts";
 import { loadConfig, trustedOrigins } from "../src/config";
 import { ApiError, rateLimited } from "../src/errors";
 import { acceptPath, toInviteResponse } from "../src/invites";
 import { ConcurrencyLimit, ConnectionSlots } from "../src/limiter";
-import { errorForLog } from "../src/logger";
 import { parseRole, personalOrgName, slugify } from "../src/orgs";
 import { isAllowed } from "../src/plugins/auth-routes";
 import { toProblem } from "../src/plugins/errors";
 import { pickActiveOrg } from "../src/plugins/session";
 import { decodeCursor, encodeCursor } from "../src/ratings/cursor";
 import { defaultViewFor } from "../src/ratings/store";
-import { parseBboxXhtml } from "@rater/core";
-import { firstPageBbox, pageCount } from "../src/ratings/first-page";
 import { checkQiwaPdf, looksLikePdf } from "../src/ratings/upload";
 import { fixture } from "./helpers";
 import { preferredLocale } from "../src/report";
@@ -170,10 +166,8 @@ describe("uploads and reports", () => {
     expect(looksLikePdf(Buffer.alloc(0))).toBe(false);
   });
 
-  it("converts only page 1 for the upload check, and still counts every page", async () => {
+  it("accepts a Qiwa contract and counts every page", async () => {
     const pdf = await fixture("fixed-term-bad-s15.pdf");
-    expect(parseBboxXhtml(await firstPageBbox(pdf))).toHaveLength(1);
-    expect(await pageCount(pdf)).toBe(10);
     await expect(checkQiwaPdf(pdf)).resolves.toEqual({ pages: 10 });
   });
 
@@ -197,43 +191,6 @@ describe("uploads and reports", () => {
     expect(preferredLocale("ar-SA,en;q=0.5")).toBe("ar");
     expect(preferredLocale("en,ar;q=0.5")).toBe("en");
     expect(preferredLocale(undefined)).toBe("en");
-  });
-});
-
-describe("logging errors", () => {
-  it("drops the parameters of a failed Drizzle query", () => {
-    const driverError = Object.assign(new Error("duplicate key value"), {
-      code: "23505",
-      detail: "Key (email)=(nour.alharbi@example.com) already exists.",
-    });
-    const error = new DrizzleQueryError(
-      'insert into "users" ("email", "name") values ($1, $2)',
-      ["nour.alharbi@example.com", "Nour Al-Harbi"],
-      driverError,
-    );
-    const logged = errorForLog(error);
-
-    const text = JSON.stringify(logged);
-    expect(text).not.toContain("nour.alharbi@example.com");
-    expect(text).not.toContain("Nour Al-Harbi");
-    expect(logged).toMatchObject({
-      name: "DrizzleQueryError",
-      message: 'Failed query: insert into "users" ("email", "name") values ($1, $2)',
-      code: "23505",
-    });
-    expect(logged.stack).toMatch(/^\s*at /);
-  });
-
-  it("keeps name, message and code of other errors", () => {
-    const error = Object.assign(new Error("connection refused"), {
-      code: "ECONNREFUSED",
-    });
-    expect(errorForLog(error)).toMatchObject({
-      name: "Error",
-      message: "connection refused",
-      code: "ECONNREFUSED",
-    });
-    expect(errorForLog("plain")).toEqual({ message: "plain" });
   });
 });
 

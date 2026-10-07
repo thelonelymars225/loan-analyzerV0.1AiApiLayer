@@ -8,8 +8,6 @@ import type { DbTransaction } from "@rater/db";
 export const LOCKS = {
   /** Creating the user's personal workspace (orgs.ts). */
   personalOrg: 4_120_771,
-  /** Counting and recording uploads against the daily limit (ratings/store.ts). */
-  dailyLimit: 4_120_772,
 } as const;
 
 /**

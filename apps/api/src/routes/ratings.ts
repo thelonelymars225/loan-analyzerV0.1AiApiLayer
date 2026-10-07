@@ -73,15 +73,13 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     },
     async (request, reply) => {
       const { ctx } = request;
-      const dailyLimit = config.RATE_LIMIT_PER_DAY;
-      // A cheap early answer before the upload is read and checked. createRating checks
-      // again under a lock, which is what actually enforces the limit.
-      await checkDailyLimit(db, ctx.user.id, dailyLimit, now());
+      // Checked before the upload is read. Parallel uploads can pass it by a few.
+      await checkDailyLimit(db, ctx.user.id, config.RATE_LIMIT_PER_DAY, now());
       const upload = await readUpload(request, config.MAX_UPLOAD_BYTES);
       const { pages } = await checkQiwaPdf(upload.pdf);
       const id = await createRating(
         { db, storage, queue, now },
-        { ctx, pdf: upload.pdf, pages, view: upload.view, dailyLimit },
+        { ctx, pdf: upload.pdf, pages, view: upload.view },
       );
       return reply.code(202).send({ id, status: "queued" });
     },

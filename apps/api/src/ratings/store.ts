@@ -8,7 +8,6 @@ import type { Db, DbTransaction } from "@rater/db";
 import type { ObjectStorage } from "@rater/storage";
 import { recordAudit } from "../audit";
 import { notFound, rateLimited } from "../errors";
-import { LOCKS, lockUser } from "../locks";
 import { parseRole } from "../orgs";
 import { seesAllRatings } from "../plugins/access";
 import type { RequestContext } from "../plugins/session";
@@ -27,7 +26,7 @@ export const PAGE_SIZE = 20;
  * Over the limit → 429 with Retry-After = seconds until the oldest of them is 24 hours old.
  */
 export async function checkDailyLimit(
-  db: Db | DbTransaction,
+  db: Db,
   userId: string,
   limit: number,
   now: Date,
@@ -58,18 +57,12 @@ export interface NewRating {
   pages: number;
   /** The view asked for at upload; otherwise it follows the workspace kind. */
   view: View | null;
-  /** The user's daily upload limit (RATE_LIMIT_PER_DAY). */
-  dailyLimit: number;
 }
 
 /**
  * Stores the PDF, writes the document and rating rows (status "queued") and enqueues the job.
  * If anything fails, what was already written is removed again, so a failed upload leaves
  * nothing behind and does not count towards the daily limit.
- *
- * The daily limit is checked again inside the transaction that records the upload, under a
- * per-user lock: concurrent uploads from one user take turns, and each one counts the
- * uploads committed before it, so no more than the limit can get through together.
  */
 export async function createRating(
   deps: { db: Db; storage: ObjectStorage; queue: RatingQueue; now: () => Date },
@@ -87,8 +80,6 @@ export async function createRating(
 
   try {
     await db.transaction(async (tx) => {
-      await lockUser(tx, LOCKS.dailyLimit, ctx.user.id);
-      await checkDailyLimit(tx, ctx.user.id, input.dailyLimit, now);
       await tx.insert(documents).values({
         id: documentId,
         orgId: ctx.orgId,

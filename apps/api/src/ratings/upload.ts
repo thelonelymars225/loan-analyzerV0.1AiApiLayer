@@ -2,10 +2,9 @@ import type { MultipartFile } from "@fastify/multipart";
 import type { FastifyRequest } from "fastify";
 import { View } from "@rater/contracts";
 import { detectQiwa, parseBboxXhtml } from "@rater/core";
-import { PdfToolError } from "@rater/pdf";
+import { PdfToolError, pdfPageCount, pdftotextBbox } from "@rater/pdf";
 import { fileTooLarge, unsupportedDocument, validationError } from "../errors";
 import { ConcurrencyLimit } from "../limiter";
-import { firstPageBbox, pageCount } from "./first-page";
 
 /**
  * Upload checks running poppler at the same time in this process; the rest wait their turn.
@@ -79,14 +78,15 @@ export async function checkQiwaPdf(pdf: Buffer): Promise<{ pages: number }> {
   if (!looksLikePdf(pdf)) throw unsupportedDocument("The file is not a PDF.");
 
   return pdfChecks.run(async () => {
-    const firstPage = parseBboxXhtml(await readPdf(() => firstPageBbox(pdf)));
+    const xhtml = await readPdf(() => pdftotextBbox(pdf, { firstPageOnly: true }));
+    const firstPage = parseBboxXhtml(xhtml);
     const detection = detectQiwa(firstPage);
     if (!detection.ok) {
       throw unsupportedDocument(
         `Only Qiwa "Unified Employment Contract" PDFs can be rated. ${detection.reason}`,
       );
     }
-    return { pages: await readPdf(() => pageCount(pdf)) };
+    return { pages: await readPdf(() => pdfPageCount(pdf)) };
   });
 }
 

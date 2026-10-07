@@ -125,6 +125,7 @@ live only in the bucket.
 
 - **Workspaces.** Every account gets a personal workspace of one. An HR team creates a company
   workspace, whose members are owners, admins or members. Ratings belong to a workspace.
+  Owners and admins see every rating and manage members; members see only their own uploads.
 - **Switching.** The header menu switches the active workspace (`PUT /api/v1/me/active-org`).
   The active workspace is kept in the session, so it changes in every open tab. Each tab sends
   the workspace it shows in the `x-org-id` header with every change. If another tab has
@@ -271,8 +272,8 @@ in:
 - **Daily upload limit.** Each user can upload `RATE_LIMIT_PER_DAY` contracts (default 20)
   in any 24 hours, across all their workspaces. Uploads are counted from the audit log, so
   deleting a rating does not give one back, while a rejected upload does not count. The
-  count and the new upload happen under a per-user lock, so parallel uploads cannot slip past
-  the limit. Over it, the API answers `429` with `Retry-After`.
+  count is checked before each upload, so uploads sent at the same moment can pass the limit
+  by a few. Over it, the API answers `429` with `Retry-After`.
 - **Audit.** Uploads, report views, PDF opens and downloads, and deletes (manual and
   automatic) are written to `audit_events`. Passage images are not audited one by one: they
   are part of viewing the report, which is.

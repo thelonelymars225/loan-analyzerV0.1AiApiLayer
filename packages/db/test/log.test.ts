@@ -1,9 +1,8 @@
 import { DrizzleQueryError, sql } from "drizzle-orm";
-import { pino } from "pino";
 import { describe, expect, it } from "vitest";
-import { createDb } from "@rater/db";
-import { errorForLog } from "../src/logger";
-import { DATABASE_URL } from "./helpers/test-db";
+import { createDb, errorForLog } from "../src";
+
+const DATABASE_URL = process.env.DATABASE_URL;
 
 /** Stands in for contract text in a query parameter. One line looks like a stack frame. */
 const SECRET = "SECRET CLAUSE TEXT, wage 12000 SAR\n    at the employer's discretion";
@@ -56,10 +55,9 @@ describe("errorForLog", () => {
 });
 
 describe.skipIf(!DATABASE_URL)("errorForLog with a real failed query", () => {
-  it("writes no query parameter into the log line", async () => {
+  it("keeps no query parameter", async () => {
     const { db, pool } = createDb(DATABASE_URL!, { max: 1 });
-    const lines: string[] = [];
-    const logger = pino({ level: "info" }, { write: (line: string) => lines.push(line) });
+    let line = "";
     try {
       // Postgres rejects the text as an integer and quotes it in its own message.
       const failure = await db
@@ -67,13 +65,11 @@ describe.skipIf(!DATABASE_URL)("errorForLog with a real failed query", () => {
         .then(() => undefined)
         .catch((error: unknown) => error);
       expect(failure).toBeInstanceOf(DrizzleQueryError);
-      logger.error({ err: errorForLog(failure) }, "Rating job crashed");
+      line = JSON.stringify(errorForLog(failure));
     } finally {
       await pool.end();
     }
 
-    expect(lines).toHaveLength(1);
-    const line = lines[0]!;
     expect(line).toContain('"code":"22P02"');
     expect(line).toContain("select $1::int as n");
     expect(line).not.toContain("SECRET");

@@ -44,13 +44,20 @@ const CROP_TIMEOUT_MS = 15_000;
 const POINTS_PER_INCH = 72;
 const DEFAULT_CROP_DPI = 144;
 
-/** Runs `pdftotext -bbox-layout` and returns its XHTML (word boxes per page). */
-export async function pdftotextBbox(pdf: Buffer): Promise<string> {
+/**
+ * Runs `pdftotext -bbox-layout` and returns its XHTML (word boxes per page). `firstPageOnly`
+ * converts page 1 alone, which is all the API's upload check reads.
+ */
+export async function pdftotextBbox(
+  pdf: Buffer,
+  options: { firstPageOnly?: boolean } = {},
+): Promise<string> {
+  const pages = options.firstPageOnly ? ["-f", "1", "-l", "1"] : [];
   return withTempDir(async (dir) => {
     const input = await writePdf(dir, pdf);
     const { stdout } = await runTool(
       "pdftotext",
-      ["-bbox-layout", "-enc", "UTF-8", input, "-"],
+      [...pages, "-bbox-layout", "-enc", "UTF-8", input, "-"],
       {
         timeoutMs: TEXT_TIMEOUT_MS,
       },

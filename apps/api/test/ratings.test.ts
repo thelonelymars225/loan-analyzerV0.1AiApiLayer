@@ -238,26 +238,6 @@ describe.skipIf(!DATABASE_URL)("daily limit", () => {
     expect(limited.statusCode).toBe(429);
     expect(Problem.parse(limited.json()).code).toBe("rate_limited");
   });
-
-  it("lets no more than the limit through when uploads arrive at once", async () => {
-    const user = await signUp(t.app);
-    t.clock.now = new Date("2026-10-06T08:00:00Z");
-    const responses = await Promise.all(
-      Array.from({ length: 6 }, () => upload(t.app, user.cookie, qiwaPdf)),
-    );
-    const statuses = responses.map((response) => response.statusCode).sort();
-    expect(statuses).toEqual([202, 202, 429, 429, 429, 429]);
-
-    const stored = await t.db
-      .select()
-      .from(ratings)
-      .where(eq(ratings.createdBy, user.id));
-    expect(stored).toHaveLength(2);
-    // Every refused upload removed its stored PDF again.
-    const files = await readdir(t.storageDir, { recursive: true });
-    const pdfs = files.filter((name) => String(name).endsWith(".pdf"));
-    expect(pdfs.length).toBe((await t.db.select().from(documents)).length);
-  });
 });
 
 describe.skipIf(!DATABASE_URL)("event stream limits", () => {

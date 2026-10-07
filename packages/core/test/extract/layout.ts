@@ -9,7 +9,7 @@ export const PAGE_HEIGHT = 841.92;
 
 const FIXTURES = fileURLToPath(new URL("../fixtures/", import.meta.url));
 
-/** Pages of a synthetic fixture (see evals/template/README.md). */
+/** Pages of a synthetic fixture. */
 export function fixturePages(id: string): PageLayout[] {
   return parseBboxXhtml(readFileSync(`${FIXTURES}${id}.bbox.html`, "utf8"));
 }

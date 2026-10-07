@@ -16,7 +16,7 @@ const FIXTURES = fileURLToPath(
   new URL("../../../../packages/core/test/fixtures/", import.meta.url),
 );
 
-/** A synthetic Qiwa PDF from packages/core/test/fixtures (rendered from evals/template). */
+/** A synthetic Qiwa PDF from packages/core/test/fixtures. */
 export function readFixturePdf(
   id: "fixed-term-bad-s15" | "indefinite-clean" | "not-qiwa" | "wage-mismatch",
 ): Promise<Buffer> {

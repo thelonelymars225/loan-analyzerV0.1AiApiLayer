@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { FastifyRequest } from "fastify";
 import { WageCheckResponse } from "@rater/contracts";
@@ -22,6 +23,12 @@ const OFFER_FIELDS = {
   offerTotal: "total",
 } as const;
 
+/** A bare page for trying the API by hand; not the product UI. */
+const TEST_PAGE = readFileSync(
+  new URL("./wage-check-page.html", import.meta.url),
+  "utf8",
+);
+
 /**
  * The wage check: compares each person's Qiwa contract with the payroll (Mudad wage file) and,
  * when given, the offer letter. Nothing is stored: the files are read, compared and dropped.
@@ -30,6 +37,12 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (
   app,
   { config },
 ) => {
+  app.get(
+    "/wage-checks/test",
+    { config: { public: true }, schema: { hide: true } },
+    async (_request, reply) => reply.type("text/html; charset=utf-8").send(TEST_PAGE),
+  );
+
   app.post(
     "/wage-checks",
     {

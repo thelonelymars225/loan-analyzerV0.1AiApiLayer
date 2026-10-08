@@ -491,6 +491,7 @@ export function extractContract(pages: PageLayout[]): ExtractionResult {
     section15ArabicRegions: section15.regions,
     identifyingStrings: parties.strings,
     namePlaceholders: parties.placeholders,
+    employeeId: readEmployeeId(reader.labels),
     issues: reader.issues,
     needsReview: reader.issues.some((issue) => BLOCKING_FIELDS.has(issue.field)),
   };
@@ -1007,6 +1008,12 @@ function readParties(
     add(createdBy?.[1], "[NAME]");
   }
   return { strings: Object.keys(placeholders), placeholders };
+}
+
+/** The employee's national ID or iqama number (section 3, "ID no."), digits only. */
+function readEmployeeId(labels: LabelIndex): string | null {
+  const id = labels.findAll(/^id no/, "secondParty")[0]?.value.replace(/\D/g, "");
+  return id || null;
 }
 
 const BY_PATTERN = arabicPhrasePattern("بواسطة", "gu");

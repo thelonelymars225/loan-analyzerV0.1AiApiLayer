@@ -50,7 +50,8 @@ export async function readUpload(
   return { pdf, view };
 }
 
-async function readFile(part: MultipartFile, maxBytes: number): Promise<Buffer> {
+/** The whole file; 413 when it is larger than `maxBytes`. */
+export async function readFile(part: MultipartFile, maxBytes: number): Promise<Buffer> {
   let buffer: Buffer;
   try {
     buffer = await part.toBuffer();

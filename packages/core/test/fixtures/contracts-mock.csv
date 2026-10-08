@@ -1,0 +1,23 @@
+﻿EmployeeID,EmployeeName,Nationality,Source,BasicSalary,HousingAllowance,TransportAllowance,TotalWage
+1000000011,Ahmed Al-Mock,SA,qiwa,11111,2778,1111,15000
+1000000011,Ahmed Al-Mock,SA,offline,,,,15000
+2000000012,Ravi Sample,IN,qiwa,6000,1500,500,8000
+2000000012,Ravi Sample,IN,offline,,,,8000
+1000000013,Khalid Test,SA,qiwa,10000,2500,1000,13500
+1000000013,Khalid Test,SA,offline,,,,13500
+2000000014,Omar Example,EG,qiwa,7000,1750,700,9450
+2000000014,Omar Example,EG,offline,,,,9450
+1000000015,Sara Demo,SA,qiwa,11111,2778,1111,15000
+1000000015,Sara Demo,SA,offline,,,,15000
+2000000016,John Placeholder,PH,qiwa,5000,1250,500,6750
+2000000016,John Placeholder,PH,offline,,,,6750
+1000000018,Noura Sample,SA,qiwa,9000,2250,900,12150
+1000000018,Noura Sample,SA,offline,,,,12150
+2000000019,Hassan Mock,SD,qiwa,4000,1000,400,5400
+2000000019,Hassan Mock,SD,offline,,,,5400
+1000000020,Fahad Test,SA,qiwa,8000,2000,800,10800
+1000000020,Fahad Test,SA,offline,,,,10800
+2000000021,Maria Example,PH,qiwa,6000,1500,600,8100
+2000000021,Maria Example,PH,offline,,,,8100
+1000000022,Reem Demo,SA,qiwa,12000,3000,1200,16200
+1000000022,Reem Demo,SA,offline,,,,17000

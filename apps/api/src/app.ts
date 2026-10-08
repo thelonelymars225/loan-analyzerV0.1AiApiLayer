@@ -21,6 +21,7 @@ import { healthRoutes } from "./routes/health";
 import { meRoutes } from "./routes/me";
 import { ratingRoutes } from "./routes/ratings";
 import { ruleRoutes } from "./routes/rules";
+import { wageCheckRoutes } from "./routes/wage-checks";
 
 export interface BuildAppOptions {
   config: Config;
@@ -88,6 +89,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await v1.register(docsRoutes);
       await v1.register(meRoutes, deps);
       await v1.register(ratingRoutes, deps);
+      await v1.register(wageCheckRoutes, deps);
     },
     { prefix: API_BASE },
   );

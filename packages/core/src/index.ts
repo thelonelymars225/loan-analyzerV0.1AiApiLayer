@@ -11,3 +11,5 @@ export * from "./impact";
 export * from "./score";
 export * from "./report";
 export * from "./pipeline";
+export * from "./wage-check";
+export * from "./wage-files";

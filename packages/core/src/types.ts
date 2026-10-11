@@ -70,6 +70,8 @@ export interface ExtractionResult {
    * "[EMPLOYEE]"). Strings missing here are redacted as "[NAME]". Same privacy rules as above.
    */
   namePlaceholders?: Record<string, NamePlaceholder>;
+  /** The employee's national ID or iqama number (matches a payroll row). Same privacy rules. */
+  employeeId?: string | null;
   issues: ExtractionIssue[];
   /** True when a required field is missing or the wage parts don't sum to the total. */
   needsReview: boolean;

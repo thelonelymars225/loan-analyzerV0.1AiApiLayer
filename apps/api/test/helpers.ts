@@ -159,11 +159,11 @@ export function sessionCookie(response: LightMyRequestResponse): string {
 /** Builds a multipart/form-data body the way a browser's FormData does. */
 export async function multipart(
   fields: Record<string, string>,
-  file?: { content: Buffer; name?: string; type?: string; field?: string },
+  ...files: { content: Buffer; name?: string; type?: string; field?: string }[]
 ): Promise<{ payload: Buffer; headers: Record<string, string> }> {
   const form = new FormData();
   for (const [name, value] of Object.entries(fields)) form.append(name, value);
-  if (file) {
+  for (const file of files) {
     const blob = new Blob([new Uint8Array(file.content)], {
       type: file.type ?? "application/pdf",
     });

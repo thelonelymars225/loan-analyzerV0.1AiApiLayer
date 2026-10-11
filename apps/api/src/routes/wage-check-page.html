@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Wage check (test page)</title>
+  </head>
+  <body style="font: 15px system-ui; max-width: 860px; margin: 24px auto">
+    <h1>Wage check</h1>
+    <p>Test page for <code>POST /api/v1/wage-checks</code>; sign in to the app first.</p>
+    <form id="form">
+      <label>Payroll CSV (Mudad) <input type="file" id="payroll" required /></label><br />
+      <label>Contract PDF or CSV <input type="file" id="contract" required /></label>
+      <fieldset>
+        <legend>Offer letter (optional, used with a PDF), SAR per month</legend>
+        <label>Basic <input name="offerBasic" inputmode="decimal" /></label><br />
+        <label>Housing <input name="offerHousing" inputmode="decimal" /></label><br />
+        <label>Transport <input name="offerTransport" inputmode="decimal" /></label><br />
+        <label>Total <input name="offerTotal" inputmode="decimal" /></label>
+      </fieldset>
+      <p><button>Check</button></p>
+    </form>
+    <div id="result"></div>
+    <script>
+      const form = document.getElementById("form");
+      const result = document.getElementById("result");
+      const el = (tag, text) =>
+        Object.assign(document.createElement(tag), { textContent: text });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const contract = document.getElementById("contract").files[0];
+        const body = new FormData(form);
+        body.append("payroll", document.getElementById("payroll").files[0]);
+        body.append(/\.pdf$/i.test(contract.name) ? "contract" : "contracts", contract);
+        result.replaceChildren(el("p", "Checking…"));
+        const response = await fetch("/api/v1/wage-checks", { method: "POST", body });
+        const data = await response.json();
+        if (!response.ok)
+          return result.replaceChildren(el("p", data.detail ?? data.title));
+        const rows = [
+          el("h2", `${data.summary.flagged} of ${data.summary.employees} flagged`),
+        ];
+        for (const { name, employeeId, issues } of data.employees) {
+          rows.push(el("h3", `${name ?? "Unnamed"} (${employeeId})`));
+          const list = el("ul");
+          for (const issue of issues) {
+            const articles = issue.articles.length
+              ? ` (Art. ${issue.articles.join(", ")})`
+              : "";
+            list.append(el("li", issue.message + articles));
+          }
+          rows.push(issues.length ? list : el("p", "No mismatches"));
+        }
+        result.replaceChildren(...rows);
+      });
+    </script>
+  </body>
+</html>

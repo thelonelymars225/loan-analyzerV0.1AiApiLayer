@@ -19,7 +19,8 @@ export type WageRecord = z.infer<typeof WageRecord>;
 export const WageCheckRequest = z.object({
   qiwa: z.array(WageRecord).max(50_000),
   offers: z.array(WageRecord).max(50_000).default([]),
-  payroll: z.array(WageRecord).max(50_000),
+  /** Leave out to check offers against Qiwa before anyone is paid. */
+  payroll: z.array(WageRecord).max(50_000).optional(),
 });
 export type WageCheckRequest = z.infer<typeof WageCheckRequest>;
 

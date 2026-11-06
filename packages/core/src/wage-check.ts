@@ -5,7 +5,8 @@ export type { WageRecord };
 export interface WageCheckInput {
   qiwa: WageRecord[];
   offers: WageRecord[];
-  payroll: WageRecord[];
+  /** Left out before anyone is paid, e.g. when a new hire's offer is checked against Qiwa. */
+  payroll?: WageRecord[] | undefined;
 }
 
 const FIELDS = ["basic", "housing", "transport", "total"] as const;
@@ -34,11 +35,11 @@ const EPSILON = 0.005;
 export function checkWages(input: WageCheckInput): WageCheckResponse {
   const qiwa = byId(input.qiwa);
   const offers = byId(input.offers);
-  const payroll = byId(input.payroll);
+  const payroll = byId(input.payroll ?? []);
   const repeated = {
     qiwa: repeatedIds(input.qiwa),
     offers: repeatedIds(input.offers),
-    payroll: repeatedIds(input.payroll),
+    payroll: repeatedIds(input.payroll ?? []),
   };
   const employees = [...new Set([...qiwa.keys(), ...payroll.keys()])].map((id) => {
     const issues: WageIssue[] = [];
@@ -60,7 +61,7 @@ export function checkWages(input: WageCheckInput): WageCheckResponse {
       const message = "Paid through payroll, but there is no Qiwa contract for this ID.";
       issues.push({ ...NONE, kind: "no_contract", articles: ["37"], message });
     }
-    if (!paid) {
+    if (!paid && input.payroll) {
       const message = "Has a Qiwa contract but is missing from this month's payroll.";
       issues.push({
         ...NONE,

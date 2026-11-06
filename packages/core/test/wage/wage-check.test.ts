@@ -61,3 +61,18 @@ it("names missing wage file columns", () => {
     ),
   );
 });
+
+it("flags a person listed twice instead of comparing one of the rows", () => {
+  const row = { employeeId: "1000000011", name: null, housing: 0, transport: 0 };
+  const qiwa = [{ ...row, basic: 9000, total: 9000 }];
+  // Paid twice, or one row is wrong: either way, not "underpaid 4,000".
+  const payroll = [
+    { ...row, basic: 9000, total: 9000 },
+    { ...row, basic: 5000, total: 5000 },
+  ];
+  const [employee] = checkWages({ qiwa, offers: [], payroll }).employees;
+  expect(employee?.issues.map((i) => i.kind)).toEqual(["duplicate"]);
+  expect(employee?.issues[0]?.message).toBe(
+    "Listed more than once in payroll. Check which row is right.",
+  );
+});

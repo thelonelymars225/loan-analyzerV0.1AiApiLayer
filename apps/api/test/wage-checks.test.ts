@@ -88,6 +88,21 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
 
     const bad = await api(t.app, cookie, "POST", "/wage-checks/records", { qiwa });
     expect(bad.statusCode).toBe(400);
+
+    // Above Fastify's default 1 MB body limit, and without names.
+    const people = Array.from({ length: 10_000 }, (_, i) => ({
+      employeeId: String(1_000_000_000 + i),
+      basic: 8000,
+      housing: 2000,
+      transport: 800,
+      total: 10800,
+    }));
+    const big = await api(t.app, cookie, "POST", "/wage-checks/records", {
+      qiwa: people,
+      payroll: people,
+    });
+    expect(big.statusCode).toBe(200);
+    expect(WageCheckResponse.parse(big.json()).summary.flagged).toBe(0);
   });
 
   it("answers 400 with the problem for a bad file, and 401 without a session", async () => {

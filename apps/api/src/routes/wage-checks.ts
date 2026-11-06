@@ -80,6 +80,8 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
   app.post(
     "/wage-checks/records",
     {
+      // Room for the 50,000-person cap: about 130 bytes a record, in two or three lists.
+      bodyLimit: 32 * 1024 * 1024,
       schema: {
         summary: "Compare Qiwa contracts, offer letters and payroll sent as JSON",
         body: WageCheckRequest,

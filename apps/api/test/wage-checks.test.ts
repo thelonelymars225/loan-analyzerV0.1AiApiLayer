@@ -241,13 +241,11 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
       qiwa.push(WageRecord.parse(read.json()));
     }
     // Payroll as found: the first is paid 500 less basic, the last isn't paid.
-    const payroll = qiwa
-      .slice(0, -1)
-      .map((r, i) => ({
-        ...r,
-        basic: (r.basic ?? 0) - (i === 0 ? 500 : 0),
-        total: null,
-      }));
+    const payroll = qiwa.slice(0, -1).map((r, i) => ({
+      ...r,
+      basic: (r.basic ?? 0) - (i === 0 ? 500 : 0),
+      total: null,
+    }));
     const check = await api(t.app, cookie, "POST", "/wage-checks/records", {
       qiwa,
       payroll,

@@ -76,3 +76,18 @@ it("flags a person listed twice instead of comparing one of the rows", () => {
     "Listed more than once in payroll. Check which row is right.",
   );
 });
+
+it("flags an offer whose ID matches no Qiwa contract instead of dropping it", () => {
+  const row = { name: null, basic: 9000, housing: 2250, transport: 900, total: 12150 };
+  const qiwa = [{ ...row, employeeId: "1000000101" }];
+  // The ATS typed the candidate's ID wrong, or the contract was drafted for someone else.
+  const offers = [{ ...row, employeeId: "1000000110" }];
+  const { summary, employees } = checkWages({ qiwa, offers });
+  expect(summary).toEqual({ employees: 2, flagged: 1 });
+  expect(employees[0]).toMatchObject({
+    employeeId: "1000000110",
+    issues: [
+      { kind: "no_contract", message: expect.stringMatching(/^Has an offer letter/) },
+    ],
+  });
+});

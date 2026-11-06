@@ -144,6 +144,28 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
     ]);
   });
 
+  it("checks the ten mock new hires the way an ATS would, one Qiwa PDF each", async () => {
+    // Made by tools/hiring-mock.ts: a drafted Qiwa PDF and the accepted offer per hire.
+    const hires = JSON.parse(String(await fixture("hires.json"))) as {
+      id: string;
+      contract: string;
+      offer: Record<string, number>;
+      expected: string[];
+    }[];
+    const field = (part: string) => `offer${part[0]?.toUpperCase()}${part.slice(1)}`;
+    for (const hire of hires) {
+      const offer = Object.entries(hire.offer).map(([part, n]) => [
+        field(part),
+        String(n),
+      ]);
+      const contract = await fixture(hire.contract);
+      const response = await post(cookie, { contract }, Object.fromEntries(offer));
+      const [employee] = WageCheckResponse.parse(response.json()).employees;
+      expect(employee?.employeeId).toBe(hire.id);
+      expect(employee?.issues.map((i) => `${i.kind}:${i.field}`)).toEqual(hire.expected);
+    }
+  });
+
   it("answers 400 with the problem for a bad file, and 401 without a session", async () => {
     const bad = await post(cookie, { payroll: "EmployeeID\n1", contracts: "x" });
     expect(bad.statusCode).toBe(400);

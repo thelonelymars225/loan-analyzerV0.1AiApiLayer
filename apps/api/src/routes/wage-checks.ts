@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { FastifyRequest } from "fastify";
-import { WageCheckRequest, WageCheckResponse } from "@rater/contracts";
+import { WageCheckRequest, WageCheckResponse, WageRecord } from "@rater/contracts";
 import {
   asPaid,
   checkWages,
@@ -10,7 +10,6 @@ import {
   readContractsCsv,
   readPayrollCsv,
   WageFileError,
-  type WageRecord,
 } from "@rater/core";
 import { pdftotextBbox } from "@rater/pdf";
 import type { AppDeps } from "../deps";
@@ -62,9 +61,8 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
       }
       try {
         // No wage file yet, e.g. for a new hire: only the offer is compared with Qiwa.
-        const payroll = wageFile && readPayrollCsv(wageFile.toString("utf8"));
-        if (csv)
-          return checkWages({ ...readContractsCsv(csv.toString("utf8")), payroll });
+        const payroll = wageFile && readPayrollCsv(csvText(wageFile));
+        if (csv) return checkWages({ ...readContractsCsv(csvText(csv)), payroll });
         const qiwa = await readQiwaWage(pdf as Buffer);
         const offer = offerFrom(fields, qiwa);
         return checkWages({ qiwa: [qiwa], offers: offer ? [offer] : [], payroll });
@@ -72,6 +70,26 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
         if (error instanceof WageFileError) throw validationError(error.message);
         throw error;
       }
+    },
+  );
+
+  // One Qiwa PDF read into a record, for a caller with many: read each here, then send them
+  // all to /wage-checks/records. An auditor going through a company's files works this way.
+  app.post(
+    "/wage-checks/contract",
+    {
+      schema: {
+        summary: "Read the wage and ID from one Qiwa contract PDF",
+        description: 'multipart/form-data: "contract" (one Qiwa PDF).',
+        consumes: ["multipart/form-data"],
+        response: { 200: WageRecord },
+      },
+    },
+    async (request) => {
+      const { files } = await readForm(request, deps.config.MAX_UPLOAD_BYTES);
+      const pdf = files.get("contract");
+      if (!pdf) throw validationError('Send a Qiwa PDF in "contract".');
+      return readQiwaWage(pdf);
     },
   );
 
@@ -91,6 +109,14 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
     async ({ body }) => checkWages({ ...body, payroll: body.payroll?.map(asPaid) }),
   );
 };
+
+/** A CSV upload as text. Excel workbooks (a zip, so "PK" first) are refused with a hint. */
+function csvText(file: Buffer): string {
+  if (file.subarray(0, 2).toString() === "PK") {
+    throw validationError("Excel files aren't read yet. Save the sheet as CSV (UTF-8).");
+  }
+  return file.toString("utf8");
+}
 
 /** The wage and the employee's ID from a Qiwa contract PDF. */
 async function readQiwaWage(pdf: Buffer): Promise<WageRecord> {
@@ -127,6 +153,12 @@ async function readForm(request: FastifyRequest, maxBytes: number) {
   const fields = new Map<string, string>();
   const parts = request.parts({ limits: { fileSize: maxBytes, files: 3, fields: 10 } });
   for await (const part of parts) {
+    if (part.type === "file" && files.has(part.fieldname)) {
+      throw validationError(
+        `Send one file in "${part.fieldname}". For many Qiwa PDFs, read each with ` +
+          "POST /wage-checks/contract and send the records to POST /wage-checks/records.",
+      );
+    }
     if (part.type === "file") files.set(part.fieldname, await readFile(part, maxBytes));
     else fields.set(part.fieldname, String(part.value));
   }

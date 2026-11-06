@@ -6,7 +6,7 @@ const Amount = z.number().nonnegative().nullable();
 export const WageRecord = z.object({
   /** National ID or iqama number. */
   employeeId: z.string().regex(/^\d{10}$/),
-  name: z.string().nullable(),
+  name: z.string().nullable().default(null),
   basic: Amount,
   housing: Amount,
   /** In payroll: every other allowance, transport included. */
@@ -30,6 +30,7 @@ export const WageIssue = z.object({
     "underpaid",
     "offer_differs",
     "no_contract",
+    "duplicate",
     "not_paid",
   ]),
   field: z.enum(["basic", "housing", "transport", "total"]).nullable(),

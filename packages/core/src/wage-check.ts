@@ -16,6 +16,13 @@ const ARTICLES = {
   transport: ["61"],
   total: ["61"],
 };
+const SOURCE_NAMES = {
+  qiwa: "the Qiwa contracts",
+  offers: "the offer letters",
+  payroll: "payroll",
+};
+type Source = keyof typeof SOURCE_NAMES;
+const SOURCES = Object.keys(SOURCE_NAMES) as Source[];
 /** Half a halala: amounts are compared after rounding to two decimals. */
 const EPSILON = 0.005;
 
@@ -28,13 +35,27 @@ export function checkWages(input: WageCheckInput): WageCheckResponse {
   const qiwa = byId(input.qiwa);
   const offers = byId(input.offers);
   const payroll = byId(input.payroll);
+  const repeated = {
+    qiwa: repeatedIds(input.qiwa),
+    offers: repeatedIds(input.offers),
+    payroll: repeatedIds(input.payroll),
+  };
   const employees = [...new Set([...qiwa.keys(), ...payroll.keys()])].map((id) => {
+    const issues: WageIssue[] = [];
+    // A person listed twice in one source can't be compared: which row is right is unknown.
+    for (const source of SOURCES) {
+      if (!repeated[source].has(id)) continue;
+      const message = `Listed more than once in ${SOURCE_NAMES[source]}. Check which row is right.`;
+      issues.push({ ...NONE, kind: "duplicate", articles: [], message });
+    }
+    const usable = (source: Source) => !repeated[source].has(id);
     const contract = qiwa.get(id);
     const paid = payroll.get(id);
     const offer = offers.get(id);
-    const issues: WageIssue[] = [];
-    if (contract && paid) issues.push(...compare(contract, paid, "payroll"));
-    if (contract && offer) issues.push(...compare(contract, offer, "offer"));
+    if (contract && paid && usable("qiwa") && usable("payroll"))
+      issues.push(...compare(contract, paid, "payroll"));
+    if (contract && offer && usable("qiwa") && usable("offers"))
+      issues.push(...compare(contract, offer, "offer"));
     if (!contract) {
       const message = "Paid through payroll, but there is no Qiwa contract for this ID.";
       issues.push({ ...NONE, kind: "no_contract", articles: ["37"], message });
@@ -88,5 +109,14 @@ function compare(contract: WageRecord, other: WageRecord, source: "payroll" | "o
 }
 
 const byId = (records: WageRecord[]) => new Map(records.map((r) => [r.employeeId, r]));
+
+function repeatedIds(records: WageRecord[]): Set<string> {
+  const seen = new Set<string>();
+  const repeated = new Set<string>();
+  for (const { employeeId } of records)
+    (seen.has(employeeId) ? repeated : seen).add(employeeId);
+  return repeated;
+}
+
 const round = (n: number) => Math.round(n * 100) / 100;
 const fmt = (n: number) => n.toLocaleString("en-US", { maximumFractionDigits: 2 });

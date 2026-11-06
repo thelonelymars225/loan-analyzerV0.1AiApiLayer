@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Problem, WageCheckResponse, WageRecord } from "@rater/contracts";
 import { readContractsCsv, readPayrollCsv } from "@rater/core";
+import { toolsAvailable } from "@rater/pdf";
 import {
   api,
   DATABASE_URL,
@@ -10,6 +11,8 @@ import {
   signUp,
   type TestContext,
 } from "./helpers";
+
+const { tesseractAra } = await toolsAvailable();
 
 describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
   let t: TestContext;
@@ -256,6 +259,31 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
       ["payroll_differs", "underpaid"],
       ["not_paid"],
     ]);
+  });
+
+  it.skipIf(!tesseractAra)("reads a scanned Qiwa contract with OCR", async () => {
+    // A mock hire printed, then scanned: a blank sheet, then the contract a little crooked.
+    // Made with ImageMagick from hire-1000000103.pdf at 150 dpi, rotated 0.7°, with noise.
+    const body = await multipart(
+      {},
+      { field: "contract", content: await fixture("scan-1000000103.pdf") },
+    );
+    const read = await api(
+      t.app,
+      cookie,
+      "POST",
+      "/wage-checks/contract",
+      body.payload,
+      body.headers,
+    );
+    expect(read.json()).toEqual({
+      employeeId: "1000000103",
+      name: null,
+      basic: 12000,
+      housing: 2250,
+      transport: 1200,
+      total: 15450,
+    });
   });
 
   it("explains two PDFs in one check and Excel files instead of misreading them", async () => {

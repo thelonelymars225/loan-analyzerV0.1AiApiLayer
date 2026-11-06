@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { PdfToolError, canRun, runTool, withTempDir, writePdf } from "./run";
 
@@ -42,6 +42,10 @@ const OCR_TIMEOUT_MS = 60_000;
 /** A page or a crop renders in well under a second; a document that needs longer is odd. */
 const CROP_TIMEOUT_MS = 15_000;
 const POINTS_PER_INCH = 72;
+/** Resolution scanned pages are rendered at for OCR; Tesseract is tuned for 300 dpi. */
+export const OCR_DPI = 300;
+/** A Qiwa contract is a few pages; a longer scan is read only this far. */
+const MAX_OCR_PAGES = 10;
 const DEFAULT_CROP_DPI = 144;
 
 /** Runs `pdftotext -bbox-layout` and returns its XHTML (word boxes per page). */
@@ -130,6 +134,30 @@ export async function ocrArabicRegions(
       }
     }
     return texts.join("\n");
+  });
+}
+
+/**
+ * OCRs every page of a scanned PDF (at most MAX_OCR_PAGES) at OCR_DPI and returns Tesseract's
+ * TSV: one row per word, with its box in pixels and its page number. Arabic and English are
+ * read together, as both columns of a Qiwa contract are printed side by side.
+ */
+export async function ocrPages(pdf: Buffer): Promise<string> {
+  return withTempDir(async (dir) => {
+    const input = await writePdf(dir, pdf);
+    const args = ["-r", String(OCR_DPI), "-l", String(MAX_OCR_PAGES), "-gray", "-png"];
+    await runTool("pdftoppm", [...args, input, join(dir, "page")], {
+      timeoutMs: OCR_TIMEOUT_MS,
+    });
+    // pdftoppm pads page numbers to the same width, so a name sort is page order.
+    const images = (await readdir(dir)).filter((f) => f.endsWith(".png")).sort();
+    await writeFile(join(dir, "pages.txt"), images.map((f) => join(dir, f)).join("\n"));
+    const { stdout } = await runTool(
+      "tesseract",
+      [join(dir, "pages.txt"), "stdout", "-l", "ara+eng", "tsv"],
+      { timeoutMs: OCR_TIMEOUT_MS * images.length },
+    );
+    return stdout;
   });
 }
 

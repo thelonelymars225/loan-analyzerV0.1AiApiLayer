@@ -4,6 +4,7 @@ import {
   decodeEntities,
   pageRows,
   parseBboxXhtml,
+  parseTesseractTsv,
   rowText,
 } from "../../src/bbox";
 import { cell, cellRight, page } from "./layout";
@@ -49,6 +50,34 @@ describe("parseBboxXhtml", () => {
 
   it("returns no pages for empty input", () => {
     expect(parseBboxXhtml("")).toEqual([]);
+  });
+});
+
+describe("parseTesseractTsv", () => {
+  // Header, then a 300 dpi page with one line of two words (and an empty block row).
+  const TSV = [
+    "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext",
+    "1\t1\t0\t0\t0\t0\t0\t0\t2550\t3300\t-1\t",
+    "2\t1\t1\t0\t0\t0\t300\t600\t600\t60\t-1\t",
+    "4\t1\t1\t1\t1\t0\t300\t600\t600\t60\t-1\t",
+    "5\t1\t1\t1\t1\t1\t300\t610\t150\t40\t96\tBasic",
+    "5\t1\t1\t1\t1\t2\t500\t600\t200\t50\t95\tWage:",
+    "1\t2\t0\t0\t0\t0\t0\t0\t2550\t3300\t-1\t",
+  ].join("\n");
+
+  it("reads pages and words in points, each word as tall as its line", () => {
+    expect(parseTesseractTsv(TSV, 300)).toEqual([
+      {
+        page: 1,
+        width: 612,
+        height: 792,
+        words: [
+          { text: "Basic", xMin: 72, xMax: 108, yMin: 144, yMax: 158.4 },
+          { text: "Wage:", xMin: 120, xMax: 168, yMin: 144, yMax: 158.4 },
+        ],
+      },
+      { page: 2, width: 612, height: 792, words: [] },
+    ]);
   });
 });
 

@@ -1,8 +1,13 @@
 import type { MultipartFile } from "@fastify/multipart";
 import type { FastifyRequest } from "fastify";
 import { View } from "@rater/contracts";
-import { detectQiwa, parseBboxXhtml } from "@rater/core";
-import { PdfToolError } from "@rater/pdf";
+import {
+  detectQiwa,
+  parseBboxXhtml,
+  parseTesseractTsv,
+  type PageLayout,
+} from "@rater/core";
+import { OCR_DPI, ocrPages, pdftotextBbox, PdfToolError } from "@rater/pdf";
 import { fileTooLarge, unsupportedDocument, validationError } from "../errors";
 import { ConcurrencyLimit } from "../limiter";
 import { firstPageBbox, pageCount } from "./first-page";
@@ -89,6 +94,46 @@ export async function checkQiwaPdf(pdf: Buffer): Promise<{ pages: number }> {
     }
     return { pages: await readPdf(() => pageCount(pdf)) };
   });
+}
+
+/**
+ * Every page of a Qiwa contract PDF as words. A scan (no text on any page) is read with OCR.
+ * For the wage check, which only needs the ID and the wage; ratings still take text PDFs only.
+ */
+export async function readQiwaPages(
+  pdf: Buffer,
+): Promise<{ pages: PageLayout[]; scanned: boolean }> {
+  if (!looksLikePdf(pdf)) throw unsupportedDocument("The file is not a PDF.");
+
+  return pdfChecks.run(async () => {
+    const pages = parseBboxXhtml(await readPdf(() => pdftotextBbox(pdf)));
+    if (pages.every((page) => page.words.length === 0)) {
+      return { pages: await readScan(pdf), scanned: true };
+    }
+    const detection = detectQiwa(pages);
+    if (!detection.ok) {
+      throw unsupportedDocument(
+        `Only Qiwa "Unified Employment Contract" PDFs can be read. ${detection.reason}`,
+      );
+    }
+    return { pages, scanned: false };
+  });
+}
+
+/**
+ * A scanned contract read with OCR, from the page with the title on: a scan may start with a
+ * blank or cover sheet.
+ */
+async function readScan(pdf: Buffer): Promise<PageLayout[]> {
+  const pages = parseTesseractTsv(await readPdf(() => ocrPages(pdf)), OCR_DPI);
+  const start = pages.findIndex((page) => detectQiwa([page]).ok);
+  if (start === -1) {
+    throw unsupportedDocument(
+      'This scan could not be read as a Qiwa "Unified Employment Contract". Scan it again ' +
+        "straight and sharp at 300 dpi, or download the contract PDF from Qiwa.",
+    );
+  }
+  return pages.slice(start);
 }
 
 /** A missing poppler is our problem (500); any other failure means an unreadable PDF. */

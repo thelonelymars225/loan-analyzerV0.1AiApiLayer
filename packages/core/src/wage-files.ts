@@ -54,7 +54,7 @@ export function readContractsCsv(text: string): Pick<WageCheckInput, "qiwa" | "o
   return { qiwa, offers };
 }
 
-/** Rows as column → cell maps. Tolerates a BOM and CRLF; quoted cells with commas are not. */
+/** Rows as column → cell maps. Tolerates a BOM, CRLF, quoted cells and empty rows. */
 function readRows(text: string, columns: Record<string, string>): Map<string, string>[] {
   const lines = text.replace("\uFEFF", "").split(/\r?\n/);
   const header = cells(lines.shift() ?? "");
@@ -62,15 +62,28 @@ function readRows(text: string, columns: Record<string, string>): Map<string, st
   if (missing.length > 0)
     throw new WageFileError(`Missing columns: ${missing.join(", ")}.`);
   return lines
-    .filter((line) => line.trim())
-    .map((line) => new Map(header.map((name, i) => [name, cells(line)[i] ?? ""])));
+    .filter((line) => line.replace(/[,\s]/g, ""))
+    .map((line) => {
+      const row = cells(line);
+      return new Map(header.map((name, i) => [name, row[i] ?? ""]));
+    });
 }
 
-const cells = (line: string) => line.split(",").map((cell) => cell.trim());
+/** One line's cells. Excel quotes a cell holding a comma: "Khan, Imran" or "6,500". */
+const cells = (line: string) =>
+  line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map((cell) =>
+    cell
+      .trim()
+      .replace(/^"(.*)"$/, "$1")
+      .replace(/""/g, '"'),
+  );
 
 function toRecord(row: Map<string, string>, c: typeof PAYROLL_COLUMNS): WageRecord {
   const employeeId = row.get(c.employeeId)?.replace(/\D/g, "");
-  if (!employeeId) throw new WageFileError(`A row has no ${c.employeeId}.`);
+  if (!employeeId) {
+    const line = [...row.values()].join(",");
+    throw new WageFileError(`A row has no ${c.employeeId}: ${line}`);
+  }
   return {
     employeeId,
     name: row.get(c.name) || null,
@@ -82,7 +95,8 @@ function toRecord(row: Map<string, string>, c: typeof PAYROLL_COLUMNS): WageReco
 }
 
 function amount(row: Map<string, string>, column: string): number | null {
-  const raw = row.get(column)?.replace(/\s/g, "");
+  // Thousands separators, as in "6,500", are dropped.
+  const raw = row.get(column)?.replace(/[\s,]/g, "");
   if (!raw) return null;
   const value = Number(raw);
   if (!Number.isFinite(value))

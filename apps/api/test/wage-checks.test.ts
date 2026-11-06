@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Problem, WageCheckResponse } from "@rater/contracts";
+import { readContractsCsv, readPayrollCsv } from "@rater/core";
 import {
   api,
   DATABASE_URL,
@@ -64,6 +65,29 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
       ["underpaid", "total", -1350],
       ["offer_differs", "total", 500],
     ]);
+  });
+
+  it("takes the same records as JSON, as an HRIS would send them", async () => {
+    const { qiwa, offers } = readContractsCsv(
+      String(await fixture("contracts-mock.csv")),
+    );
+    // An HRIS sends the parts it pays, not a total: the check adds them up.
+    const payroll = readPayrollCsv(String(await fixture("mudad-wage-file-mock.csv"))).map(
+      (row) => ({ ...row, total: null }),
+    );
+    const ok = await api(t.app, cookie, "POST", "/wage-checks/records", {
+      qiwa,
+      offers,
+      payroll,
+    });
+    expect(ok.statusCode).toBe(200);
+    expect(WageCheckResponse.parse(ok.json()).summary).toEqual({
+      employees: 12,
+      flagged: 7,
+    });
+
+    const bad = await api(t.app, cookie, "POST", "/wage-checks/records", { qiwa });
+    expect(bad.statusCode).toBe(400);
   });
 
   it("answers 400 with the problem for a bad file, and 401 without a session", async () => {

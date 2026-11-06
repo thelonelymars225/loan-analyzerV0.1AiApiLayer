@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { FastifyRequest } from "fastify";
-import { WageCheckResponse } from "@rater/contracts";
+import { WageCheckRequest, WageCheckResponse } from "@rater/contracts";
 import {
+  asPaid,
   checkWages,
   extractContract,
   parseBboxXhtml,
@@ -72,6 +73,20 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
         throw error;
       }
     },
+  );
+
+  // The same check for a system that already holds the records, such as an HRIS calling it
+  // before payroll is approved. Payroll amounts left out count as 0, like an empty CSV cell.
+  app.post(
+    "/wage-checks/records",
+    {
+      schema: {
+        summary: "Compare Qiwa contracts, offer letters and payroll sent as JSON",
+        body: WageCheckRequest,
+        response: { 200: WageCheckResponse },
+      },
+    },
+    async ({ body }) => checkWages({ ...body, payroll: body.payroll.map(asPaid) }),
   );
 };
 

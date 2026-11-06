@@ -1,6 +1,19 @@
 import { z } from "zod";
 
-const Amount = z.number().nonnegative().nullable();
+/**
+ * SAR, or null when the source does not say. May be left out, and may be a decimal string
+ * such as "9000.00", which is how SAP OData sends amounts.
+ */
+const Amount = z
+  .union([
+    z.number().nonnegative(),
+    z
+      .string()
+      .regex(/^\d+(\.\d+)?$/)
+      .transform(Number),
+  ])
+  .nullable()
+  .default(null);
 
 /** One person's monthly pay as one source states it, in SAR. Null: the source does not say. */
 export const WageRecord = z.object({

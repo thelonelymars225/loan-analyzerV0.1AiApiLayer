@@ -86,6 +86,16 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
       flagged: 7,
     });
 
+    // An ERP's nightly job: amounts left out, or sent as SAP OData decimal strings.
+    const erp = await api(t.app, cookie, "POST", "/wage-checks/records", {
+      qiwa: [{ employeeId: "1000000011", basic: "9000.00", housing: "2250.00" }],
+      payroll: [{ employeeId: "1000000011", basic: "8000.00", housing: 2250 }],
+    });
+    const [employee] = WageCheckResponse.parse(erp.json()).employees;
+    expect(employee?.issues.map((i) => [i.kind, i.field, i.gap])).toEqual([
+      ["payroll_differs", "basic", -1000],
+    ]);
+
     const bad = await api(t.app, cookie, "POST", "/wage-checks/records", { payroll });
     expect(bad.statusCode).toBe(400);
 

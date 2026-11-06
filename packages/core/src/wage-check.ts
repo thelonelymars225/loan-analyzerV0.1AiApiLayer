@@ -41,7 +41,8 @@ export function checkWages(input: WageCheckInput): WageCheckResponse {
     offers: repeatedIds(input.offers),
     payroll: repeatedIds(input.payroll ?? []),
   };
-  const employees = [...new Set([...qiwa.keys(), ...payroll.keys()])].map((id) => {
+  const ids = new Set([...qiwa.keys(), ...payroll.keys(), ...offers.keys()]);
+  const employees = [...ids].map((id) => {
     const issues: WageIssue[] = [];
     // A person listed twice in one source can't be compared: which row is right is unknown.
     for (const source of SOURCES) {
@@ -58,10 +59,13 @@ export function checkWages(input: WageCheckInput): WageCheckResponse {
     if (contract && offer && usable("qiwa") && usable("offers"))
       issues.push(...compare(contract, offer, "offer"));
     if (!contract) {
-      const message = "Paid through payroll, but there is no Qiwa contract for this ID.";
+      // An offer with no contract is often a typo in the ID on one of the two.
+      const message = paid
+        ? "Paid through payroll, but there is no Qiwa contract for this ID."
+        : "Has an offer letter, but there is no Qiwa contract for this ID.";
       issues.push({ ...NONE, kind: "no_contract", articles: ["37"], message });
     }
-    if (!paid && input.payroll) {
+    if (contract && !paid && input.payroll) {
       const message = "Has a Qiwa contract but is missing from this month's payroll.";
       issues.push({
         ...NONE,

@@ -1,0 +1,111 @@
+[
+  {
+    "id": "1000000101",
+    "name": "Abdulrahman Mock",
+    "contract": "1000000101.pdf",
+    "offer": {
+      "basic": 9000,
+      "housing": 2250,
+      "transport": 900,
+      "total": 12150
+    },
+    "expected": []
+  },
+  {
+    "id": "2000000102",
+    "name": "Arjun Sample",
+    "contract": "2000000102.pdf",
+    "offer": {
+      "total": 5400
+    },
+    "expected": []
+  },
+  {
+    "id": "1000000103",
+    "name": "Haya Example",
+    "contract": "1000000103.pdf",
+    "offer": {
+      "basic": 12000,
+      "housing": 3000,
+      "transport": 1200,
+      "total": 16200
+    },
+    "expected": ["offer_differs:housing", "offer_differs:total"]
+  },
+  {
+    "id": "2000000104",
+    "name": "Mark Fixture",
+    "contract": "2000000104.pdf",
+    "offer": {
+      "basic": 6000,
+      "housing": 1500,
+      "transport": 600,
+      "total": 8100
+    },
+    "expected": ["offer_differs:transport", "offer_differs:total"]
+  },
+  {
+    "id": "1000000105",
+    "name": "Nawaf Test",
+    "contract": "1000000105.pdf",
+    "offer": {
+      "basic": 9000,
+      "housing": 2000,
+      "transport": 800,
+      "total": 11800
+    },
+    "expected": ["offer_differs:basic", "offer_differs:housing"]
+  },
+  {
+    "id": "1000000106",
+    "name": "Shahad Demo",
+    "contract": "1000000106.pdf",
+    "offer": {
+      "total": 14500
+    },
+    "expected": ["offer_differs:total"]
+  },
+  {
+    "id": "2000000107",
+    "name": "Liza Placeholder",
+    "contract": "2000000107.pdf",
+    "offer": {
+      "basic": 4500,
+      "housing": 1250,
+      "transport": 500,
+      "total": 6250
+    },
+    "expected": ["offer_differs:basic", "offer_differs:total"]
+  },
+  {
+    "id": "1000000108",
+    "name": "Ghada Stub",
+    "contract": "1000000108.pdf",
+    "offer": {
+      "basic": 15000
+    },
+    "expected": []
+  },
+  {
+    "id": "2000000109",
+    "name": "Tariq Dummy",
+    "contract": "2000000109.pdf",
+    "offer": {
+      "basic": 3500,
+      "housing": 875,
+      "transport": 350,
+      "total": 4725
+    },
+    "expected": []
+  },
+  {
+    "id": "1000000110",
+    "name": "Majed Specimen",
+    "contract": "1000000110.pdf",
+    "offer": {
+      "housing": 2778,
+      "total": 16000
+    },
+    "expected": ["offer_differs:total"]
+  }
+]

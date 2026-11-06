@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Problem, WageCheckResponse } from "@rater/contracts";
 import { readContractsCsv, readPayrollCsv } from "@rater/core";
@@ -142,6 +143,29 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
       ["offer_differs", "housing"],
       ["offer_differs", "total"],
     ]);
+  });
+
+  it("checks the ten mock new hires the way an ATS would, one Qiwa PDF each", async () => {
+    // Made by tools/hiring-mock.ts: a drafted Qiwa PDF and the accepted offer per hire.
+    const dir = new URL("./fixtures/hiring/", import.meta.url);
+    const hires = JSON.parse(await readFile(new URL("hires.json", dir), "utf8")) as {
+      id: string;
+      contract: string;
+      offer: Record<string, number>;
+      expected: string[];
+    }[];
+    const field = (part: string) => `offer${part[0]?.toUpperCase()}${part.slice(1)}`;
+    for (const hire of hires) {
+      const offer = Object.entries(hire.offer).map(([part, n]) => [
+        field(part),
+        String(n),
+      ]);
+      const contract = await readFile(new URL(hire.contract, dir));
+      const response = await post(cookie, { contract }, Object.fromEntries(offer));
+      const [employee] = WageCheckResponse.parse(response.json()).employees;
+      expect(employee?.employeeId).toBe(hire.id);
+      expect(employee?.issues.map((i) => `${i.kind}:${i.field}`)).toEqual(hire.expected);
+    }
   });
 
   it("answers 400 with the problem for a bad file, and 401 without a session", async () => {

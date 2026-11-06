@@ -1,15 +1,15 @@
 /*
  * Scenario 2 mock: ten new hires at a fake company, as an ATS holds them before the Qiwa
  * contract goes to the employee. Each has the drafted Qiwa contract as a PDF and the accepted
- * offer as data, with some mismatches planted. Writes the PDFs and hires.json (offers and the
- * expected issues) to apps/api/test/fixtures/hiring/. Everything is made up.
+ * offer as data, with some mismatches planted. Writes hire-<ID>.pdf and hires.json (the offers
+ * and expected issues) to packages/core/test/fixtures/. Everything is made up.
  *
  *   CHROME_PATH=/usr/bin/google-chrome pnpm exec tsx tools/hiring-mock.ts
  *
  * The PDFs are printed by headless Chrome, which needs an Arabic font for the Arabic column.
  */
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -77,7 +77,7 @@ const HIRES: [string, string, Pay, Offer, string[]][] = [
   ],
 ];
 
-const OUT = new URL("../apps/api/test/fixtures/hiring/", import.meta.url).pathname;
+const OUT = new URL("../packages/core/test/fixtures/", import.meta.url).pathname;
 const CHROME = process.env.CHROME_PATH ?? "chromium";
 const sar = (n: number) => n.toLocaleString("en-US", { minimumFractionDigits: 2 });
 
@@ -160,11 +160,10 @@ function qiwaContract(id: string, name: string, p: Pay): string {
   <p style="text-align:center;color:#888">SYNTHETIC TEST CONTRACT - NOT A REAL DOCUMENT</p>`;
 }
 
-rmSync(OUT, { recursive: true, force: true });
-mkdirSync(OUT, { recursive: true });
 const hires = HIRES.map(([id, name, contract, offer, expected]) => {
-  writeFileSync(join(OUT, `${id}.pdf`), pdf(qiwaContract(id, name, contract)));
-  return { id, name, contract: `${id}.pdf`, offer, expected };
+  const file = `hire-${id}.pdf`;
+  writeFileSync(join(OUT, file), pdf(qiwaContract(id, name, contract)));
+  return { id, name, contract: file, offer, expected };
 });
 writeFileSync(join(OUT, "hires.json"), JSON.stringify(hires, null, 2) + "\n");
 console.log(`Wrote ${hires.length} hires to ${OUT}`);

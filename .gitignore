@@ -14,5 +14,4 @@ private/
 *.pdf
 !evals/cases/*/contract.pdf
 !packages/core/test/fixtures/*.pdf
-!apps/api/test/fixtures/hiring/*.pdf
 .vite/

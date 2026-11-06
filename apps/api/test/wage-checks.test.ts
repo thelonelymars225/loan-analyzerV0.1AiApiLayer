@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Problem, WageCheckResponse } from "@rater/contracts";
 import { readContractsCsv, readPayrollCsv } from "@rater/core";
@@ -147,8 +146,7 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
 
   it("checks the ten mock new hires the way an ATS would, one Qiwa PDF each", async () => {
     // Made by tools/hiring-mock.ts: a drafted Qiwa PDF and the accepted offer per hire.
-    const dir = new URL("./fixtures/hiring/", import.meta.url);
-    const hires = JSON.parse(await readFile(new URL("hires.json", dir), "utf8")) as {
+    const hires = JSON.parse(String(await fixture("hires.json"))) as {
       id: string;
       contract: string;
       offer: Record<string, number>;
@@ -160,7 +158,7 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
         field(part),
         String(n),
       ]);
-      const contract = await readFile(new URL(hire.contract, dir));
+      const contract = await fixture(hire.contract);
       const response = await post(cookie, { contract }, Object.fromEntries(offer));
       const [employee] = WageCheckResponse.parse(response.json()).employees;
       expect(employee?.employeeId).toBe(hire.id);

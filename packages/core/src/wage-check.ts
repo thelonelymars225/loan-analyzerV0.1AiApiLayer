@@ -1,16 +1,6 @@
-import type { WageCheckResponse, WageIssue } from "@rater/contracts";
+import type { WageCheckResponse, WageIssue, WageRecord } from "@rater/contracts";
 
-/** One person's monthly pay as one source states it, in SAR. Null: the source does not say. */
-export interface WageRecord {
-  /** National ID or iqama number. */
-  employeeId: string;
-  name: string | null;
-  basic: number | null;
-  housing: number | null;
-  /** In payroll: every other allowance, transport included. */
-  transport: number | null;
-  total: number | null;
-}
+export type { WageRecord };
 
 export interface WageCheckInput {
   qiwa: WageRecord[];

@@ -1,5 +1,28 @@
 import { z } from "zod";
 
+const Amount = z.number().nonnegative().nullable();
+
+/** One person's monthly pay as one source states it, in SAR. Null: the source does not say. */
+export const WageRecord = z.object({
+  /** National ID or iqama number. */
+  employeeId: z.string().regex(/^\d{10}$/),
+  name: z.string().nullable(),
+  basic: Amount,
+  housing: Amount,
+  /** In payroll: every other allowance, transport included. */
+  transport: Amount,
+  total: Amount,
+});
+export type WageRecord = z.infer<typeof WageRecord>;
+
+/** The same check as JSON, for a system that already holds the records (an HRIS, an ERP). */
+export const WageCheckRequest = z.object({
+  qiwa: z.array(WageRecord).max(50_000),
+  offers: z.array(WageRecord).max(50_000).default([]),
+  payroll: z.array(WageRecord).max(50_000),
+});
+export type WageCheckRequest = z.infer<typeof WageCheckRequest>;
+
 /** The wage check: Qiwa contract vs. offer letter and payroll (Mudad wage file), field by field. */
 export const WageIssue = z.object({
   kind: z.enum([

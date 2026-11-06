@@ -26,14 +26,18 @@ export class WageFileError extends Error {
   override readonly name = "WageFileError";
 }
 
-/** Payroll rows: an empty amount is 0 and the total is the sum of the parts (gross pay). */
+/** Payroll rows, as paid (see asPaid). */
 export function readPayrollCsv(text: string): WageRecord[] {
-  return readRows(text, PAYROLL_COLUMNS).map((row) => {
-    const r = toRecord(row, PAYROLL_COLUMNS);
-    const [basic, housing, transport] = [r.basic ?? 0, r.housing ?? 0, r.transport ?? 0];
-    const total = Math.round((basic + housing + transport) * 100) / 100;
-    return { ...r, basic, housing, transport, total };
-  });
+  return readRows(text, PAYROLL_COLUMNS).map((row) =>
+    asPaid(toRecord(row, PAYROLL_COLUMNS)),
+  );
+}
+
+/** A payroll row as paid: a missing amount is 0, and a missing total is the sum of the parts. */
+export function asPaid(r: WageRecord): WageRecord {
+  const [basic, housing, transport] = [r.basic ?? 0, r.housing ?? 0, r.transport ?? 0];
+  const total = r.total ?? Math.round((basic + housing + transport) * 100) / 100;
+  return { ...r, basic, housing, transport, total };
 }
 
 export function readContractsCsv(text: string): Pick<WageCheckInput, "qiwa" | "offers"> {

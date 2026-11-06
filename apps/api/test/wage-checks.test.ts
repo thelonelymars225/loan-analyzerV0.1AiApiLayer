@@ -86,7 +86,7 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
       flagged: 7,
     });
 
-    const bad = await api(t.app, cookie, "POST", "/wage-checks/records", { qiwa });
+    const bad = await api(t.app, cookie, "POST", "/wage-checks/records", { payroll });
     expect(bad.statusCode).toBe(400);
 
     // Above Fastify's default 1 MB body limit, and without names.
@@ -103,6 +103,45 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
     });
     expect(big.statusCode).toBe(200);
     expect(WageCheckResponse.parse(big.json()).summary.flagged).toBe(0);
+  });
+
+  it("checks a new hire's offer against Qiwa before there is any payroll", async () => {
+    const pdf = await post(
+      cookie,
+      { contract: await fixture("wage-mismatch.pdf") },
+      { offerTotal: "13,500" },
+    );
+    const json = await api(t.app, cookie, "POST", "/wage-checks/records", {
+      qiwa: [
+        {
+          employeeId: "1000000031",
+          basic: 9000,
+          housing: 2250,
+          transport: 1400,
+          total: 13000,
+        },
+      ],
+      offers: [
+        {
+          employeeId: "1000000031",
+          basic: 9000,
+          housing: 3000,
+          transport: 1400,
+          total: 13750,
+        },
+      ],
+    });
+    const kinds = (r: typeof pdf) =>
+      WageCheckResponse.parse(r.json()).employees[0]?.issues.map((i) => [
+        i.kind,
+        i.field,
+      ]);
+    // No "not paid": nobody is paid yet.
+    expect(kinds(pdf)).toEqual([["offer_differs", "total"]]);
+    expect(kinds(json)).toEqual([
+      ["offer_differs", "housing"],
+      ["offer_differs", "total"],
+    ]);
   });
 
   it("answers 400 with the problem for a bad file, and 401 without a session", async () => {

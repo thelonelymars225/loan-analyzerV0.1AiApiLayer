@@ -8,7 +8,8 @@
     <h1>Wage check</h1>
     <p>Test page for <code>POST /api/v1/wage-checks</code>; sign in to the app first.</p>
     <form id="form">
-      <label>Payroll CSV (Mudad) <input type="file" id="payroll" required /></label><br />
+      <label>Payroll CSV (Mudad, optional) <input type="file" id="payroll" /></label
+      ><br />
       <label>Contract PDF or CSV <input type="file" id="contract" required /></label>
       <fieldset>
         <legend>Offer letter (optional, used with a PDF), SAR per month</legend>
@@ -30,7 +31,8 @@
         event.preventDefault();
         const contract = document.getElementById("contract").files[0];
         const body = new FormData(form);
-        body.append("payroll", document.getElementById("payroll").files[0]);
+        const payroll = document.getElementById("payroll").files[0];
+        if (payroll) body.append("payroll", payroll);
         body.append(/\.pdf$/i.test(contract.name) ? "contract" : "contracts", contract);
         result.replaceChildren(el("p", "Checking…"));
         const response = await fetch("/api/v1/wage-checks", { method: "POST", body });

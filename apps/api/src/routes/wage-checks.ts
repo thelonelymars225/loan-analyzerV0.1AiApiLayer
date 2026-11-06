@@ -6,15 +6,13 @@ import {
   asPaid,
   checkWages,
   extractContract,
-  parseBboxXhtml,
   readContractsCsv,
   readPayrollCsv,
   WageFileError,
 } from "@rater/core";
-import { pdftotextBbox } from "@rater/pdf";
 import type { AppDeps } from "../deps";
 import { unsupportedDocument, validationError } from "../errors";
-import { checkQiwaPdf, readFile } from "../ratings/upload";
+import { readFile, readQiwaPages } from "../ratings/upload";
 
 /** Form field → wage part of the offer letter typed in next to a Qiwa PDF. */
 const OFFER_FIELDS = {
@@ -118,14 +116,18 @@ function csvText(file: Buffer): string {
   return file.toString("utf8");
 }
 
-/** The wage and the employee's ID from a Qiwa contract PDF. */
+/** The wage and the employee's ID from a Qiwa contract PDF, scanned or not. */
 async function readQiwaWage(pdf: Buffer): Promise<WageRecord> {
-  await checkQiwaPdf(pdf);
-  const pages = parseBboxXhtml(await pdftotextBbox(pdf));
-  const { employeeId, fields } = extractContract(pages);
+  const { pages, scanned } = await readQiwaPages(pdf);
+  const { employeeId, fields, issues } = extractContract(pages);
   const { wage } = fields;
   if (!employeeId || !wage) {
     throw unsupportedDocument("The employee's ID number or wage could not be read.");
+  }
+  // In a scan, wage parts that don't add up to the total are more likely a misread digit.
+  const wageIssue = scanned && issues.find((issue) => issue.field === "wage");
+  if (wageIssue) {
+    throw unsupportedDocument(`The scan's wage could not be read: ${wageIssue.message}`);
   }
   // "Other" fixed allowances in the contract count toward transport, like payroll does.
   const transport = wage.transport + wage.other;

@@ -20,6 +20,41 @@ export function parseBboxXhtml(xhtml: string): PageLayout[] {
   return pages;
 }
 
+/** Tesseract TSV row levels: 1 a page, 4 a line, 5 a word. */
+const TSV_PAGE = "1";
+const TSV_LINE = "4";
+const TSV_WORD = "5";
+
+/**
+ * Parses Tesseract's TSV output (a scanned PDF read at `dpi`) into the same pages of words as
+ * parseBboxXhtml, in PDF points. Tesseract boxes a word tightly around its ink; pdftotext boxes
+ * it by the font's full height. So each word takes the height of its line, which keeps the
+ * layout code's row and gap rules working for both.
+ */
+export function parseTesseractTsv(tsv: string, dpi: number): PageLayout[] {
+  const toPoints = (pixels: string | undefined) => (Number(pixels) * 72) / dpi;
+  const pages: PageLayout[] = [];
+  let line = { yMin: 0, yMax: 0 };
+  for (const row of tsv.split(/\r?\n/).slice(1)) {
+    const [level, page, , , , , left, top, width, height, , text] = row.split("\t");
+    const box = {
+      xMin: toPoints(left),
+      yMin: toPoints(top),
+      xMax: toPoints(left) + toPoints(width),
+      yMax: toPoints(top) + toPoints(height),
+    };
+    if (level === TSV_PAGE) {
+      pages.push({ page: Number(page), width: box.xMax, height: box.yMax, words: [] });
+    } else if (level === TSV_LINE) {
+      line = { yMin: box.yMin, yMax: box.yMax };
+    } else if (level === TSV_WORD && text?.trim()) {
+      const { xMin, xMax } = box;
+      pages[pages.length - 1]?.words.push({ text: text.trim(), xMin, xMax, ...line });
+    }
+  }
+  return pages;
+}
+
 function parseWords(pageBody: string): BboxWord[] {
   const words: BboxWord[] = [];
   for (const match of pageBody.matchAll(/<word\b([^>]*)>([\s\S]*?)<\/word>/g)) {

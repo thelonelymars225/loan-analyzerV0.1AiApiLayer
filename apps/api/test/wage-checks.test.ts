@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { Problem, WageCheckResponse } from "@rater/contracts";
+import { Problem, WageCheckResponse, WageRecord } from "@rater/contracts";
 import { readContractsCsv, readPayrollCsv } from "@rater/core";
 import {
   api,
@@ -217,6 +217,73 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
       employees: 2000,
       flagged: 25,
     });
+  });
+
+  it("lets an auditor read many Qiwa PDFs one by one, then check them together", async () => {
+    // The ten mock hires stand in for a company's contract folder.
+    const hires = JSON.parse(String(await fixture("hires.json"))) as {
+      contract: string;
+    }[];
+    const qiwa = [];
+    for (const { contract } of hires) {
+      const body = await multipart(
+        {},
+        { field: "contract", content: await fixture(contract) },
+      );
+      const read = await api(
+        t.app,
+        cookie,
+        "POST",
+        "/wage-checks/contract",
+        body.payload,
+        body.headers,
+      );
+      qiwa.push(WageRecord.parse(read.json()));
+    }
+    // Payroll as found: the first is paid 500 less basic, the last isn't paid.
+    const payroll = qiwa
+      .slice(0, -1)
+      .map((r, i) => ({
+        ...r,
+        basic: (r.basic ?? 0) - (i === 0 ? 500 : 0),
+        total: null,
+      }));
+    const check = await api(t.app, cookie, "POST", "/wage-checks/records", {
+      qiwa,
+      payroll,
+    });
+    const { summary, employees } = WageCheckResponse.parse(check.json());
+    expect(summary).toEqual({ employees: 10, flagged: 2 });
+    expect(employees.slice(0, 2).map((e) => e.issues.map((i) => i.kind))).toEqual([
+      ["payroll_differs", "underpaid"],
+      ["not_paid"],
+    ]);
+  });
+
+  it("explains two PDFs in one check and Excel files instead of misreading them", async () => {
+    const pdf = await fixture("wage-mismatch.pdf");
+    const two = await multipart(
+      {},
+      { field: "contract", content: pdf },
+      { field: "contract", content: pdf },
+    );
+    const twice = await api(
+      t.app,
+      cookie,
+      "POST",
+      "/wage-checks",
+      two.payload,
+      two.headers,
+    );
+    expect(Problem.parse(twice.json()).detail).toMatch(/^Send one file in "contract"/);
+
+    const xlsx = await post(cookie, {
+      contract: pdf,
+      payroll: "PK\u0003\u0004 workbook",
+    });
+    expect(Problem.parse(xlsx.json()).detail).toBe(
+      "Excel files aren't read yet. Save the sheet as CSV (UTF-8).",
+    );
   });
 
   it("answers 400 with the problem for a bad file, and 401 without a session", async () => {

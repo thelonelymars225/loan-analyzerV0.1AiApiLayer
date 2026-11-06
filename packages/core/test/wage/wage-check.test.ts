@@ -91,3 +91,11 @@ it("flags an offer whose ID matches no Qiwa contract instead of dropping it", ()
     ],
   });
 });
+
+it("names the row that has no ID, such as a totals row", () => {
+  const csv =
+    "EmployeeID,EmployeeName,BasicSalary,HousingAllowance,OtherAllowances\nTOTAL,,90000,22500,9000";
+  expect(() => readPayrollCsv(csv)).toThrow(
+    new WageFileError("A row has no EmployeeID: TOTAL,,90000,22500,9000"),
+  );
+});

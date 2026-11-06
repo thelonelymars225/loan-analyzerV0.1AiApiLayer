@@ -166,6 +166,49 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
     }
   });
 
+  it("audits a manpower agency's month: 2,000 workers in Excel-style exports", async () => {
+    const SITES = [
+      "Riyadh Hospital",
+      "Jeddah Port",
+      "NEOM Camp",
+      "Dammam Mall",
+      "Qassim Farm",
+    ];
+    const workers = Array.from({ length: 2000 }, (_, i) => ({
+      id: String((i % 4 ? 2 : 1) * 1e9 + 100_000 + i),
+      name: `"Worker, No. ${i}"`, // Excel quotes a cell holding a comma
+      basic: 2000 + ((i * 37) % 6000),
+      site: SITES[i % 5],
+    }));
+    // Amounts as Excel writes them with a number format: "6,500".
+    const pay = (basic: number) =>
+      [basic, basic / 4, basic / 10].map((n) => `"${n.toLocaleString("en-US")}"`);
+    const contracts = [
+      "EmployeeID,EmployeeName,Nationality,Source,BasicSalary,HousingAllowance,TransportAllowance,TotalWage,ClientSite",
+      ...workers.map((w) => [w.id, w.name, "SA", "qiwa", ...pay(w.basic), "", w.site]),
+    ];
+    // Planted: every 100th worker is paid 100 SAR less basic, and the last 5 are not paid.
+    const payroll = [
+      "EmployeeID,EmployeeName,IBAN,BasicSalary,HousingAllowance,OtherAllowances,ClientSite",
+      ...workers.slice(0, -5).map((w, i) => {
+        const [basic, ...rest] = pay(w.basic);
+        const paid = i % 100 ? basic : `${w.basic - 100}`;
+        return [w.id, w.name, "SA00", paid, ...rest, w.site];
+      }),
+      ",,,,,,", // the empty row Excel leaves at the end
+    ];
+    const csv = (rows: unknown[]) => "\uFEFF" + rows.map(String).join("\r\n");
+    const response = await post(cookie, {
+      contracts: csv(contracts),
+      payroll: csv(payroll),
+    });
+    expect(response.statusCode).toBe(200);
+    expect(WageCheckResponse.parse(response.json()).summary).toEqual({
+      employees: 2000,
+      flagged: 25,
+    });
+  });
+
   it("answers 400 with the problem for a bad file, and 401 without a session", async () => {
     const bad = await post(cookie, { payroll: "EmployeeID\n1", contracts: "x" });
     expect(bad.statusCode).toBe(400);

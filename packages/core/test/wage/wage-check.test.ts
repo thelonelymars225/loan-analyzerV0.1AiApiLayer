@@ -57,9 +57,32 @@ describe("checkWages on the 12 planted mock cases", () => {
 it("names missing wage file columns", () => {
   expect(() => readPayrollCsv("\uFEFFEmployeeID,BasicSalary\r\n1,2")).toThrow(
     new WageFileError(
-      "Missing columns: EmployeeName, HousingAllowance, OtherAllowances.",
+      "Missing columns: EmployeeName (اسم الموظف), HousingAllowance (بدل السكن), " +
+        "OtherAllowances (البدلات الأخرى).",
     ),
   );
+});
+
+it("reads Arabic or loosely written column names, a title row and Arabic digits", () => {
+  const csv = [
+    "كشف رواتب سبتمبر 2026,,,,",
+    "رقم الإقامة,اسم الموظف,الراتب الاساسي,بدل السكن,بدلات أخرى",
+    '٢٠٠٠٠٠٠٠١٢,Ravi Sample,"٦٬٠٠٠٫٥٠",1500,500',
+  ].join("\n");
+  expect(readPayrollCsv(csv)).toEqual([
+    {
+      employeeId: "2000000012",
+      name: "Ravi Sample",
+      basic: 6000.5,
+      housing: 1500,
+      transport: 500,
+      total: 8000.5,
+    },
+  ]);
+
+  const english =
+    "Employee ID,employee_name,Basic Salary,HOUSING ALLOWANCE,Other Allowances\n1,A,1,1,1";
+  expect(readPayrollCsv(english)[0]?.employeeId).toBe("1");
 });
 
 it("flags a person listed twice instead of comparing one of the rows", () => {

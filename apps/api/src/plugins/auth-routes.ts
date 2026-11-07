@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { fromNodeHeaders } from "better-auth/node";
-import { AUTH_BASE_PATH, type Auth } from "../auth";
+import { API_KEY_HEADER, AUTH_BASE_PATH, type Auth } from "../auth";
+import { unauthorized } from "../errors";
 
 /**
  * The only Better Auth endpoints reachable over HTTP, as paths under /api/auth. Everything
@@ -12,10 +13,15 @@ const ALLOWED_PATHS: ReadonlySet<string> = new Set([
   "/sign-out",
   "/get-session",
   "/ok", // Better Auth's own liveness check
+  // API keys of the signed-in user (@better-auth/api-key). Creating one needs a session
+  // cookie, not a key: a leaked key cannot mint more keys.
+  "/api-key/create",
+  "/api-key/list",
+  "/api-key/delete",
 ]);
 
 /**
- * Serves the allowed Better Auth endpoints (sign-up, sign-in, sign-out, session) at
+ * Serves the allowed Better Auth endpoints (sign-up, sign-in, sign-out, session, API keys) at
  * /api/auth/*. Better Auth speaks Web Request/Response, so each request is converted and the
  * answer copied back. Bodies are passed through untouched: this plugin's own content-type
  * parser keeps them as raw bytes instead of parsing JSON.
@@ -32,6 +38,13 @@ export function authRoutes(auth: Auth): FastifyPluginAsync {
       url: `${AUTH_BASE_PATH}/*`,
       schema: { hide: true },
       handler: async (request, reply) => {
+        // A key is for the product API, not the account: with one, the api-key plugin would
+        // let a leaked key mint more keys or read the session. Account calls take the cookie.
+        if (request.headers[API_KEY_HEADER]) {
+          throw unauthorized(
+            "Sign in with the session cookie to manage the account or its keys.",
+          );
+        }
         const webRequest = toWebRequest(request);
         if (!isAllowed(webRequest)) {
           // Answered exactly like a route that does not exist.

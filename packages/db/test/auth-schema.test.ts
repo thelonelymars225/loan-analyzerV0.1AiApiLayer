@@ -34,6 +34,31 @@ const BETTER_AUTH_FIELDS = {
     "updatedAt",
   ],
   verification: ["id", "identifier", "value", "expiresAt", "createdAt", "updatedAt"],
+  // @better-auth/api-key 1.7.7
+  apikey: [
+    "id",
+    "configId",
+    "name",
+    "start",
+    "prefix",
+    "key",
+    "referenceId",
+    "refillInterval",
+    "refillAmount",
+    "lastRefillAt",
+    "enabled",
+    "rateLimitEnabled",
+    "rateLimitTimeWindow",
+    "rateLimitMax",
+    "requestCount",
+    "remaining",
+    "lastRequest",
+    "expiresAt",
+    "createdAt",
+    "updatedAt",
+    "permissions",
+    "metadata",
+  ],
 } as const;
 
 const SQL_TABLE_NAMES = {
@@ -41,6 +66,7 @@ const SQL_TABLE_NAMES = {
   session: "sessions",
   account: "accounts",
   verification: "verifications",
+  apikey: "api_keys",
 };
 
 const models = Object.keys(BETTER_AUTH_FIELDS) as (keyof typeof BETTER_AUTH_FIELDS)[];

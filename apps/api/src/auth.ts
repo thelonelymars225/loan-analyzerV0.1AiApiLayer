@@ -1,3 +1,4 @@
+import { apiKey } from "@better-auth/api-key";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { authTables } from "@rater/db";
@@ -11,9 +12,16 @@ export const AUTH_BASE_PATH = "/api/auth";
  * Accounts and sessions (Better Auth, self-hosted, in our own Postgres).
  *
  * - Email + password sign-up. Each user sees and manages only their own ratings.
- * - Over HTTP only sign-up, sign-in, sign-out and the session are reachable (see the
- *   allow-list in plugins/auth-routes.ts).
+ * - API keys, for a company's system calling without a browser: a signed-in user creates one
+ *   (shown once, stored hashed) and the system sends it in the x-api-key header. The key acts
+ *   as that user: getSession answers with them, so every route works unchanged.
+ * - Over HTTP only sign-up, sign-in, sign-out, the session and the API key endpoints are
+ *   reachable (see the allow-list in plugins/auth-routes.ts).
  */
+export const API_KEY_HEADER = "x-api-key";
+/** Keys start with this, so one is recognisable in a log or a config file. */
+export const API_KEY_PREFIX = "cr_";
+
 export function createAuth(options: { config: Config; db: Db }) {
   const { config, db } = options;
   return betterAuth({
@@ -24,6 +32,16 @@ export function createAuth(options: { config: Config; db: Db }) {
     trustedOrigins: trustedOrigins(config),
     database: drizzleAdapter(db, { provider: "pg", schema: authTables }),
     emailAndPassword: { enabled: true },
+    plugins: [
+      apiKey({
+        apiKeyHeaders: API_KEY_HEADER,
+        defaultPrefix: API_KEY_PREFIX,
+        enableSessionForAPIKeys: true,
+        requireName: true,
+        // The plugin's own per-key cap defaults to 10 calls a day, far below a payroll run.
+        rateLimit: { enabled: false },
+      }),
+    ],
     telemetry: { enabled: false },
   });
 }

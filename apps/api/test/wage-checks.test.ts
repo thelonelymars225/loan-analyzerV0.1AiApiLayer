@@ -261,30 +261,36 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
     ]);
   });
 
-  it.skipIf(!tesseractAra)("reads a scanned Qiwa contract with OCR", async () => {
-    // A mock hire printed, then scanned: a blank sheet, then the contract a little crooked.
-    // Made with ImageMagick from hire-1000000103.pdf at 150 dpi, rotated 0.7°, with noise.
-    const body = await multipart(
-      {},
-      { field: "contract", content: await fixture("scan-1000000103.pdf") },
-    );
-    const read = await api(
-      t.app,
-      cookie,
-      "POST",
-      "/wage-checks/contract",
-      body.payload,
-      body.headers,
-    );
-    expect(read.json()).toEqual({
-      employeeId: "1000000103",
-      name: null,
-      basic: 12000,
-      housing: 2250,
-      transport: 1200,
-      total: 15450,
-    });
-  });
+  // Two pages of OCR take 5 to 15 s alone, and longer on a shared CI runner busy with the
+  // other test files, so this test gets more than the default 30 s.
+  it.skipIf(!tesseractAra)(
+    "reads a scanned Qiwa contract with OCR",
+    { timeout: 120_000 },
+    async () => {
+      // A mock hire printed, then scanned: a blank sheet, then the contract a little crooked.
+      // Made with ImageMagick from hire-1000000103.pdf at 150 dpi, rotated 0.7°, with noise.
+      const body = await multipart(
+        {},
+        { field: "contract", content: await fixture("scan-1000000103.pdf") },
+      );
+      const read = await api(
+        t.app,
+        cookie,
+        "POST",
+        "/wage-checks/contract",
+        body.payload,
+        body.headers,
+      );
+      expect(read.json()).toEqual({
+        employeeId: "1000000103",
+        name: null,
+        basic: 12000,
+        housing: 2250,
+        transport: 1200,
+        total: 15450,
+      });
+    },
+  );
 
   it("explains two PDFs in one check and Excel files instead of misreading them", async () => {
     const pdf = await fixture("wage-mismatch.pdf");

@@ -122,7 +122,21 @@ live only in the bucket.
 
 - **Your own ratings only.** Each account sees and manages only the ratings it uploaded.
   There are no workspaces, members or invitations.
-- Over HTTP, Better Auth only serves sign-up, sign-in, sign-out and the session.
+- Over HTTP, Better Auth only serves sign-up, sign-in, sign-out, the session and API keys.
+- **API keys** are for a system that calls without a browser (an HRIS, SAP, an agency's
+  tool). While signed in, create one on the test page (`/api/v1/wage-checks/test`) or with
+  `POST /api/auth/api-key/create {"name": "SAP payroll job"}`. The answer's `key` is shown
+  once and stored hashed. The system sends it in the `x-api-key` header and acts as the user
+  who made it; a key cannot create keys or touch the account. `GET /api/auth/api-key/list`
+  and `POST /api/auth/api-key/delete {"keyId"}` manage them. Request logs carry the key's id,
+  never the key.
+
+  ```sh
+  curl -H "x-api-key: $KEY" -H "content-type: application/json" \
+    -d '{"qiwa":[{"employeeId":"1000000001","basic":8000,"housing":2000,"transport":800,"total":10800}],
+         "payroll":[{"employeeId":"1000000001","basic":7500,"housing":2000,"transport":800}]}' \
+    http://localhost:3000/api/v1/wage-checks/records
+  ```
 
 ## Quick start with Docker
 
@@ -187,7 +201,7 @@ Every setting is listed in [.env.example](.env.example). The apps read real envi
 variables only. To use a file: `cp .env.example .env`, edit it, then run
 `set -a; . ./.env; set +a` in each terminal before `pnpm dev:*`.
 
-## With or without an API key
+## With or without a Claude API key
 
 Without `ANTHROPIC_API_KEY`, the worker uses the offline analyser (`heuristic-v2`). It
 matches Section 15 clauses against known patterns in English and Arabic. It needs no network,

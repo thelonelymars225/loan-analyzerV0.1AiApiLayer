@@ -9,6 +9,7 @@ import {
   type TestContext,
   type TestUser,
 } from "./helpers";
+import { createLogger } from "../src/logger";
 
 /**
  * API keys: a company's system calls without a browser. The key acts as the user who made
@@ -96,6 +97,17 @@ describe.skipIf(!DATABASE_URL)("API keys", () => {
       employees: 1,
       flagged: 1,
     });
+  });
+
+  it("offers keys on the test page and keeps the secret out of logs", async () => {
+    const page = await t.app.inject({ method: "GET", url: "/api/v1/wage-checks/test" });
+    expect(page.body).toContain("/api/auth/api-key/");
+
+    let logged = "";
+    const logger = createLogger("info", { write: (line: string) => (logged += line) });
+    logger.info({ req: { headers: { "x-api-key": "cr_secret" } } }, "request");
+    expect(logged).toContain("[redacted]");
+    expect(logged).not.toContain("cr_secret");
   });
 
   it("refuses a made-up key, and a key cannot create more keys", async () => {

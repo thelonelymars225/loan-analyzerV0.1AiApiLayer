@@ -1,6 +1,6 @@
 import { DrizzleQueryError } from "drizzle-orm";
 import { pino } from "pino";
-import type { Logger } from "pino";
+import type { DestinationStream, Logger } from "pino";
 import type { Config } from "./config";
 
 /**
@@ -8,20 +8,28 @@ import type { Config } from "./config";
  * file names and contract contents are never logged. Credentials are redacted in case a
  * header object ever ends up in a log line.
  */
-export function createLogger(level: Config["LOG_LEVEL"]): Logger {
-  return pino({
-    level,
-    redact: {
-      paths: [
-        "req.headers.authorization",
-        "req.headers.cookie",
-        'res.headers["set-cookie"]',
-        "headers.authorization",
-        "headers.cookie",
-      ],
-      censor: "[redacted]",
+export function createLogger(
+  level: Config["LOG_LEVEL"],
+  destination?: DestinationStream,
+): Logger {
+  return pino(
+    {
+      level,
+      redact: {
+        paths: [
+          "req.headers.authorization",
+          "req.headers.cookie",
+          'req.headers["x-api-key"]',
+          'res.headers["set-cookie"]',
+          "headers.authorization",
+          "headers.cookie",
+          'headers["x-api-key"]',
+        ],
+        censor: "[redacted]",
+      },
     },
-  });
+    destination,
+  );
 }
 
 /**

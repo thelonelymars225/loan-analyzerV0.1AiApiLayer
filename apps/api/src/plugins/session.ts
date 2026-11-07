@@ -1,12 +1,15 @@
 import type { FastifyRequest, onRequestAsyncHookHandler } from "fastify";
 import { isAPIError } from "better-auth/api";
 import { fromNodeHeaders } from "better-auth/node";
+import type { Logger } from "pino";
 import { API_KEY_HEADER, type Auth } from "../auth";
 import { unauthorized } from "../errors";
 
 /** Who is calling. Every query for customer data is scoped by user.id. */
 export interface RequestContext {
   user: { id: string; email: string; name: string };
+  /** The API key the call came with (its id, never the secret), or null for a cookie session. */
+  apiKeyId: string | null;
 }
 
 declare module "fastify" {
@@ -30,7 +33,11 @@ export function sessionHook(deps: { auth: Auth }): onRequestAsyncHookHandler {
     const session = await getSession(deps.auth, request);
     if (!session) throw unauthorized();
     const { user } = session;
-    request.ctx = { user: { id: user.id, email: user.email, name: user.name } };
+    // With a key, the plugin answers a session whose id is the key's id.
+    const apiKeyId = request.headers[API_KEY_HEADER] ? session.session.id : null;
+    request.ctx = { user: { id: user.id, email: user.email, name: user.name }, apiKeyId };
+    // On the request's own logger, so the "request completed" line carries it too.
+    if (apiKeyId) (request.log as Logger).setBindings({ apiKeyId });
   };
 }
 

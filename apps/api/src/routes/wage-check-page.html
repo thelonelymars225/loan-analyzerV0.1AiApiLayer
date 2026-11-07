@@ -21,6 +21,62 @@
       <p><button>Check</button></p>
     </form>
     <div id="result"></div>
+
+    <h2>API keys</h2>
+    <p>
+      For a system that calls without a browser (an HRIS, SAP, an agency's tool). It sends
+      the key in the <code>x-api-key</code> header and acts as you. The key is shown once.
+    </p>
+    <form id="key-form">
+      <label>Name <input name="name" placeholder="SAP payroll job" required /></label>
+      <button>Create key</button>
+    </form>
+    <div id="new-key"></div>
+    <ul id="keys"></ul>
+    <script>
+      const keyForm = document.getElementById("key-form");
+      const newKey = document.getElementById("new-key");
+      const keyList = document.getElementById("keys");
+      const authApi = (path, body) =>
+        fetch(`/api/auth/api-key/${path}`, {
+          method: body ? "POST" : "GET",
+          headers: body ? { "content-type": "application/json" } : {},
+          body: body && JSON.stringify(body),
+        }).then((r) => r.json());
+
+      async function showKeys() {
+        const { apiKeys = [] } = await authApi("list");
+        keyList.replaceChildren(
+          ...apiKeys.map((key) => {
+            const revoke = Object.assign(document.createElement("button"), {
+              textContent: "Revoke",
+              onclick: () => authApi("delete", { keyId: key.id }).then(showKeys),
+            });
+            const item = document.createElement("li");
+            item.append(`${key.name} (${key.start}…) `, revoke);
+            return item;
+          }),
+        );
+      }
+      keyForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const { key, message } = await authApi("create", {
+          name: new FormData(keyForm).get("name"),
+        });
+        if (!key) return newKey.replaceChildren(message ?? "Could not create the key.");
+        const curl =
+          `curl -H "x-api-key: ${key}" -H "content-type: application/json" \\\n` +
+          `  -d '{"qiwa":[{"employeeId":"1000000001","basic":8000,"housing":2000,"transport":800,"total":10800}],` +
+          `"payroll":[{"employeeId":"1000000001","basic":7500,"housing":2000,"transport":800}]}' \\\n` +
+          `  ${location.origin}/api/v1/wage-checks/records`;
+        const pre = document.createElement("pre");
+        pre.textContent = `Your key, shown once:\n${key}\n\nTry it:\n${curl}`;
+        newKey.replaceChildren(pre);
+        keyForm.reset();
+        showKeys();
+      });
+      showKeys().catch(() => {});
+    </script>
     <script>
       const form = document.getElementById("form");
       const result = document.getElementById("result");

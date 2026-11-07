@@ -2,6 +2,7 @@ import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 import type { FastifyInstance } from "fastify";
 import { jsonSchemaTransform } from "fastify-type-provider-zod";
+import { API_KEY_HEADER } from "../auth";
 
 /**
  * OpenAPI generated from the routes' Zod schemas. Register before the routes so the spec
@@ -18,14 +19,18 @@ export async function registerDocs(app: FastifyInstance): Promise<void> {
         description:
           "Rates Saudi Qiwa employment contracts. Rating aid, not legal advice. " +
           "Sign in through Better Auth at /api/auth; the session cookie authenticates " +
-          "every other call. Errors are application/problem+json with a stable `code`.",
+          "every other call. A system without a browser sends an API key instead: create " +
+          "one while signed in with POST /api/auth/api-key/create {name}, keep the `key` " +
+          "from the answer (it is shown once) and send it in the x-api-key header. " +
+          "Errors are application/problem+json with a stable `code`.",
       },
       components: {
         securitySchemes: {
           session: { type: "apiKey", in: "cookie", name: "better-auth.session_token" },
+          apiKey: { type: "apiKey", in: "header", name: API_KEY_HEADER },
         },
       },
-      security: [{ session: [] }],
+      security: [{ session: [] }, { apiKey: [] }],
     },
     transform: jsonSchemaTransform,
   });

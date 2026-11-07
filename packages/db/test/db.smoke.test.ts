@@ -61,6 +61,7 @@ describe.skipIf(!DATABASE_URL)("database smoke test", () => {
     );
     expect(tables.rows.map((row) => row.tablename)).toEqual([
       "accounts",
+      "api_keys",
       "audit_events",
       "clause_cache",
       "clause_locations",

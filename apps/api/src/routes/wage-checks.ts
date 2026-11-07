@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import type { FastifyRequest } from "fastify";
+import { readSheet } from "read-excel-file/node";
 import { WageCheckRequest, WageCheckResponse, WageRecord } from "@rater/contracts";
 import {
   asPaid,
@@ -42,9 +43,10 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
       schema: {
         summary: "Compare Qiwa contracts, offer letters and a payroll file",
         description:
-          'multipart/form-data: optional "payroll" (Mudad wage file, CSV) plus "contract" (one Qiwa PDF; ' +
+          'multipart/form-data: optional "payroll" (Mudad wage file, CSV or .xlsx) plus "contract" (one Qiwa PDF; ' +
           "offer letter in the optional fields offerBasic, offerHousing, offerTransport, " +
-          'offerTotal) or "contracts" (CSV, a row per person and source: qiwa or offline).',
+          'offerTotal) or "contracts" (CSV or .xlsx, a row per person and source: qiwa or offline). ' +
+          "Column names may be English or Arabic.",
         consumes: ["multipart/form-data"],
         response: { 200: WageCheckResponse },
       },
@@ -59,8 +61,9 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
       }
       try {
         // No wage file yet, e.g. for a new hire: only the offer is compared with Qiwa.
-        const payroll = wageFile && readPayrollCsv(csvText(wageFile));
-        if (csv) return checkWages({ ...readContractsCsv(csvText(csv)), payroll });
+        const payroll = wageFile && readPayrollCsv(await tableText(wageFile));
+        if (csv)
+          return checkWages({ ...readContractsCsv(await tableText(csv)), payroll });
         const qiwa = await readQiwaWage(pdf as Buffer);
         const offer = offerFrom(fields, qiwa);
         return checkWages({ qiwa: [qiwa], offers: offer ? [offer] : [], payroll });
@@ -108,12 +111,26 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
   );
 };
 
-/** A CSV upload as text. Excel workbooks (a zip, so "PK" first) are refused with a hint. */
-function csvText(file: Buffer): string {
-  if (file.subarray(0, 2).toString() === "PK") {
-    throw validationError("Excel files aren't read yet. Save the sheet as CSV (UTF-8).");
+/**
+ * A CSV upload as text, or the first sheet of an Excel workbook (.xlsx, a zip: "PK" first)
+ * written out as CSV, so one reader handles both.
+ */
+async function tableText(file: Buffer): Promise<string> {
+  if (file.subarray(0, 2).toString() !== "PK") return file.toString("utf8");
+  let rows: unknown[][];
+  try {
+    rows = await readSheet(file);
+  } catch {
+    throw validationError(
+      "The Excel file could not be read. Save it as .xlsx or CSV (UTF-8).",
+    );
   }
-  return file.toString("utf8");
+  // Every cell quoted, so a comma inside one stays in it; a line break inside one is a space.
+  const cell = (value: unknown) =>
+    `"${String(value ?? "")
+      .replace(/\r?\n/g, " ")
+      .replace(/"/g, '""')}"`;
+  return rows.map((row) => row.map(cell).join(",")).join("\n");
 }
 
 /** The wage and the employee's ID from a Qiwa contract PDF, scanned or not. */

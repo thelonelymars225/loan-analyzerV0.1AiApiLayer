@@ -51,6 +51,21 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
     });
   });
 
+  it("reads an Excel wage file with Arabic headers like the CSV", async () => {
+    // The mock wage file as an Arabic Excel export: a title row, Arabic headers, amounts and
+    // dates as numbers, one ID typed in Arabic digits. Made with openpyxl from the CSV.
+    const response = await post(cookie, {
+      payroll: await fixture("mudad-wage-file-mock-ar.xlsx"),
+      contracts: await fixture("contracts-mock.csv"),
+    });
+    const csv = await post(cookie, {
+      payroll: await fixture("mudad-wage-file-mock.csv"),
+      contracts: await fixture("contracts-mock.csv"),
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual(csv.json());
+  });
+
   it("reads the wage and ID from a Qiwa PDF and compares the typed offer letter", async () => {
     // The synthetic contract: ID 1000000031, wage 9,000 + 2,250 + 900 + 500 other = 13,000.
     const payroll =
@@ -292,7 +307,7 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
     },
   );
 
-  it("explains two PDFs in one check and Excel files instead of misreading them", async () => {
+  it("explains two PDFs in one check and a broken Excel file", async () => {
     const pdf = await fixture("wage-mismatch.pdf");
     const two = await multipart(
       {},
@@ -311,10 +326,10 @@ describe.skipIf(!DATABASE_URL)("POST /wage-checks", () => {
 
     const xlsx = await post(cookie, {
       contract: pdf,
-      payroll: "PK\u0003\u0004 workbook",
+      payroll: "PK\u0003\u0004 not really a workbook",
     });
     expect(Problem.parse(xlsx.json()).detail).toBe(
-      "Excel files aren't read yet. Save the sheet as CSV (UTF-8).",
+      "The Excel file could not be read. Save it as .xlsx or CSV (UTF-8).",
     );
   });
 

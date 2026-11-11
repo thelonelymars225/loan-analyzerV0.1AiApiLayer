@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { fromNodeHeaders } from "better-auth/node";
 import { API_KEY_HEADER, AUTH_BASE_PATH, type Auth } from "../auth";
-import { unauthorized } from "../errors";
+import { forbidden, unauthorized } from "../errors";
 
 /**
  * The only Better Auth endpoints reachable over HTTP, as paths under /api/auth. Everything
@@ -14,7 +14,7 @@ const ALLOWED_PATHS: ReadonlySet<string> = new Set([
   "/get-session",
   "/ok", // Better Auth's own liveness check
   // API keys of the signed-in user (@better-auth/api-key). Creating one needs a session
-  // cookie, not a key: a leaked key cannot mint more keys.
+  // cookie, not a key (a leaked key cannot mint more keys), and API access from an admin.
   "/api-key/create",
   "/api-key/list",
   "/api-key/delete",
@@ -51,6 +51,14 @@ export function authRoutes(auth: Auth): FastifyPluginAsync {
           reply.callNotFound();
           return reply;
         }
+        if (
+          authPath(webRequest) === "/api-key/create" &&
+          !(await hasApiAccess(auth, request))
+        ) {
+          throw forbidden(
+            "Your account does not have API access. Ask an admin to grant it.",
+          );
+        }
         const response = await auth.handler(webRequest);
         return sendWebResponse(reply, response);
       },
@@ -60,8 +68,18 @@ export function authRoutes(auth: Auth): FastifyPluginAsync {
 
 /** Checks the normalised path that Better Auth itself will route on. */
 export function isAllowed(request: Request): boolean {
-  const path = new URL(request.url).pathname.slice(AUTH_BASE_PATH.length);
-  return ALLOWED_PATHS.has(path);
+  return ALLOWED_PATHS.has(authPath(request));
+}
+
+function authPath(request: Request): string {
+  return new URL(request.url).pathname.slice(AUTH_BASE_PATH.length);
+}
+
+async function hasApiAccess(auth: Auth, request: FastifyRequest): Promise<boolean> {
+  const session = await auth.api.getSession({
+    headers: fromNodeHeaders(request.headers),
+  });
+  return session?.user.apiAccess === true;
 }
 
 function toWebRequest(request: FastifyRequest): Request {

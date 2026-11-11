@@ -124,7 +124,10 @@ live only in the bucket.
   There are no workspaces, members or invitations.
 - Over HTTP, Better Auth only serves sign-up, sign-in, sign-out, the session and API keys.
 - **API keys** are for a system that calls without a browser (an HRIS, SAP, an agency's
-  tool). While signed in, create one on the test page (`/api/v1/wage-checks/test`) or with
+  tool). Only users an admin granted API access can create them: admins are the emails in
+  `ADMIN_EMAILS`, and they grant or revoke access with `GET /api/v1/admin/users` and
+  `POST`/`DELETE /api/v1/admin/users/{id}/api-access`. Revoking also deletes the user's
+  keys. Users who already had a key when this arrived keep access. While signed in, create one on the test page (`/api/v1/wage-checks/test`) or with
   `POST /api/auth/api-key/create {"name": "SAP payroll job"}`. The answer's `key` is shown
   once and stored hashed. The system sends it in the `x-api-key` header and acts as the user
   who made it; a key cannot create keys or touch the account. `GET /api/auth/api-key/list`

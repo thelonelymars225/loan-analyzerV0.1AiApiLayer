@@ -1,5 +1,8 @@
 import {
+  AdminUsersResponse,
   API_BASE,
+  ApiKeysResponse,
+  CreatedApiKey,
   CreateRatingResponse,
   ListRatingsResponse,
   MeResponse,
@@ -70,7 +73,9 @@ async function send(path: string, options: RequestOptions = {}): Promise<Respons
 
   let response: Response;
   try {
-    response = await fetch(`${API_BASE}${path}`, {
+    // Better Auth's own endpoints (API keys) live outside the REST API.
+    const url = path.startsWith("/api/auth/") ? path : `${API_BASE}${path}`;
+    response = await fetch(url, {
       method,
       headers,
       body,
@@ -188,6 +193,22 @@ export const api = {
   },
 
   deleteRating: (id: string) => requestEmpty(`/ratings/${enc(id)}`, { method: "DELETE" }),
+
+  listApiKeys: () => requestJson("/api/auth/api-key/list", ApiKeysResponse),
+  createApiKey: (name: string) =>
+    requestJson("/api/auth/api-key/create", CreatedApiKey, {
+      method: "POST",
+      json: { name },
+    }),
+  deleteApiKey: (keyId: string) =>
+    requestEmpty("/api/auth/api-key/delete", { method: "POST", json: { keyId } }),
+
+  /** Admin only. */
+  listUsers: () => requestJson("/admin/users", AdminUsersResponse),
+  setApiAccess: (userId: string, allowed: boolean) =>
+    requestEmpty(`/admin/users/${enc(userId)}/api-access`, {
+      method: allowed ? "POST" : "DELETE",
+    }),
 };
 
 export type Api = typeof api;

@@ -3,6 +3,8 @@ import type { View } from "@rater/contracts";
 /** Query keys in one place. Everything under "ratings" is refetched when a rating changes. */
 export const queryKeys = {
   me: ["me"] as const,
+  apiKeys: ["api-keys"] as const,
+  adminUsers: ["admin", "users"] as const,
   ratings: ["ratings"] as const,
   ratingsList: ["ratings", "list"] as const,
   rating: (id: string) => ["ratings", "detail", id] as const,

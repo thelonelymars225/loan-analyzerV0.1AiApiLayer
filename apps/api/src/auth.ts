@@ -12,9 +12,10 @@ export const AUTH_BASE_PATH = "/api/auth";
  * Accounts and sessions (Better Auth, self-hosted, in our own Postgres).
  *
  * - Email + password sign-up. Each user sees and manages only their own ratings.
- * - API keys, for a company's system calling without a browser: a signed-in user creates one
- *   (shown once, stored hashed) and the system sends it in the x-api-key header. The key acts
- *   as that user: getSession answers with them, so every route works unchanged.
+ * - API keys, for a company's system calling without a browser: a signed-in user with API
+ *   access (granted by an admin, see routes/admin.ts) creates one (shown once, stored hashed)
+ *   and the system sends it in the x-api-key header. The key acts as that user: getSession
+ *   answers with them, so every route works unchanged.
  * - Over HTTP only sign-up, sign-in, sign-out, the session and the API key endpoints are
  *   reachable (see the allow-list in plugins/auth-routes.ts).
  */
@@ -32,6 +33,17 @@ export function createAuth(options: { config: Config; db: Db }) {
     trustedOrigins: trustedOrigins(config),
     database: drizzleAdapter(db, { provider: "pg", schema: authTables }),
     emailAndPassword: { enabled: true },
+    // input: false, so sign-up cannot grant it; only the admin routes write it.
+    user: {
+      additionalFields: {
+        apiAccess: {
+          type: "boolean",
+          required: false,
+          defaultValue: false,
+          input: false,
+        },
+      },
+    },
     plugins: [
       apiKey({
         apiKeyHeaders: API_KEY_HEADER,

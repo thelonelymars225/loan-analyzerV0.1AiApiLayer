@@ -16,6 +16,7 @@ import { registerDocs } from "./plugins/docs";
 import { registerErrorHandling } from "./plugins/errors";
 import { sessionHook, type RequestContext } from "./plugins/session";
 import type { RatingQueue } from "./queue";
+import { adminRoutes } from "./routes/admin";
 import { docsRoutes } from "./routes/docs";
 import { healthRoutes } from "./routes/health";
 import { meRoutes } from "./routes/me";
@@ -90,6 +91,7 @@ export async function buildApp(options: BuildAppOptions): Promise<FastifyInstanc
       await v1.register(meRoutes, deps);
       await v1.register(ratingRoutes, deps);
       await v1.register(wageCheckRoutes, deps);
+      await v1.register(adminRoutes, deps);
     },
     { prefix: API_BASE },
   );

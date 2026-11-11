@@ -14,7 +14,10 @@ export const meRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
         response: { 200: MeResponse },
       },
     },
-    async (request) => ({ user: request.ctx.user }),
+    async (request) => {
+      const { user, apiAccess, isAdmin } = request.ctx;
+      return { user, apiAccess, isAdmin };
+    },
   );
 
   app.delete(

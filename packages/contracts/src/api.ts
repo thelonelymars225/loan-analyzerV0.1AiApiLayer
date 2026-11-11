@@ -179,8 +179,43 @@ export type RatingEvent = z.infer<typeof RatingEvent>;
 
 export const MeResponse = z.object({
   user: z.object({ id: z.string(), email: z.string(), name: z.string() }),
+  /** May create API keys. */
+  apiAccess: z.boolean(),
+  /** May grant and revoke API access (GET /admin/users). */
+  isAdmin: z.boolean(),
 });
 export type MeResponse = z.infer<typeof MeResponse>;
+
+/** A user as the admin page lists them. */
+export const AdminUser = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  apiAccess: z.boolean(),
+  createdAt: z.string(),
+});
+export type AdminUser = z.infer<typeof AdminUser>;
+
+export const AdminUsersResponse = z.object({ users: z.array(AdminUser) });
+export type AdminUsersResponse = z.infer<typeof AdminUsersResponse>;
+
+/** POST /api/auth/api-key/list (Better Auth's api-key plugin): the caller's keys, no secrets. */
+export const ApiKeysResponse = z.object({
+  apiKeys: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string().nullable(),
+      /** The first characters of the secret. */
+      start: z.string().nullable(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+export type ApiKeysResponse = z.infer<typeof ApiKeysResponse>;
+
+/** POST /api/auth/api-key/create: `key` is the secret, shown this once. */
+export const CreatedApiKey = z.object({ id: z.string(), key: z.string() });
+export type CreatedApiKey = z.infer<typeof CreatedApiKey>;
 
 export const RulesResponse = z.object({
   rulesetVersion: z.string(),

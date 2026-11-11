@@ -20,7 +20,8 @@ export async function registerDocs(app: FastifyInstance): Promise<void> {
           "Rates Saudi Qiwa employment contracts. Rating aid, not legal advice. " +
           "Sign in through Better Auth at /api/auth; the session cookie authenticates " +
           "every other call. A system without a browser sends an API key instead: create " +
-          "one while signed in with POST /api/auth/api-key/create {name}, keep the `key` " +
+          "one while signed in (with API access, granted by an admin) with " +
+          "POST /api/auth/api-key/create {name}, keep the `key` " +
           "from the answer (it is shown once) and send it in the x-api-key header. " +
           "Errors are application/problem+json with a stable `code`.",
       },

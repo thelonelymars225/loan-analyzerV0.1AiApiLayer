@@ -21,6 +21,8 @@ export class ApiError extends Error {
 export const unauthorized = (detail = "Sign in to continue.") =>
   new ApiError(401, "unauthorized", detail);
 
+export const forbidden = (detail: string) => new ApiError(403, "forbidden", detail);
+
 export const notFound = (detail = "Not found.") => new ApiError(404, "not_found", detail);
 
 export const validationError = (detail: string) =>

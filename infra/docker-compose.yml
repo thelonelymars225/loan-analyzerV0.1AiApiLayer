@@ -42,7 +42,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: rater
     ports:
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -124,7 +124,6 @@ services:
       BETTER_AUTH_URL: http://localhost:${WEB_PORT:-8080}
       WEB_ORIGIN: http://localhost:${WEB_PORT:-8080}
       RATE_LIMIT_PER_DAY: ${RATE_LIMIT_PER_DAY:-20}
-      WAGE_CHECKS_PER_MINUTE: ${WAGE_CHECKS_PER_MINUTE:-60}
       # The migrate job above already did this.
       DB_MIGRATE_ON_START: "false"
     ports:

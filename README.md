@@ -261,6 +261,10 @@ in:
   deleting a rating does not give one back, while a rejected upload does not count. The
   count and the new upload happen under a per-user lock, so parallel uploads cannot slip past
   the limit. Over it, the API answers `429` with `Retry-After`.
+- **Wage check limit.** Each user, whether signed in or calling with one of their API keys,
+  can make `WAGE_CHECKS_PER_MINUTE` wage check requests a minute (default 60), so one caller
+  reading many scans cannot keep the server busy for everyone. Over it, the API answers `429`
+  with `Retry-After` before reading the upload. The count is kept in the API process's memory.
 - **Audit.** Uploads, report views, PDF opens and downloads, and deletes (manual and
   automatic) are written to `audit_events`. Passage images are not audited one by one: they
   are part of viewing the report, which is.

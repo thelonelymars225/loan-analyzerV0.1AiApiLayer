@@ -2,7 +2,7 @@ import { DrizzleQueryError } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { loadConfig, trustedOrigins } from "../src/config";
 import { ApiError, rateLimited } from "../src/errors";
-import { ConcurrencyLimit, ConnectionSlots } from "../src/limiter";
+import { ConcurrencyLimit, ConnectionSlots, RequestWindow } from "../src/limiter";
 import { errorForLog } from "../src/logger";
 import { isAllowed } from "../src/plugins/auth-routes";
 import { toProblem } from "../src/plugins/errors";
@@ -246,6 +246,16 @@ describe("limits", () => {
     const limit = new ConcurrencyLimit(1);
     await expect(limit.run(() => Promise.reject(new Error("bad pdf")))).rejects.toThrow();
     await expect(limit.run(async () => "next")).resolves.toBe("next");
+  });
+
+  it("counts requests per user in fixed windows and says when to retry", () => {
+    const requests = new RequestWindow({ limit: 2, windowMs: 60_000 });
+    const at = (seconds: number) => new Date(Date.UTC(2026, 10, 11, 9, 0, seconds));
+    expect(requests.take("user_a", at(0))).toEqual({ ok: true });
+    expect(requests.take("user_a", at(10))).toEqual({ ok: true });
+    expect(requests.take("user_a", at(20))).toEqual({ ok: false, retryAfterSeconds: 40 });
+    expect(requests.take("user_b", at(20))).toEqual({ ok: true }); // each user their own
+    expect(requests.take("user_a", at(60))).toEqual({ ok: true }); // a new window
   });
 
   it("caps open connections per user and in total", () => {

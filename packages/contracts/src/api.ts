@@ -199,6 +199,24 @@ export type AdminUser = z.infer<typeof AdminUser>;
 export const AdminUsersResponse = z.object({ users: z.array(AdminUser) });
 export type AdminUsersResponse = z.infer<typeof AdminUsersResponse>;
 
+/** POST /api/auth/api-key/list (Better Auth's api-key plugin): the caller's keys, no secrets. */
+export const ApiKeysResponse = z.object({
+  apiKeys: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string().nullable(),
+      /** The first characters of the secret. */
+      start: z.string().nullable(),
+      createdAt: z.string(),
+    }),
+  ),
+});
+export type ApiKeysResponse = z.infer<typeof ApiKeysResponse>;
+
+/** POST /api/auth/api-key/create: `key` is the secret, shown this once. */
+export const CreatedApiKey = z.object({ id: z.string(), key: z.string() });
+export type CreatedApiKey = z.infer<typeof CreatedApiKey>;
+
 export const RulesResponse = z.object({
   rulesetVersion: z.string(),
   lawVersion: z.string(),

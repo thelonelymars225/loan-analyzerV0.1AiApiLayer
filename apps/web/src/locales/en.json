@@ -9,7 +9,9 @@
     "ratings": "Ratings",
     "account": "Account",
     "signOut": "Sign out",
-    "switchLanguage": "Switch language to Arabic"
+    "switchLanguage": "Switch language to Arabic",
+    "apiKeys": "API keys",
+    "admin": "Admin"
   },
   "common": {
     "cancel": "Cancel",
@@ -296,5 +298,25 @@
     "loadSession": "Couldn't load your account.",
     "rating_timeout": "The rating took too long and was stopped. Try uploading the contract again.",
     "document_missing": "The contract file is no longer stored (it may have been deleted after the retention period), so it can't be rated. Upload it again."
+  },
+  "apiKeys": {
+    "title": "API keys",
+    "noAccess": "Your account doesn't have API access yet. Ask an admin to grant it.",
+    "create": "Create key",
+    "createHint": "A system that calls the API without a browser sends a key in the x-api-key header and acts as you.",
+    "name": "Name",
+    "shownOnce": "Copy this key now. It won't be shown again.",
+    "empty": "You have no keys yet.",
+    "revoke": "Revoke",
+    "confirmRevoke": "Revoke this key? Systems using it will stop working at once."
+  },
+  "admin": {
+    "title": "Admin",
+    "intro": "Choose who may create API keys. Revoking access also deletes the user's keys.",
+    "hasAccess": "API access",
+    "noAccess": "No API access",
+    "grant": "Grant access",
+    "revoke": "Revoke access",
+    "confirmRevoke": "Revoke API access for {{email}}? Their keys will be deleted and stop working at once."
   }
 }

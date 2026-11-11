@@ -25,6 +25,12 @@ const ContractViewerPage = lazy(() =>
 const AccountPage = lazy(() =>
   import("./pages/AccountPage").then((module) => ({ default: module.AccountPage })),
 );
+const ApiKeysPage = lazy(() =>
+  import("./pages/ApiKeysPage").then((module) => ({ default: module.ApiKeysPage })),
+);
+const AdminPage = lazy(() =>
+  import("./pages/AdminPage").then((module) => ({ default: module.AdminPage })),
+);
 
 /** Providers and routes. The router itself is supplied by main.tsx (or a test). */
 export function App({ queryClient }: { queryClient: QueryClient }) {
@@ -48,6 +54,8 @@ export function AppRoutes() {
           <Route path="ratings/:id" element={<ReportPage />} />
           <Route path="ratings/:id/contract" element={<ContractViewerPage />} />
           <Route path="account" element={<AccountPage />} />
+          <Route path="keys" element={<ApiKeysPage />} />
+          <Route path="admin" element={<AdminPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

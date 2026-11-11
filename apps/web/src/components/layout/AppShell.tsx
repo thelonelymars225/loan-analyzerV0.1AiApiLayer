@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Link, NavLink, useNavigate } from "react-router";
 import { signOut } from "../../lib/auth";
 import { cn } from "../../lib/cn";
+import { useSession } from "../../lib/session";
 import { Button } from "../ui/button";
 import { useToast } from "../ui/toast-context";
 import { LanguageToggle } from "./LanguageToggle";
@@ -12,10 +13,14 @@ import { LanguageToggle } from "./LanguageToggle";
 const NAV_ITEMS = [
   { to: "/", key: "nav.ratings", end: true },
   { to: "/account", key: "nav.account", end: false },
+  { to: "/keys", key: "nav.apiKeys", end: false, show: "apiAccess" },
+  { to: "/admin", key: "nav.admin", end: false, show: "isAdmin" },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
+  const { me } = useSession();
+  const navItems = NAV_ITEMS.filter((item) => !("show" in item) || me[item.show]);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -63,7 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             aria-label={t("nav.main")}
             className="-mb-3 flex w-full gap-1 overflow-x-auto"
           >
-            {NAV_ITEMS.map((item) => (
+            {navItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

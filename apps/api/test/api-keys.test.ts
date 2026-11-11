@@ -138,3 +138,41 @@ describe.skipIf(!DATABASE_URL)("API keys", () => {
     expect(anonymous.statusCode).toBe(401);
   });
 });
+
+describe.skipIf(!DATABASE_URL)("wage check limit", () => {
+  let t: TestContext;
+
+  beforeAll(async () => {
+    t = await createTestContext({ env: { WAGE_CHECKS_PER_MINUTE: "2" } });
+  });
+  afterAll(async () => {
+    await t?.close();
+  });
+
+  it("answers 429 with Retry-After once a user is over the per-minute limit", async () => {
+    const { cookie } = await signUp(t.app, "Busy Robot");
+    const check = () =>
+      api(t.app, cookie, "POST", "/wage-checks/records", {
+        qiwa: [{ employeeId: "1000000001", basic: 8000 }],
+      });
+    expect((await check()).statusCode).toBe(200);
+    expect((await check()).statusCode).toBe(200);
+
+    t.clock.now = new Date(t.clock.now.getTime() + 15_000);
+    const refused = await check();
+    expect(refused.statusCode).toBe(429);
+    expect(refused.headers["retry-after"]).toBe("45");
+    expect(Problem.parse(refused.json()).detail).toBe(
+      "You can make 2 wage check requests per minute. Try again in 45 s.",
+    );
+
+    // Another account has its own allowance, and a minute later this one does again.
+    const other = await signUp(t.app, "Other Robot");
+    const fresh = await api(t.app, other.cookie, "POST", "/wage-checks/records", {
+      qiwa: [],
+    });
+    expect(fresh.statusCode).toBe(200);
+    t.clock.now = new Date(t.clock.now.getTime() + 45_000);
+    expect((await check()).statusCode).toBe(200);
+  });
+});

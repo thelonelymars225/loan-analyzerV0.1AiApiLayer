@@ -12,7 +12,8 @@ import {
   WageFileError,
 } from "@rater/core";
 import type { AppDeps } from "../deps";
-import { unsupportedDocument, validationError } from "../errors";
+import { tooManyWageChecks, unsupportedDocument, validationError } from "../errors";
+import { RequestWindow } from "../limiter";
 import { readFile, readQiwaPages } from "../ratings/upload";
 
 /** Form field → wage part of the offer letter typed in next to a Qiwa PDF. */
@@ -31,6 +32,16 @@ const PAGE = readFileSync(new URL("./wage-check-page.html", import.meta.url), "u
  * when given, the offer letter. Nothing is stored: the files are read, compared and dropped.
  */
 export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
+  // Reading PDFs (above all scans, with OCR) is heavy: one caller, or one leaked API key, must
+  // not keep the server busy for everyone. Refused before the upload is read.
+  const limit = deps.config.WAGE_CHECKS_PER_MINUTE;
+  const requests = new RequestWindow({ limit, windowMs: 60_000 });
+  app.addHook("onRequest", async (request) => {
+    if (request.routeOptions.config.public) return;
+    const taken = requests.take(request.ctx.user.id, deps.now());
+    if (!taken.ok) throw tooManyWageChecks(limit, taken.retryAfterSeconds);
+  });
+
   app.get(
     "/wage-checks/test",
     { config: { public: true }, schema: { hide: true } },

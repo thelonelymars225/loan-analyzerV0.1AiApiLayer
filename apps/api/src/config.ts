@@ -28,6 +28,12 @@ const Env = z
       .default(RATINGS_PER_USER_PER_DAY),
     MAX_UPLOAD_BYTES: z.coerce.number().int().positive().default(MAX_UPLOAD_BYTES),
     /**
+     * Wage check requests per user (or API key's user) per minute. Each reads a payroll file,
+     * a contract PDF (perhaps with OCR) or a list of records. An auditor reading 300 PDFs one
+     * by one takes about five minutes at the default.
+     */
+    WAGE_CHECKS_PER_MINUTE: z.coerce.number().int().positive().default(60),
+    /**
      * Apply database migrations on start-up (safe when the worker does it too). Same name and
      * parser as the worker's, so one shared env file controls both ("true"/"false").
      */

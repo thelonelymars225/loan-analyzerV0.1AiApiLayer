@@ -56,3 +56,43 @@ export class ConnectionSlots {
     return this.total;
   }
 }
+
+/**
+ * At most `limit` requests per user in each fixed window (e.g. a minute). Counts live in this
+ * process's memory, so with several API processes each allows its own `limit`, and a restart
+ * starts afresh: a guard against bursts, not an exact quota.
+ */
+export class RequestWindow {
+  private readonly counts = new Map<string, { start: number; count: number }>();
+
+  constructor(private readonly options: { limit: number; windowMs: number }) {}
+
+  /** Counts a request; when over the limit, the seconds until the window resets instead. */
+  take(
+    userId: string,
+    now: Date,
+  ): { ok: true } | { ok: false; retryAfterSeconds: number } {
+    const { limit, windowMs } = this.options;
+    const at = now.getTime();
+    if (this.counts.size > 10_000) this.forgetBefore(at - windowMs);
+    const entry = this.counts.get(userId);
+    if (!entry || at - entry.start >= windowMs) {
+      this.counts.set(userId, { start: at, count: 1 });
+      return { ok: true };
+    }
+    if (entry.count >= limit) {
+      return {
+        ok: false,
+        retryAfterSeconds: Math.ceil((entry.start + windowMs - at) / 1000),
+      };
+    }
+    entry.count += 1;
+    return { ok: true };
+  }
+
+  private forgetBefore(at: number): void {
+    for (const [userId, entry] of this.counts) {
+      if (entry.start < at) this.counts.delete(userId);
+    }
+  }
+}

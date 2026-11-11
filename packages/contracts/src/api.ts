@@ -179,8 +179,25 @@ export type RatingEvent = z.infer<typeof RatingEvent>;
 
 export const MeResponse = z.object({
   user: z.object({ id: z.string(), email: z.string(), name: z.string() }),
+  /** May create API keys. */
+  apiAccess: z.boolean(),
+  /** May grant and revoke API access (GET /admin/users). */
+  isAdmin: z.boolean(),
 });
 export type MeResponse = z.infer<typeof MeResponse>;
+
+/** A user as the admin page lists them. */
+export const AdminUser = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  apiAccess: z.boolean(),
+  createdAt: z.string(),
+});
+export type AdminUser = z.infer<typeof AdminUser>;
+
+export const AdminUsersResponse = z.object({ users: z.array(AdminUser) });
+export type AdminUsersResponse = z.infer<typeof AdminUsersResponse>;
 
 export const RulesResponse = z.object({
   rulesetVersion: z.string(),

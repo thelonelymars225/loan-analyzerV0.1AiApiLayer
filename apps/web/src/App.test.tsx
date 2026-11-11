@@ -5,6 +5,8 @@ import { jsonResponse, renderWithProviders, routeFetch } from "./test/render";
 
 const me = {
   user: { id: "u_1", email: "nour@example.com", name: "Nour Al-Harbi" },
+  apiAccess: false,
+  isAdmin: false,
 };
 
 describe("App routes", () => {

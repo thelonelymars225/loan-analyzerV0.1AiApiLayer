@@ -3,6 +3,7 @@ import { isAPIError } from "better-auth/api";
 import { fromNodeHeaders } from "better-auth/node";
 import type { Logger } from "pino";
 import { API_KEY_HEADER, type Auth } from "../auth";
+import type { Config } from "../config";
 import { unauthorized } from "../errors";
 
 /** Who is calling. Every query for customer data is scoped by user.id. */
@@ -10,6 +11,10 @@ export interface RequestContext {
   user: { id: string; email: string; name: string };
   /** The API key the call came with (its id, never the secret), or null for a cookie session. */
   apiKeyId: string | null;
+  /** May create API keys (granted by an admin). */
+  apiAccess: boolean;
+  /** Signed in with a cookie as one of ADMIN_EMAILS. An API key is never an admin. */
+  isAdmin: boolean;
 }
 
 declare module "fastify" {
@@ -27,7 +32,10 @@ declare module "fastify" {
  * onRequest hook: resolves the Better Auth session (a cookie, or an API key in x-api-key,
  * which the api-key plugin answers as a session of the key's user), or answers 401.
  */
-export function sessionHook(deps: { auth: Auth }): onRequestAsyncHookHandler {
+export function sessionHook(deps: {
+  auth: Auth;
+  config: Config;
+}): onRequestAsyncHookHandler {
   return async (request: FastifyRequest) => {
     if (request.routeOptions.config.public) return;
     const session = await getSession(deps.auth, request);
@@ -35,7 +43,12 @@ export function sessionHook(deps: { auth: Auth }): onRequestAsyncHookHandler {
     const { user } = session;
     // With a key, the plugin answers a session whose id is the key's id.
     const apiKeyId = request.headers[API_KEY_HEADER] ? session.session.id : null;
-    request.ctx = { user: { id: user.id, email: user.email, name: user.name }, apiKeyId };
+    request.ctx = {
+      user: { id: user.id, email: user.email, name: user.name },
+      apiKeyId,
+      apiAccess: user.apiAccess === true,
+      isAdmin: !apiKeyId && deps.config.ADMIN_EMAILS.includes(user.email.toLowerCase()),
+    };
     // On the request's own logger, so the "request completed" line carries it too.
     if (apiKeyId) (request.log as Logger).setBindings({ apiKeyId });
   };

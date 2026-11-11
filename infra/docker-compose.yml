@@ -124,6 +124,7 @@ services:
       BETTER_AUTH_URL: http://localhost:${WEB_PORT:-8080}
       WEB_ORIGIN: http://localhost:${WEB_PORT:-8080}
       RATE_LIMIT_PER_DAY: ${RATE_LIMIT_PER_DAY:-20}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       # The migrate job above already did this.
       DB_MIGRATE_ON_START: "false"
     ports:

@@ -34,6 +34,19 @@ const Env = z
      */
     WAGE_CHECKS_PER_MINUTE: z.coerce.number().int().positive().default(60),
     /**
+     * Comma-separated emails of the admins, who grant and revoke API access. Sign up with the
+     * address before setting it here: sign-up does not verify email ownership.
+     */
+    ADMIN_EMAILS: z
+      .string()
+      .default("")
+      .transform((value) =>
+        value
+          .split(",")
+          .map((email) => email.trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    /**
      * Apply database migrations on start-up (safe when the worker does it too). Same name and
      * parser as the worker's, so one shared env file controls both ("true"/"false").
      */

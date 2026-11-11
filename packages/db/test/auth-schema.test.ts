@@ -7,7 +7,17 @@ import { authTables } from "../src/auth-schema";
  * If a Better Auth upgrade adds fields, update this list and the tables together.
  */
 const BETTER_AUTH_FIELDS = {
-  user: ["id", "name", "email", "emailVerified", "image", "createdAt", "updatedAt"],
+  // apiAccess is ours, declared to Better Auth as an additional field.
+  user: [
+    "id",
+    "name",
+    "email",
+    "emailVerified",
+    "image",
+    "createdAt",
+    "updatedAt",
+    "apiAccess",
+  ],
   session: [
     "id",
     "expiresAt",

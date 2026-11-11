@@ -235,5 +235,7 @@ export function syntheticReport(view: View): RatingReport {
 export function syntheticMe(): MeResponse {
   return {
     user: { id: "u_1", email: "nour@example.com", name: "Nour Al-Harbi" },
+    apiAccess: false,
+    isAdmin: false,
   };
 }

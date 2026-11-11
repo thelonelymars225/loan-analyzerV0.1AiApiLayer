@@ -37,6 +37,8 @@ export const users = pgTable("users", {
   image: text("image"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
+  /** May create API keys. Granted and revoked by an admin (see ADMIN_EMAILS in the API). */
+  apiAccess: boolean("api_access").notNull().default(false),
 });
 
 export const sessions = pgTable(

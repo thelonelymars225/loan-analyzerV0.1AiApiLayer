@@ -52,7 +52,7 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
     "/wage-checks",
     {
       schema: {
-        summary: "Compare Qiwa contracts, offer letters and a payroll file",
+        summary: "Check wages from files",
         description:
           'multipart/form-data: optional "payroll" (Mudad wage file, CSV or .xlsx) plus "contract" (one Qiwa PDF; ' +
           "offer letter in the optional fields offerBasic, offerHousing, offerTransport, " +
@@ -91,8 +91,9 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
     "/wage-checks/contract",
     {
       schema: {
-        summary: "Read the wage and ID from one Qiwa contract PDF",
-        description: 'multipart/form-data: "contract" (one Qiwa PDF).',
+        summary: "Read a contract's wage",
+        description:
+          'The wage and ID from one Qiwa PDF, sent as multipart/form-data in "contract".',
         consumes: ["multipart/form-data"],
         response: { 200: WageRecord },
       },
@@ -113,7 +114,9 @@ export const wageCheckRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps)
       // Room for the 50,000-person cap: about 130 bytes a record, in two or three lists.
       bodyLimit: 32 * 1024 * 1024,
       schema: {
-        summary: "Compare Qiwa contracts, offer letters and payroll sent as JSON",
+        summary: "Check wages from JSON",
+        description:
+          "The same check as from files, with the contracts, offer letters and payroll sent as JSON.",
         body: WageCheckRequest,
         response: { 200: WageCheckResponse },
       },

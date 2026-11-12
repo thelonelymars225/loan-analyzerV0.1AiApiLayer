@@ -57,11 +57,12 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings",
     {
       schema: {
-        summary: "Upload a Qiwa contract PDF to rate",
+        summary: "Rate a contract",
         description:
-          'multipart/form-data: optional field "view" (employee | hr) first, then the PDF in ' +
-          `"file" (at most ${config.MAX_UPLOAD_BYTES} bytes). 422 unsupported_document when ` +
-          "it is not a Qiwa Unified Employment Contract; 429 rate_limited over the daily limit.",
+          "Send `multipart/form-data` with the PDF in `file` " +
+          `(at most ${config.MAX_UPLOAD_BYTES / 1024 / 1024} MB). To pick the report view, send ` +
+          "`view` (`employee` or `hr`) before the file. Answers 422 `unsupported_document` for " +
+          "anything but a Qiwa Unified Employment Contract, and 429 `rate_limited` over the daily limit.",
         consumes: ["multipart/form-data"],
         response: { 202: CreateRatingResponse },
       },
@@ -86,7 +87,9 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings",
     {
       schema: {
-        summary: "List your ratings, newest first",
+        summary: "List ratings",
+        description:
+          "Your ratings, newest first. Pass `nextCursor` back as `cursor` for the next page.",
         querystring: z.object({ cursor: z.string().max(200).optional() }),
         response: { 200: ListRatingsResponse },
       },
@@ -101,7 +104,8 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id",
     {
       schema: {
-        summary: "A rating as a report in one view (any status)",
+        summary: "Get a rating report",
+        description: "Works in any status. `view` defaults to the one chosen at upload.",
         params: RatingParams,
         querystring: z.object({ view: View.optional() }),
         response: { 200: RatingReport },
@@ -130,7 +134,7 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id/events",
     {
       schema: {
-        summary: "Server-sent events: the rating's status until it is final",
+        summary: "Follow a rating's status",
         description:
           'text/event-stream. Each event is `event: status` with data {"id","status"}. ' +
           `429 rate_limited when the user already has ${MAX_STREAMS_PER_USER} streams open ` +
@@ -161,7 +165,7 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id/document",
     {
       schema: {
-        summary: "The uploaded PDF (until the retention period deletes it)",
+        summary: "Download the contract PDF",
         description:
           "disposition=attachment (default) downloads it; disposition=inline opens it in the " +
           "contract viewer. Each is audited as its own action. 404 once the PDF is deleted.",
@@ -195,9 +199,9 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id/pages/:page",
     {
       schema: {
-        summary: "One page of the PDF as a PNG, cut on request for the contract viewer",
+        summary: "Get a page as an image",
         description:
-          "Rendered from the PDF each time and never stored; " +
+          "A PNG rendered from the PDF each time and never stored; " +
           "404 for a page the contract does not have, or once the PDF is deleted.",
         params: PageParams,
       },
@@ -217,7 +221,8 @@ export const ratingRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
     "/ratings/:id",
     {
       schema: {
-        summary: "Delete the rating, its findings and the PDF",
+        summary: "Delete a rating",
+        description: "Deletes the rating, its findings and the PDF.",
         params: RatingParams,
       },
     },

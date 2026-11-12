@@ -23,7 +23,8 @@ export const adminRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => 
     "/admin/users",
     {
       schema: {
-        summary: "Every user and whether they may use the API (admin)",
+        summary: "List users",
+        description: "Every user and whether they may use the API. Admins only.",
         response: { 200: AdminUsersResponse },
       },
     },
@@ -46,7 +47,13 @@ export const adminRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => 
 
   app.post(
     "/admin/users/:id/api-access",
-    { schema: { summary: "Let a user create API keys (admin)", params: UserParams } },
+    {
+      schema: {
+        summary: "Grant API access",
+        description: "Lets the user create API keys. Admins only.",
+        params: UserParams,
+      },
+    },
     async (request, reply) => {
       await setApiAccess(request.params.id, true);
       request.log.info({ targetUserId: request.params.id }, "api access granted");
@@ -58,7 +65,8 @@ export const adminRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => 
     "/admin/users/:id/api-access",
     {
       schema: {
-        summary: "Revoke a user's API access and delete their keys (admin)",
+        summary: "Revoke API access",
+        description: "Deletes the user's API keys. Admins only.",
         params: UserParams,
       },
     },

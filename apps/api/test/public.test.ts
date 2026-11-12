@@ -45,7 +45,7 @@ describe.skipIf(!DATABASE_URL)("public routes", () => {
     expect(rules.rules.map((rule) => rule.id)).toContain("EOS-BASE-01");
   });
 
-  it("publishes an OpenAPI document generated from the schemas, and Swagger UI", async () => {
+  it("publishes an OpenAPI document generated from the schemas, and the API reference", async () => {
     const response = await t.app.inject({ method: "GET", url: "/api/v1/openapi.json" });
     expect(response.statusCode).toBe(200);
     const spec = response.json<{ openapi: string; paths: Record<string, object> }>();

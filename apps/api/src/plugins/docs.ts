@@ -1,39 +1,75 @@
+import { readFileSync } from "node:fs";
 import fastifySwagger from "@fastify/swagger";
-import fastifySwaggerUi from "@fastify/swagger-ui";
+import scalarApiReference from "@scalar/fastify-api-reference";
 import type { FastifyInstance } from "fastify";
 import { jsonSchemaTransform } from "fastify-type-provider-zod";
 import { API_KEY_HEADER } from "../auth";
 
+/** The guides above the reference (Getting started, Authentication, ...): Markdown. */
+const GUIDE = readFileSync(new URL("./docs-guide.md", import.meta.url), "utf8");
+/** The web app's colours, applied to the reference. */
+const THEME = readFileSync(new URL("./docs-theme.css", import.meta.url), "utf8");
+
+/** Sidebar groups, in order. Each route joins the group of its first path segment. */
+const TAGS = [
+  {
+    name: "Ratings",
+    description: "Upload a contract, follow its status, read the report.",
+    segments: ["ratings"],
+  },
+  {
+    name: "Wage checks",
+    description: "Compare contracts, offer letters and payroll. Nothing is stored.",
+    segments: ["wage-checks"],
+  },
+  {
+    name: "Account",
+    description: "The signed-in user and their data.",
+    segments: ["me"],
+  },
+  { name: "Admin", description: "Grant and revoke API access.", segments: ["admin"] },
+  {
+    name: "Reference",
+    description: "The rules table and the health check.",
+    segments: ["rules", "healthz"],
+  },
+];
+
 /**
  * OpenAPI generated from the routes' Zod schemas. Register before the routes so the spec
  * sees them. The spec is served at /api/v1/openapi.json (routes/docs.ts) and the
- * Swagger UI at /api/docs.
+ * API reference (Scalar) at /api/docs.
  */
 export async function registerDocs(app: FastifyInstance): Promise<void> {
   await app.register(fastifySwagger, {
     openapi: {
       openapi: "3.1.0",
-      info: {
-        title: "Contract Rater API",
-        version: "0.1.0",
-        description:
-          "Rates Saudi Qiwa employment contracts. Rating aid, not legal advice. " +
-          "Sign in through Better Auth at /api/auth; the session cookie authenticates " +
-          "every other call. A system without a browser sends an API key instead: create " +
-          "one while signed in (with API access, granted by an admin) with " +
-          "POST /api/auth/api-key/create {name}, keep the `key` " +
-          "from the answer (it is shown once) and send it in the x-api-key header. " +
-          "Errors are application/problem+json with a stable `code`.",
-      },
+      info: { title: "Contract Rater API", version: "0.1.0", description: GUIDE },
       components: {
         securitySchemes: {
-          session: { type: "apiKey", in: "cookie", name: "better-auth.session_token" },
           apiKey: { type: "apiKey", in: "header", name: API_KEY_HEADER },
+          session: { type: "apiKey", in: "cookie", name: "better-auth.session_token" },
         },
       },
-      security: [{ session: [] }, { apiKey: [] }],
+      security: [{ apiKey: [] }, { session: [] }],
+      tags: TAGS.map(({ name, description }) => ({ name, description })),
     },
-    transform: jsonSchemaTransform,
+    transform: (input) => {
+      const out = jsonSchemaTransform(input);
+      const segment = input.url.split("/")[3] ?? ""; // /api/v1/<segment>/...
+      const tag = TAGS.find((t) => t.segments.includes(segment));
+      return tag ? { ...out, schema: { tags: [tag.name], ...out.schema } } : out;
+    },
   });
-  await app.register(fastifySwaggerUi, { routePrefix: "/api/docs" });
+  await app.register(scalarApiReference, {
+    routePrefix: "/api/docs",
+    configuration: {
+      pageTitle: "Contract Rater API",
+      hideModels: true,
+      documentDownloadType: "none",
+      showDeveloperTools: "never",
+      agent: { disabled: true },
+      customCss: THEME,
+    },
+  });
 }

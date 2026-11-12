@@ -10,7 +10,7 @@ export const meRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/me",
     {
       schema: {
-        summary: "The signed-in user",
+        summary: "Get the signed-in user",
         response: { 200: MeResponse },
       },
     },
@@ -24,7 +24,7 @@ export const meRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) => {
     "/me/data",
     {
       schema: {
-        summary: "Delete every rating and PDF you uploaded",
+        summary: "Delete all my data",
         description:
           "Removes all of the caller's ratings (with their findings), document rows and " +
           "stored PDFs. Each deleted rating is audited.",

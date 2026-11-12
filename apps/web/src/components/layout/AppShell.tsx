@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut } from "lucide-react";
+import { KeyRound, LogOut, ShieldCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, NavLink, useNavigate } from "react-router";
+import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import { signOut } from "../../lib/auth";
 import { cn } from "../../lib/cn";
 import { useSession } from "../../lib/session";
@@ -13,14 +13,27 @@ import { LanguageToggle } from "./LanguageToggle";
 const NAV_ITEMS = [
   { to: "/", key: "nav.ratings", end: true },
   { to: "/account", key: "nav.account", end: false },
-  { to: "/keys", key: "nav.apiKeys", end: false, show: "apiAccess" },
-  { to: "/admin", key: "nav.admin", end: false, show: "isAdmin" },
 ] as const;
+
+/** API and admin pages, set apart at the end of the menu and shown only to those allowed. */
+const PLATFORM_ITEMS = [
+  { to: "/keys", key: "nav.apiKeys", show: "apiAccess", icon: KeyRound },
+  { to: "/admin", key: "nav.admin", show: "isAdmin", icon: ShieldCheck },
+] as const;
+
+const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+  cn(
+    "flex items-center gap-1.5 border-b-2 px-3 pt-1 pb-2.5 text-sm font-medium whitespace-nowrap transition-colors",
+    isActive
+      ? "border-primary text-foreground"
+      : "border-transparent text-muted-foreground hover:text-foreground",
+  );
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { me } = useSession();
-  const navItems = NAV_ITEMS.filter((item) => !("show" in item) || me[item.show]);
+  const platformItems = PLATFORM_ITEMS.filter((item) => me[item.show]);
+  const inAdmin = useLocation().pathname.startsWith("/admin");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
@@ -47,6 +60,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         {t("app.skipToContent")}
       </a>
       <header className="sticky top-0 z-40 border-b border-border bg-card/90 backdrop-blur">
+        {inAdmin && (
+          <div className="flex items-center justify-center gap-2 bg-foreground px-4 py-2 text-sm font-medium text-background">
+            <ShieldCheck aria-hidden="true" className="size-4" />
+            {t("admin.banner")}
+          </div>
+        )}
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
           <Link to="/" className="flex items-center gap-2 font-semibold">
             <BrandMark />
@@ -68,23 +87,21 @@ export function AppShell({ children }: { children: ReactNode }) {
             aria-label={t("nav.main")}
             className="-mb-3 flex w-full gap-1 overflow-x-auto"
           >
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={({ isActive }) =>
-                  cn(
-                    "border-b-2 px-3 pt-1 pb-2.5 text-sm font-medium whitespace-nowrap transition-colors",
-                    isActive
-                      ? "border-primary text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground",
-                  )
-                }
-              >
+            {NAV_ITEMS.map((item) => (
+              <NavLink key={item.to} to={item.to} end={item.end} className={navLinkClass}>
                 {t(item.key)}
               </NavLink>
             ))}
+            {platformItems.length > 0 && (
+              <div className="ms-auto flex gap-1 border-s border-border ps-2">
+                {platformItems.map(({ to, key, icon: Icon }) => (
+                  <NavLink key={to} to={to} className={navLinkClass}>
+                    <Icon aria-hidden="true" className="size-4" />
+                    {t(key)}
+                  </NavLink>
+                ))}
+              </div>
+            )}
           </nav>
         </div>
       </header>

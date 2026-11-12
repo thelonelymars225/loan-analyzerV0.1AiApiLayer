@@ -317,6 +317,7 @@
     "noAccess": "No API access",
     "grant": "Grant access",
     "revoke": "Revoke access",
-    "confirmRevoke": "Revoke API access for {{email}}? Their keys will be deleted and stop working at once."
+    "confirmRevoke": "Revoke API access for {{email}}? Their keys will be deleted and stop working at once.",
+    "banner": "Admin area: changes here affect other users' access."
   }
 }

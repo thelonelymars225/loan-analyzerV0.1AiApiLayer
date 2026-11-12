@@ -14,7 +14,8 @@ export const healthRoutes: FastifyPluginAsyncZod<AppDeps> = async (app, deps) =>
       // Probes hit this every few seconds; their request logs would drown everything else.
       logLevel: "warn",
       schema: {
-        summary: "Liveness, database and queue check (503 when one fails)",
+        summary: "Check health",
+        description: "503 when the database or the queue is down.",
         security: [],
         response: { 200: HealthResponse, 503: HealthResponse },
       },

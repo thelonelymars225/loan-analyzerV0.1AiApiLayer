@@ -44,7 +44,7 @@ export interface BuildAppOptions {
  *
  *   /api/auth/*   Better Auth: sign-up, sign-in, sign-out, session (nothing else is reachable)
  *   /api/v1/*     the REST API (session cookie; problem+json errors)
- *   /api/docs     Swagger UI; the spec is /api/v1/openapi.json
+ *   /api/docs     API reference with guides (Scalar); the spec is /api/v1/openapi.json
  */
 export async function buildApp(options: BuildAppOptions): Promise<FastifyInstance> {
   const { config, db } = options;

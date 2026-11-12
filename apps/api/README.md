@@ -8,11 +8,11 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/rater pnpm dev:api
 curl localhost:3000/api/v1/healthz
 ```
 
-| Path          | What                                                                            |
-| ------------- | ------------------------------------------------------------------------------- |
-| `/api/auth/*` | Better Auth: sign-up, sign-in, sign-out, get-session only; anything else is 404 |
-| `/api/v1/*`   | The REST API. Session cookie; errors are `application/problem+json`             |
-| `/api/docs`   | Swagger UI. The spec, generated from the Zod schemas, is `/api/v1/openapi.json` |
+| Path          | What                                                                                                    |
+| ------------- | ------------------------------------------------------------------------------------------------------- |
+| `/api/auth/*` | Better Auth: sign-up, sign-in, sign-out, get-session only; anything else is 404                         |
+| `/api/v1/*`   | The REST API. Session cookie; errors are `application/problem+json`                                     |
+| `/api/docs`   | API reference with guides (Scalar). The spec, generated from the Zod schemas, is `/api/v1/openapi.json` |
 
 ## Configuration
 

@@ -1,0 +1,68 @@
+/* The web app's colours (apps/web/src/index.css) on the API reference. */
+.light-mode {
+  --scalar-background-1: #ffffff;
+  --scalar-background-2: #f7f7f5;
+  --scalar-background-3: #efeeea;
+  --scalar-background-accent: #e3f0f1;
+  --scalar-color-1: #16181d;
+  --scalar-color-2: #5b5d63;
+  --scalar-color-3: #8a8c91;
+  --scalar-color-accent: #1f6f78;
+  --scalar-border-color: #e2e1dc;
+  --scalar-color-green: #0b6b0b;
+  --scalar-color-blue: #1c4f8f;
+  --scalar-color-red: #9f2323;
+  --scalar-color-orange: #9a3d17;
+  --scalar-color-yellow: #7a5300;
+  --scalar-sidebar-background-1: #f7f7f5;
+  --scalar-sidebar-item-hover-background: #efeeea;
+  --scalar-sidebar-item-active-background: #e3f0f1;
+  --scalar-sidebar-color-active: #1f6f78;
+  --scalar-sidebar-search-background: #ffffff;
+}
+.dark-mode {
+  --scalar-background-1: #121314;
+  --scalar-background-2: #1a1b1d;
+  --scalar-background-3: #25262a;
+  --scalar-background-accent: #1d3134;
+  --scalar-color-1: #ececea;
+  --scalar-color-2: #a3a4a9;
+  --scalar-color-accent: #5fb3bc;
+  --scalar-border-color: #2e3034;
+  --scalar-color-green: #8fdc8f;
+  --scalar-color-blue: #9cc3f2;
+  --scalar-color-red: #f19a9a;
+  --scalar-color-orange: #f3ab8d;
+  --scalar-color-yellow: #f7cf72;
+  --scalar-sidebar-background-1: #1a1b1d;
+  --scalar-sidebar-item-active-background: #1d3134;
+  --scalar-sidebar-color-active: #5fb3bc;
+}
+/* Inline code reads as teal chips; tables get a tinted header. */
+.markdown code {
+  background: var(--scalar-background-accent);
+  color: var(--scalar-color-accent);
+}
+.markdown pre code {
+  background: none;
+  color: inherit;
+}
+.markdown table th {
+  background: var(--scalar-background-2);
+  white-space: nowrap;
+}
+.markdown table code {
+  white-space: nowrap;
+}
+.markdown h2 {
+  padding-top: 12px;
+}
+/* Method badges as soft pills in the sidebar. */
+.sidebar-heading-type {
+  background: color-mix(in srgb, var(--method-color) 12%, transparent);
+  border-radius: 4px;
+  padding: 0 5px;
+  line-height: 16px;
+  min-width: 34px;
+  text-align: center;
+}

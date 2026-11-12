@@ -9,7 +9,8 @@ export const ruleRoutes: FastifyPluginAsyncZod = async (app) => {
     {
       config: { public: true },
       schema: {
-        summary: "The current rules table with its ruleset and law versions",
+        summary: "Get the rules",
+        description: "The current rules table with its ruleset and law versions.",
         security: [],
         response: { 200: RulesResponse },
       },

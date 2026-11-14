@@ -1,0 +1,15 @@
+{
+  "name": "@rater/scenarios",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "tsx generate.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@rater/contracts": "workspace:*",
+    "@rater/core": "workspace:*",
+    "write-excel-file": "^4.1.1"
+  }
+}
